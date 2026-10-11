@@ -1,0 +1,47 @@
+# Node & Frontend
+node_modules/
+*/node_modules/
+.next/
+*/.next/
+out/
+build/
+.vercel/
+
+# Python & Backend
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+venv/
+*/venv/
+.venv/
+*/.venv/
+env/
+*/env/
+
+# Environment Variables & Secrets - CRITICAL: NEVER LEAK
+.env
+.env.*
+*.env
+*/.env
+*/.env.*
+!.env.example
+!*/.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Temporary / Scratch files
+test-face.jpg
+last_scan.json
+*.zip
+*.pem
