@@ -1,0 +1,9 @@
+{
+  "status": 200,
+  "data": {
+    "error": "error_src_face_too_small",
+    "error_message": "The face in the input image is too small. It needs to take up more than 60% of the image width.",
+    "results": null,
+    "task_status": "error"
+  }
+}

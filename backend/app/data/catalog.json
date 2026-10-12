@@ -1,0 +1,344 @@
+{
+  "disclaimer": "Sample catalogue. These are fictional products created to demonstrate ProofLoop's matching logic; brands, prices and listings are not real.",
+  "products": [
+    {
+      "id": "thale-water-reserve",
+      "name": "Water Reserve Gel Cream",
+      "brand": "Thale",
+      "category": "Moisturiser",
+      "routine_step": "moisturize",
+      "price": 28.0,
+      "size_ml": 50,
+      "texture": "Gel cream",
+      "finish": "light",
+      "fragrance_free": true,
+      "description": "A bouncy gel cream that layers humectants under a light barrier film. Absorbs quickly with no residue.",
+      "key_ingredients": [
+        {"name": "Sodium hyaluronate", "role": "humectant"},
+        {"name": "Glycerin", "role": "humectant"},
+        {"name": "Ceramide NP", "role": "barrier lipid"}
+      ],
+      "primary_targets": ["moisture"],
+      "secondary_targets": ["texture"],
+      "cautions": [],
+      "palette": ["#cfe3e6", "#5f8d96"]
+    },
+    {
+      "id": "thale-barrier-rich",
+      "name": "Barrier Rich Cream",
+      "brand": "Thale",
+      "category": "Moisturiser",
+      "routine_step": "moisturize",
+      "price": 34.0,
+      "size_ml": 50,
+      "texture": "Cream",
+      "finish": "rich",
+      "fragrance_free": true,
+      "description": "A cushioning cream with skin-identical lipids for skin that feels tight by midday.",
+      "key_ingredients": [
+        {"name": "Ceramide NP", "role": "barrier lipid"},
+        {"name": "Squalane", "role": "emollient"},
+        {"name": "Butyrospermum parkii (shea) butter", "role": "occlusive emollient"}
+      ],
+      "primary_targets": ["moisture"],
+      "secondary_targets": ["redness"],
+      "cautions": [],
+      "palette": ["#efe2cf", "#9b7b55"]
+    },
+    {
+      "id": "numa-milk-essence",
+      "name": "Hydrating Milk Essence",
+      "brand": "Numa Field",
+      "category": "Essence",
+      "routine_step": "treat",
+      "price": 22.0,
+      "size_ml": 120,
+      "texture": "Milky fluid",
+      "finish": "light",
+      "fragrance_free": false,
+      "description": "A first-step essence that adds a layer of water-binding ingredients before serum or cream.",
+      "key_ingredients": [
+        {"name": "Glycerin", "role": "humectant"},
+        {"name": "Panthenol", "role": "humectant, skin-conditioning"},
+        {"name": "Beta-glucan", "role": "skin-conditioning"}
+      ],
+      "primary_targets": ["moisture"],
+      "secondary_targets": ["radiance"],
+      "cautions": [],
+      "palette": ["#f3ece4", "#b49a86"]
+    },
+    {
+      "id": "velra-shine-control",
+      "name": "Shine Control Gel",
+      "brand": "Velra",
+      "category": "Moisturiser",
+      "routine_step": "moisturize",
+      "price": 26.0,
+      "size_ml": 50,
+      "texture": "Water gel",
+      "finish": "light",
+      "fragrance_free": true,
+      "description": "An oil-free gel with soft-focus powders for a matte finish that still feels hydrated.",
+      "key_ingredients": [
+        {"name": "Niacinamide", "role": "multi-functional skin-conditioning"},
+        {"name": "Zinc PCA", "role": "sebum-regulating"},
+        {"name": "Silica", "role": "mattifying absorbent"}
+      ],
+      "primary_targets": ["oiliness"],
+      "secondary_targets": ["pore"],
+      "cautions": [],
+      "palette": ["#dfe8d8", "#6f8a5e"]
+    },
+    {
+      "id": "velra-clay-cleanser",
+      "name": "Clay Balance Cleanser",
+      "brand": "Velra",
+      "category": "Cleanser",
+      "routine_step": "cleanse",
+      "price": 18.0,
+      "size_ml": 150,
+      "texture": "Cream-gel",
+      "finish": "light",
+      "fragrance_free": true,
+      "description": "A low-foam cleanser with kaolin to lift excess oil without a squeaky after-feel.",
+      "key_ingredients": [
+        {"name": "Kaolin", "role": "oil-absorbing clay"},
+        {"name": "Glycerin", "role": "humectant"},
+        {"name": "Coco-glucoside", "role": "mild cleansing agent"}
+      ],
+      "primary_targets": ["oiliness", "pore"],
+      "secondary_targets": [],
+      "cautions": [
+        {"when_low": "moisture", "note": "Clay cleansers can feel drying. If your skin already looks dehydrated, use it once a day rather than twice."}
+      ],
+      "palette": ["#e7dfd6", "#8a7a6a"]
+    },
+    {
+      "id": "ostin-calm-serum",
+      "name": "Calm Barrier Serum",
+      "brand": "Ostin & Co",
+      "category": "Serum",
+      "routine_step": "treat",
+      "price": 38.0,
+      "size_ml": 30,
+      "texture": "Light serum",
+      "finish": "light",
+      "fragrance_free": true,
+      "description": "A minimalist soothing serum built for skin that looks reactive or flushed.",
+      "key_ingredients": [
+        {"name": "Centella asiatica extract", "role": "soothing"},
+        {"name": "Panthenol", "role": "skin-conditioning"},
+        {"name": "Allantoin", "role": "soothing"}
+      ],
+      "primary_targets": ["redness"],
+      "secondary_targets": ["moisture"],
+      "cautions": [],
+      "palette": ["#e5ead9", "#7d8f62"]
+    },
+    {
+      "id": "ostin-azelaic-fluid",
+      "name": "Azelaic Tone Fluid",
+      "brand": "Ostin & Co",
+      "category": "Treatment",
+      "routine_step": "treat",
+      "price": 29.0,
+      "size_ml": 30,
+      "texture": "Fluid",
+      "finish": "light",
+      "fragrance_free": true,
+      "description": "A cosmetic-strength azelaic acid fluid for a more even-looking tone.",
+      "key_ingredients": [
+        {"name": "Azelaic acid 10%", "role": "tone-evening"},
+        {"name": "Bisabolol", "role": "soothing"}
+      ],
+      "primary_targets": ["redness"],
+      "secondary_targets": ["acne"],
+      "cautions": [
+        {"when_low": "redness", "note": "Azelaic acid can tingle at first. Patch-test and start every other evening."}
+      ],
+      "palette": ["#f1e1dc", "#a5675a"]
+    },
+    {
+      "id": "numa-lactic-night",
+      "name": "Lactic Night Renewal",
+      "brand": "Numa Field",
+      "category": "Exfoliant",
+      "routine_step": "treat",
+      "price": 24.0,
+      "size_ml": 30,
+      "texture": "Serum",
+      "finish": "light",
+      "fragrance_free": true,
+      "description": "A gentle evening acid serum that loosens dull surface cells for smoother-looking skin.",
+      "key_ingredients": [
+        {"name": "Lactic acid 8%", "role": "exfoliant (AHA), humectant"},
+        {"name": "Glycerin", "role": "humectant"}
+      ],
+      "primary_targets": ["texture"],
+      "secondary_targets": ["radiance"],
+      "cautions": [
+        {"when_low": "redness", "note": "Contains an exfoliating acid. If your skin looks easily reddened, introduce it slowly and patch-test first."}
+      ],
+      "palette": ["#efe6d2", "#a18a52"]
+    },
+    {
+      "id": "thale-retinal-serum",
+      "name": "Retinal Smoothing Serum",
+      "brand": "Thale",
+      "category": "Serum",
+      "routine_step": "treat",
+      "price": 48.0,
+      "size_ml": 30,
+      "texture": "Serum",
+      "finish": "light",
+      "fragrance_free": true,
+      "description": "An encapsulated retinal serum for the look of uneven texture and enlarged pores. Evening use.",
+      "key_ingredients": [
+        {"name": "Retinal 0.05%", "role": "retinoid"},
+        {"name": "Squalane", "role": "emollient"}
+      ],
+      "primary_targets": ["texture"],
+      "secondary_targets": ["pore"],
+      "cautions": [
+        {"when_low": "redness", "note": "Retinoids commonly cause temporary dryness or redness. Start twice a week."},
+        {"when_low": "moisture", "note": "Pair with a moisturiser; retinoids can make skin look drier at first."}
+      ],
+      "palette": ["#e9dccf", "#7a5a4a"]
+    },
+    {
+      "id": "velra-bha-clarifier",
+      "name": "BHA Pore Clarifier",
+      "brand": "Velra",
+      "category": "Exfoliant",
+      "routine_step": "treat",
+      "price": 27.0,
+      "size_ml": 100,
+      "texture": "Liquid",
+      "finish": "light",
+      "fragrance_free": true,
+      "description": "A leave-on salicylic acid liquid that works inside oily pores.",
+      "key_ingredients": [
+        {"name": "Salicylic acid 2%", "role": "oil-soluble exfoliant (BHA)"},
+        {"name": "Camellia sinensis (green tea) extract", "role": "antioxidant"}
+      ],
+      "primary_targets": ["pore", "acne"],
+      "secondary_targets": ["oiliness"],
+      "cautions": [
+        {"when_low": "redness", "note": "Contains an exfoliating acid. Patch-test if your skin looks easily reddened."},
+        {"when_low": "moisture", "note": "BHA can be drying; follow with a moisturiser."}
+      ],
+      "palette": ["#dbe4e8", "#4f6b78"]
+    },
+    {
+      "id": "velra-niacinamide-blemish",
+      "name": "Niacinamide Blemish Serum",
+      "brand": "Velra",
+      "category": "Serum",
+      "routine_step": "treat",
+      "price": 19.0,
+      "size_ml": 30,
+      "texture": "Water serum",
+      "finish": "light",
+      "fragrance_free": true,
+      "description": "A high-strength niacinamide and zinc serum for blemish-prone-looking skin.",
+      "key_ingredients": [
+        {"name": "Niacinamide 10%", "role": "multi-functional skin-conditioning"},
+        {"name": "Zinc PCA", "role": "sebum-regulating"}
+      ],
+      "primary_targets": ["acne"],
+      "secondary_targets": ["oiliness", "pore"],
+      "cautions": [],
+      "palette": ["#e2e7ef", "#5d6f8c"]
+    },
+    {
+      "id": "numa-vitc-drops",
+      "name": "Vitamin C Glow Drops",
+      "brand": "Numa Field",
+      "category": "Serum",
+      "routine_step": "treat",
+      "price": 42.0,
+      "size_ml": 30,
+      "texture": "Light serum",
+      "finish": "light",
+      "fragrance_free": false,
+      "description": "A morning antioxidant serum for a brighter, more radiant-looking complexion.",
+      "key_ingredients": [
+        {"name": "Ascorbic acid 15%", "role": "antioxidant, brightening"},
+        {"name": "Tocopherol (vitamin E)", "role": "antioxidant"},
+        {"name": "Ferulic acid", "role": "antioxidant"}
+      ],
+      "primary_targets": ["radiance"],
+      "secondary_targets": ["texture"],
+      "cautions": [
+        {"when_low": "redness", "note": "Strong vitamin C can tingle on easily reddened-looking skin; start every other morning."}
+      ],
+      "palette": ["#f4e3c8", "#c48a3a"]
+    },
+    {
+      "id": "thale-glow-mask",
+      "name": "Glow Recovery Mask",
+      "brand": "Thale",
+      "category": "Mask",
+      "routine_step": "treat",
+      "price": 31.0,
+      "size_ml": 75,
+      "texture": "Cream mask",
+      "finish": "rich",
+      "fragrance_free": true,
+      "description": "A leave-on overnight mask for skin that looks tired and flat.",
+      "key_ingredients": [
+        {"name": "Niacinamide", "role": "multi-functional skin-conditioning"},
+        {"name": "Glycyrrhiza glabra (licorice) root extract", "role": "brightening"},
+        {"name": "Squalane", "role": "emollient"}
+      ],
+      "primary_targets": ["radiance"],
+      "secondary_targets": ["moisture"],
+      "cautions": [],
+      "palette": ["#f2e6da", "#b0785a"]
+    },
+    {
+      "id": "ostin-caffeine-eye",
+      "name": "Caffeine Eye Fluid",
+      "brand": "Ostin & Co",
+      "category": "Eye care",
+      "routine_step": "treat",
+      "price": 24.0,
+      "size_ml": 15,
+      "texture": "Fluid",
+      "finish": "light",
+      "fragrance_free": true,
+      "description": "A cooling roll-on fluid for the eye area, morning and night.",
+      "key_ingredients": [
+        {"name": "Caffeine", "role": "skin-conditioning"},
+        {"name": "Niacinamide", "role": "multi-functional skin-conditioning"},
+        {"name": "Palmitoyl tripeptide-1", "role": "peptide"}
+      ],
+      "primary_targets": ["dark_circle"],
+      "secondary_targets": [],
+      "cautions": [],
+      "palette": ["#e3e1ea", "#6c6787"]
+    },
+    {
+      "id": "thale-eye-cream",
+      "name": "Rested Eye Cream",
+      "brand": "Thale",
+      "category": "Eye care",
+      "routine_step": "treat",
+      "price": 36.0,
+      "size_ml": 15,
+      "texture": "Cream",
+      "finish": "rich",
+      "fragrance_free": true,
+      "description": "A cushioning eye cream with peptides and vitamin K for the look of shadows.",
+      "key_ingredients": [
+        {"name": "Phytonadione (vitamin K)", "role": "skin-conditioning"},
+        {"name": "Acetyl tetrapeptide-5", "role": "peptide"},
+        {"name": "Butyrospermum parkii (shea) butter", "role": "emollient"}
+      ],
+      "primary_targets": ["dark_circle"],
+      "secondary_targets": ["moisture"],
+      "cautions": [],
+      "palette": ["#ebe2dc", "#85685c"]
+    }
+  ]
+}

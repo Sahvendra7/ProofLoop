@@ -20,3 +20,8 @@ __pycache__/
 
 # Project files
 *.log
+
+# Local databases
+*.db
+*.db-wal
+*.db-shm

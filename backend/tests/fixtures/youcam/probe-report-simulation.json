@@ -1,0 +1,17 @@
+{
+  "run_at": "2026-10-11T21:27:18.734159+00:00",
+  "file_path_template": "/s2s/v2.0/file/{feature}",
+  "runs": [],
+  "credit_before": 932.0,
+  "simulation": {
+    "status": "success",
+    "duration_s": 7.74,
+    "intensities": {
+      "redness": 0.4,
+      "texture": 0.4
+    },
+    "url_host": "yce-us.s3-accelerate.amazonaws.com"
+  },
+  "credit_after": 928.0,
+  "units_spent": 4.0
+}

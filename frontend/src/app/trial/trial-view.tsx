@@ -1,0 +1,259 @@
+"use client";
+
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { ArrowDownRight, ArrowUpRight, Camera, FlaskConical, Minus } from "lucide-react";
+import { api, ApiError } from "@/lib/api";
+import { OUTCOME_COPY, shortDate, VERDICT_COPY } from "@/lib/format";
+import { useResource } from "@/lib/hooks";
+import type { Change, Comparison, Trial } from "@/lib/types";
+import { BandChart } from "@/components/band-chart";
+import { Dial } from "@/components/dial";
+import { ProvenanceNote } from "@/components/measure";
+import { ProductArt } from "@/components/product-art";
+import { Button, ButtonLink, Card, Notice, Skeleton } from "@/components/ui";
+
+export function TrialView() {
+  const id = useSearchParams().get("id");
+  const trial = useResource(id ? `trial:${id}` : null, () => api.trial(id!));
+  if (!id) return <Shell><Notice title="No trial selected." action={<Link className="font-semibold underline" href="/trials">See my trials</Link>} /></Shell>;
+  if (trial.error) return <Shell><Notice tone="error" title={trial.error.message}>{trial.error.hint}</Notice></Shell>;
+  if (!trial.data) return <Shell><Skeleton className="h-16 w-2/3" /><Skeleton className="mt-8 h-96" /></Shell>;
+  return <TrialDetail trial={trial.data} onUpdate={trial.setData} />;
+}
+
+function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) => void }) {
+  const focusBand = trial.focus_noise_band;
+  const pendingCheckin = trial.checkins.find((c) => c.status === "processing");
+  return (
+    <Shell>
+      <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-start">
+        <header className="max-w-3xl">
+          <p className="mb-4 inline-flex rounded-full bg-berry-milk px-3 py-1 text-xs font-semibold text-berry-deep">Step 4 of 4 · Trial · started {shortDate(trial.baseline.observed_at)}</p>
+          <h1 className="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold leading-[0.98] text-espresso">{trial.goal.label}</h1>
+          <p className="mt-3 text-lg text-ink-2">with {trial.product.name} <span className="text-ink-3">by {trial.product.brand}</span></p>
+        </header>
+        <ProductArt product={trial.product} className="hidden aspect-[5/6] w-32 lg:block" />
+      </div>
+      <div className="mt-6 max-w-3xl"><ProvenanceNote provenance={trial.provenance} /></div>
+
+      {trial.comparison ? (
+        <Verdict trial={trial} comparison={trial.comparison} band={focusBand} />
+      ) : (
+        <Waiting trial={trial} onUpdate={onUpdate} />
+      )}
+
+      {pendingCheckin && <Notice className="mt-6" title="A check-in is still being measured.">Refresh in a few seconds.</Notice>}
+
+      {trial.history.length > 0 && (
+        <Card className="mt-8 p-6 sm:p-8">
+          <h2 className="text-lg font-semibold text-ink">{trial.goal.metric_label} over this trial</h2>
+          <div className="mt-4">
+            <BandChart
+              metricLabel={trial.goal.metric_label}
+              band={focusBand}
+              points={trial.history
+                .filter((h) => h.focus_score !== null)
+                .map((h) => ({
+                  label: h.is_baseline
+                    ? `Baseline · ${shortDate(h.observed_at)}`
+                    : h.synthetic
+                      ? `Day ${daysBetween(trial.baseline.observed_at, h.observed_at)} · synthetic`
+                      : shortDate(h.observed_at),
+                  score: h.focus_score!,
+                  baseline: h.is_baseline,
+                  synthetic: h.synthetic,
+                }))}
+            />
+          </div>
+        </Card>
+      )}
+    </Shell>
+  );
+}
+
+function Waiting({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
+  const demo = trial.provenance.kind === "demo";
+  const base = trial.baseline.metrics.find((m) => m.key === trial.goal.metric);
+
+  async function demoFollowup() {
+    setBusy(true);
+    try {
+      onUpdate(await api.demoCheckin(trial.id));
+    } catch (err) {
+      setError(err instanceof ApiError ? err : new ApiError("unknown", "Couldn't create the demo follow-up.", 0));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+      <Card className="p-6 sm:p-8">
+        <p className="eyebrow">Baseline saved</p>
+        <p className="mt-3 font-display text-6xl text-ink tabular">{base?.ui_score ?? "—"}</p>
+        <p className="mt-1 text-ink-2">{trial.goal.metric_label} score on {shortDate(trial.baseline.observed_at)}</p>
+        <h2 className="mt-8 text-lg font-semibold text-ink">Check in after 3–4 weeks</h2>
+        <ul className="mt-3 space-y-2 text-ink-2">
+          <li>• Same spot and similar light as today — ProofLoop checks the lighting difference</li>
+          <li>• Same camera — pores and texture scores are sensitive to image sharpness</li>
+          <li>• No makeup, hair off your forehead, glasses off</li>
+          <li>• Keep the rest of your routine steady so the test stays fair</li>
+        </ul>
+        {!demo && (
+          <ButtonLink href={`/scan?trial=${trial.id}`} className="mt-6">
+            <Camera aria-hidden className="size-4" /> Check in now
+          </ButtonLink>
+        )}
+      </Card>
+      {demo && (
+        <div className="hatch rounded-[var(--radius-xl)] bg-demo-soft p-6 ring-1 ring-demo/25 sm:p-8">
+          <FlaskConical aria-hidden className="size-6 text-demo" />
+          <h2 className="mt-4 font-display text-2xl text-ink">See how a verdict works</h2>
+          <p className="mt-2 leading-relaxed text-ink-2">
+            Sample-data trials can show a <strong>synthetic</strong> follow-up dated 21 days later. Its changes are fixed and mixed —
+            some beyond normal variation, some within, one going the wrong way — so you can see every kind of answer. It is not a
+            measurement and never appears in a real trial.
+          </p>
+          {error && <p role="alert" className="mt-3 text-sm text-worse">{error.message}</p>}
+          <Button className="mt-5" onClick={demoFollowup} loading={busy}>Show synthetic 21-day follow-up</Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Comparison; band: number }) {
+  const outcome = OUTCOME_COPY[comparison.focus_outcome];
+  const focus = comparison.changes.find((c) => c.metric === comparison.focus_metric);
+  const synthetic = trial.checkins.some((c) => c.id === comparison.current_scan_id && c.synthetic_timeline);
+  // A beyond-band change gets the strongest treatment whichever way it moved;
+  // direction is carried by words and arrows, not by a "good news" colour.
+  const changed = comparison.focus_outcome === "measured_improvement" || comparison.focus_outcome === "measured_decline";
+  const unclear = comparison.focus_outcome === "inconclusive" || comparison.focus_outcome === "insufficient_data";
+  const panel = changed
+    ? "bg-espresso text-white"
+    : unclear
+      ? "border-2 border-dashed border-line-strong bg-white text-espresso"
+      : "bg-berry-milk text-espresso";
+  const sub = changed ? "text-white/85" : "text-ink-2";
+  const hasNumbers = focus && focus.baseline !== null && focus.current !== null;
+
+  return (
+    <>
+      <section aria-labelledby="verdict" className={`mt-10 overflow-hidden rounded-[2.5rem] p-7 sm:p-12 ${panel}`}>
+        <div className="grid gap-10 md:grid-cols-[1.25fr_1fr] md:items-center">
+          <div>
+            {synthetic && (
+              <p className="hatch mb-5 inline-flex items-center gap-2 rounded-full bg-demo-soft px-3 py-1 text-xs font-semibold text-demo ring-1 ring-demo/25">
+                <FlaskConical aria-hidden className="size-3.5" /> Synthetic follow-up — not a measurement
+              </p>
+            )}
+            <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${sub}`}>
+              {synthetic ? "Demo verdict" : "Verdict"} · {trial.goal.metric_label} · {comparison.comparability.days_apart} days apart
+            </p>
+            <h2 id="verdict" className="mt-4 font-display text-[clamp(2.2rem,4.5vw,3.75rem)] font-bold leading-[1]">
+              {outcome.headline}
+            </h2>
+            <p className={`mt-5 max-w-xl text-lg leading-relaxed ${sub}`}>{outcome.body}</p>
+          </div>
+          {hasNumbers && (
+            <div className={`mx-auto w-full max-w-sm ${unclear ? "opacity-60 grayscale" : ""}`}>
+              <Dial
+                baseline={focus.baseline!}
+                band={band}
+                current={unclear ? undefined : focus.current!}
+                span={Math.max(12, band * 2 + 4, Math.abs(focus.delta ?? 0) + 4)}
+                label={`${trial.goal.metric_label} verdict`}
+                tone={changed ? "dark" : "light"}
+                caption={
+                  <p className={`text-sm font-semibold ${sub}`}>
+                    {focus.delta! > 0 ? "+" : ""}
+                    {focus.delta} points · normal variation ±{band}
+                  </p>
+                }
+              >
+                <p className="tabular whitespace-nowrap font-display text-[clamp(1.75rem,9vw,2.25rem)] font-bold">
+                  {focus.baseline} <span className="opacity-50">→</span> {focus.current}
+                </p>
+              </Dial>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <Comparability comparison={comparison} />
+
+      <Card className="mt-8 overflow-hidden">
+        <div className="p-6 pb-2 sm:px-8">
+          <h2 className="text-lg font-semibold text-ink">Every measured concern</h2>
+          <p className="mt-1 text-sm text-ink-3">Your focus is highlighted. Other scores are shown for context; they weren&apos;t the test.</p>
+        </div>
+        {/* Focusable so keyboard users can scroll the table horizontally on small screens. */}
+        <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Every measured concern, scrollable table">
+          <table className="w-full min-w-[520px] text-left text-sm">
+            <thead className="text-xs uppercase tracking-wider text-ink-3">
+              <tr>
+                <th scope="col" className="px-6 py-3 font-semibold sm:px-8">Concern</th>
+                <th scope="col" className="px-3 py-3 text-right font-semibold">Baseline</th>
+                <th scope="col" className="px-3 py-3 text-right font-semibold">Now</th>
+                <th scope="col" className="px-3 py-3 text-right font-semibold">Change</th>
+                <th scope="col" className="px-6 py-3 font-semibold sm:px-8">Reading</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {comparison.changes.map((c) => <ChangeRow key={c.metric} change={c} focus={c.metric === comparison.focus_metric} />)}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </>
+  );
+}
+
+function ChangeRow({ change, focus }: { change: Change; focus: boolean }) {
+  const v = VERDICT_COPY[change.verdict];
+  const Icon = change.verdict === "better" ? ArrowUpRight : change.verdict === "worse" ? ArrowDownRight : Minus;
+  const color = v.tone === "better" ? "text-better" : v.tone === "worse" ? "text-worse" : "text-ink-3";
+  return (
+    <tr className={focus ? "bg-accent-soft/50" : undefined}>
+      <th scope="row" className="px-6 py-3 font-medium text-ink sm:px-8">
+        {change.label} {focus && <span className="ml-1 rounded-full bg-accent px-2 py-0.5 text-[0.65rem] font-semibold text-white">Focus</span>}
+      </th>
+      <td className="tabular px-3 py-3 text-right text-ink-2">{change.baseline ?? "—"}</td>
+      <td className="tabular px-3 py-3 text-right text-ink">{change.current ?? "—"}</td>
+      <td className={`tabular px-3 py-3 text-right font-semibold ${color}`}>
+        {change.delta === null ? "—" : `${change.delta > 0 ? "+" : ""}${change.delta}`}
+      </td>
+      <td className={`px-6 py-3 sm:px-8 ${color}`}>
+        <span className="inline-flex items-center gap-1.5"><Icon aria-hidden className="size-4" />{v.label}</span>
+        <span className="ml-1 text-xs text-ink-3">(±{change.noise_band})</span>
+      </td>
+    </tr>
+  );
+}
+
+function Comparability({ comparison }: { comparison: Comparison }) {
+  const { level, issues } = comparison.comparability;
+  const title = level === "good" ? "Comparable conditions" : level === "fair" ? "Comparable, with caveats" : "Not comparable";
+  return (
+    <Notice tone={level === "good" ? "info" : level === "fair" ? "warn" : "error"} className="mt-6" title={`${title}: how fair is this comparison?`}>
+      {issues.length === 0 ? (
+        "Lighting and capture method were similar in both photos."
+      ) : (
+        <ul className="list-disc space-y-1 pl-4">{issues.map((i) => <li key={i}>{i}</li>)}</ul>
+      )}
+    </Notice>
+  );
+}
+
+function daysBetween(a: string, b: string) {
+  return Math.round((new Date(b).getTime() - new Date(a).getTime()) / 86_400_000);
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">{children}</div>;
+}

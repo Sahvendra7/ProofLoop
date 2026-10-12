@@ -1,85 +1,162 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+import type {
+  Goal,
+  Product,
+  RecommendationFilters,
+  Recommendations,
+  Scan,
+  Simulation,
+  SystemStatus,
+  Trial,
+  TrialSummary,
+} from "./types";
 
-export async function analyzeSkin(file: File) {
-  const formData = new FormData();
-  formData.append('image', file);
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "") + "/api/v1";
+const TOKEN_KEY = "pl:session";
 
-  const response = await fetch(`${API_BASE_URL}/scan`, {
-    method: 'POST',
-    body: formData,
+export class ApiError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+    public readonly status: number,
+    public readonly hint: string | null = null,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+function readToken(): string | null {
+  try {
+    return window.localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeToken(token: string | null) {
+  try {
+    if (token) window.localStorage.setItem(TOKEN_KEY, token);
+    else window.localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    // storage unavailable (private mode): the session lives for this page only
+  }
+}
+
+let memoryToken: string | null = null;
+let pendingSession: Promise<string> | null = null;
+
+async function ensureSession(): Promise<string> {
+  const existing = memoryToken ?? readToken();
+  if (existing) return existing;
+  pendingSession ??= (async () => {
+    const res = await fetch(`${API_BASE}/sessions`, { method: "POST" });
+    if (!res.ok) throw await toError(res);
+    const body = (await res.json()) as { token: string };
+    memoryToken = body.token;
+    writeToken(body.token);
+    return body.token;
+  })().finally(() => {
+    pendingSession = null;
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Failed to analyze skin');
-  }
-
-  return response.json();
+  return pendingSession;
 }
 
-export async function getRecommendations(scanId: string, goal: string) {
-  const response = await fetch(`${API_BASE_URL}/recommendations/${scanId}?goal=${encodeURIComponent(goal)}`);
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch recommendations');
+async function toError(res: Response): Promise<ApiError> {
+  try {
+    const body = await res.json();
+    const err = body?.error;
+    if (err?.code) return new ApiError(err.code, err.message, res.status, err.hint ?? null);
+  } catch {
+    // fall through
   }
-
-  return response.json();
+  return new ApiError("http_error", `Request failed (${res.status}).`, res.status);
 }
 
-export async function saveBaseline(scanId: string) {
-  const formData = new FormData();
-  formData.append('scan_id', scanId);
-
-  const response = await fetch(`${API_BASE_URL}/baseline`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to save baseline');
+async function request<T>(path: string, init: RequestInit = {}, retried = false): Promise<T> {
+  let token: string;
+  try {
+    token = await ensureSession();
+  } catch (err) {
+    throw err instanceof ApiError ? err : networkError();
   }
-
-  return response.json();
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...init,
+      headers: { ...(init.headers ?? {}), "X-Session-Token": token },
+    });
+  } catch {
+    throw networkError();
+  }
+  if (res.status === 401 && !retried) {
+    memoryToken = null;
+    writeToken(null);
+    return request<T>(path, init, true);
+  }
+  if (!res.ok) throw await toError(res);
+  if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
 }
 
-export async function getJourney(currentScanId: string) {
-  const response = await fetch(`${API_BASE_URL}/journey?current_scan_id=${currentScanId}`);
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch journey');
-  }
-
-  return response.json();
+function networkError() {
+  return new ApiError(
+    "network_error",
+    "Can't reach the ProofLoop server.",
+    0,
+    "Check that the backend is running and try again.",
+  );
 }
 
-export async function demoJourneyJump() {
-  const response = await fetch(`${API_BASE_URL}/demo/journey-jump`, {
-    method: 'POST',
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to jump journey in demo mode');
-  }
-
-  return response.json();
+function json(body: unknown): RequestInit {
+  return { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) };
 }
 
-export async function simulateSkin(file: File, feature: string, intensity: number = 1.0) {
-  const formData = new FormData();
-  formData.append('image', file);
-  formData.append('feature', feature);
-  formData.append('intensity', intensity.toString());
+export const api = {
+  status: () => request<SystemStatus>("/system/status"),
+  goals: () => request<Goal[]>("/goals"),
+  product: (id: string) => request<Product>(`/products/${encodeURIComponent(id)}`),
 
-  const response = await fetch(`${API_BASE_URL}/simulate`, {
-    method: 'POST',
-    body: formData,
-  });
+  startScan(image: Blob, opts: { source: "camera" | "upload"; idempotencyKey: string; trialId?: string }) {
+    const form = new FormData();
+    form.append("image", image, "capture.jpg");
+    form.append("consent", "true");
+    form.append("source", opts.source);
+    if (opts.trialId) form.append("trial_id", opts.trialId);
+    return request<Scan>("/scans", { method: "POST", body: form, headers: { "Idempotency-Key": opts.idempotencyKey } });
+  },
+  demoScan: () => request<Scan>("/scans/demo", { method: "POST" }),
+  scan: (id: string) => request<Scan>(`/scans/${encodeURIComponent(id)}`),
+  scans: () => request<Scan[]>("/scans"),
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.detail || 'Failed to simulate skin');
-  }
+  recommendations(scanId: string, goal: string, filters: RecommendationFilters = {}) {
+    const q = new URLSearchParams({ goal });
+    if (filters.budget_max) q.set("budget_max", String(filters.budget_max));
+    if (filters.fragrance_free) q.set("fragrance_free", "true");
+    if (filters.finish) q.set("finish", filters.finish);
+    return request<Recommendations>(`/scans/${encodeURIComponent(scanId)}/recommendations?${q}`);
+  },
 
-  return response.json();
+  createTrial: (body: { scan_id: string; goal: string; product_id: string }) => request<Trial>("/trials", json(body)),
+  trial: (id: string) => request<Trial>(`/trials/${encodeURIComponent(id)}`),
+  trials: () => request<TrialSummary[]>("/trials"),
+  demoCheckin: (id: string) => request<Trial>(`/trials/${encodeURIComponent(id)}/demo-checkin`, { method: "POST" }),
+
+  simulate(image: Blob, goal: string, intensity: number) {
+    const form = new FormData();
+    form.append("image", image, "capture.jpg");
+    form.append("goal", goal);
+    form.append("intensity", String(intensity));
+    form.append("consent", "true");
+    return request<Simulation>("/simulations", { method: "POST", body: form });
+  },
+
+  async deleteEverything() {
+    await request<void>("/sessions/me", { method: "DELETE" });
+    memoryToken = null;
+    writeToken(null);
+  },
+};
+
+export function newIdempotencyKey(): string {
+  return crypto.randomUUID().replace(/-/g, "");
 }

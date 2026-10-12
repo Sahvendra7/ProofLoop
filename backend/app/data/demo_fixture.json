@@ -1,0 +1,109 @@
+{
+  "note": "Replay of a recorded YouCam Skin Analysis response (8 SD concerns, captured 2026-10-11 through ProofLoop's own client from a stock portrait). No provider call is made and no photo is involved.",
+  "recorded_at": "2026-10-11T21:27:01Z",
+  "capture": {
+    "width": 720,
+    "height": 961,
+    "luminance_mean": 85.6
+  },
+  "response": {
+    "status": 200,
+    "data": {
+      "error": null,
+      "results": {
+        "output": [
+          {
+            "ui_score": 68,
+            "mask_urls": [
+              "https://example.invalid/redacted/dark_circle_v2_output.png"
+            ],
+            "raw_score": 57.58926570415497,
+            "type": "dark_circle_v2",
+            "url": null
+          },
+          {
+            "ui_score": 99,
+            "mask_urls": [
+              "https://example.invalid/redacted/acne_output.png"
+            ],
+            "raw_score": 100.0,
+            "type": "acne",
+            "url": null
+          },
+          {
+            "ui_score": 88,
+            "mask_urls": [
+              "https://example.invalid/redacted/texture_output.png"
+            ],
+            "raw_score": 91.94748401641846,
+            "type": "texture",
+            "url": null
+          },
+          {
+            "ui_score": 99,
+            "mask_urls": [
+              "https://example.invalid/redacted/redness_output.png"
+            ],
+            "raw_score": 100.0,
+            "type": "redness",
+            "url": null
+          },
+          {
+            "ui_score": 99,
+            "mask_urls": [
+              "https://example.invalid/redacted/oiliness_output.png"
+            ],
+            "raw_score": 99.86103820800781,
+            "type": "oiliness",
+            "url": null
+          },
+          {
+            "ui_score": 79,
+            "mask_urls": [
+              "https://example.invalid/redacted/pore_output.png"
+            ],
+            "raw_score": 76.70903825759888,
+            "type": "pore",
+            "url": null
+          },
+          {
+            "ui_score": 82,
+            "mask_urls": [
+              "https://example.invalid/redacted/radiance_output.png"
+            ],
+            "raw_score": 84.05851721763611,
+            "type": "radiance",
+            "url": null
+          },
+          {
+            "ui_score": 69,
+            "mask_urls": [
+              "https://example.invalid/redacted/moisture_output.png"
+            ],
+            "raw_score": 46.33920192718506,
+            "type": "moisture",
+            "url": null
+          },
+          {
+            "score": 85.375,
+            "type": "all",
+            "url": null
+          },
+          {
+            "score": 26,
+            "type": "skin_age",
+            "url": null
+          },
+          {
+            "mask_urls": [
+              "https://example.invalid/redacted/resize_image.jpg"
+            ],
+            "type": "resize_image",
+            "url": null
+          }
+        ]
+      },
+      "task_status": "success"
+    }
+  }
+}

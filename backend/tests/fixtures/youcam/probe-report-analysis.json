@@ -1,0 +1,184 @@
+{
+  "run_at": "2026-10-11T21:26:25.160387+00:00",
+  "file_path_template": "/s2s/v2.0/file/{feature}",
+  "runs": [
+    {
+      "variant": "A_face75",
+      "width": 720,
+      "height": 961,
+      "luminance_mean": 85.6,
+      "status": "success",
+      "duration_s": 7.86,
+      "stages": [
+        "registering",
+        "uploading",
+        "analyzing"
+      ],
+      "scores": {
+        "dark_circle": 68,
+        "acne": 99,
+        "texture": 88,
+        "redness": 99,
+        "oiliness": 99,
+        "pore": 79,
+        "radiance": 82,
+        "moisture": 69
+      },
+      "raw_scores": {
+        "dark_circle": 57.58926570415497,
+        "acne": 100.0,
+        "texture": 91.94748401641846,
+        "redness": 100.0,
+        "oiliness": 99.86103820800781,
+        "pore": 76.70903825759888,
+        "radiance": 84.05851721763611,
+        "moisture": 46.33920192718506
+      },
+      "missing": [],
+      "ignored_types": [
+        "all",
+        "skin_age",
+        "resize_image"
+      ],
+      "masks_returned": 8
+    },
+    {
+      "variant": "A_face75_repeat",
+      "width": 720,
+      "height": 961,
+      "luminance_mean": 85.6,
+      "status": "success",
+      "duration_s": 7.05,
+      "stages": [
+        "registering",
+        "uploading",
+        "analyzing"
+      ],
+      "scores": {
+        "dark_circle": 68,
+        "acne": 99,
+        "oiliness": 99,
+        "redness": 99,
+        "pore": 79,
+        "texture": 88,
+        "radiance": 82,
+        "moisture": 69
+      },
+      "raw_scores": {
+        "dark_circle": 57.58926570415497,
+        "acne": 100.0,
+        "oiliness": 99.86103820800781,
+        "redness": 100.0,
+        "pore": 76.70903825759888,
+        "texture": 91.94748401641846,
+        "radiance": 84.05851721763611,
+        "moisture": 46.33920192718506
+      },
+      "missing": [],
+      "ignored_types": [
+        "all",
+        "skin_age",
+        "resize_image"
+      ],
+      "masks_returned": 8
+    },
+    {
+      "variant": "B_face65",
+      "width": 720,
+      "height": 959,
+      "luminance_mean": 83.7,
+      "status": "success",
+      "duration_s": 7.66,
+      "stages": [
+        "registering",
+        "uploading",
+        "analyzing"
+      ],
+      "scores": {
+        "dark_circle": 68,
+        "acne": 99,
+        "oiliness": 99,
+        "texture": 88,
+        "redness": 99,
+        "pore": 79,
+        "radiance": 83,
+        "moisture": 69
+      },
+      "raw_scores": {
+        "dark_circle": 56.786879897117615,
+        "acne": 100.0,
+        "oiliness": 100.0,
+        "texture": 91.84826612472534,
+        "redness": 100.0,
+        "pore": 76.68372452259064,
+        "radiance": 84.51046943664551,
+        "moisture": 46.56705558300018
+      },
+      "missing": [],
+      "ignored_types": [
+        "all",
+        "skin_age",
+        "resize_image"
+      ],
+      "masks_returned": 8
+    },
+    {
+      "variant": "C_face75_darker",
+      "width": 720,
+      "height": 961,
+      "luminance_mean": 69.7,
+      "status": "success",
+      "duration_s": 7.1,
+      "stages": [
+        "registering",
+        "uploading",
+        "analyzing"
+      ],
+      "scores": {
+        "dark_circle": 67,
+        "acne": 99,
+        "redness": 99,
+        "pore": 80,
+        "oiliness": 99,
+        "texture": 89,
+        "radiance": 82,
+        "moisture": 71
+      },
+      "raw_scores": {
+        "dark_circle": 56.16254657506943,
+        "acne": 100.0,
+        "redness": 100.0,
+        "pore": 78.35303592681885,
+        "oiliness": 100.0,
+        "texture": 92.63893961906433,
+        "radiance": 83.60509276390076,
+        "moisture": 51.58990025520325
+      },
+      "missing": [],
+      "ignored_types": [
+        "all",
+        "skin_age",
+        "resize_image"
+      ],
+      "masks_returned": 8
+    },
+    {
+      "variant": "E_uncropped_face_too_small",
+      "width": 800,
+      "height": 1199,
+      "luminance_mean": 84.5,
+      "status": "error",
+      "code": "face_too_small",
+      "provider_code": "error_src_face_too_small",
+      "detail": "error_src_face_too_small",
+      "stages": [
+        "registering",
+        "uploading",
+        "analyzing"
+      ]
+    }
+  ],
+  "credit_before": 980.0,
+  "credit_after": 932.0,
+  "units_spent": 48.0
+}

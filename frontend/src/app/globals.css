@@ -1,42 +1,259 @@
 @import "tailwindcss";
 
+/*
+ * ProofLoop design tokens — see docs/design-direction.md.
+ * Berry-milk storytelling, white app surfaces, espresso type, strawberry action.
+ * #fe3144 (strawberry) is for large display type and decoration only;
+ * buttons use strawberry-ink (#d61a2f, 5.19:1 with white).
+ */
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-jakarta: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
-  
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-border: hsl(var(--border));
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Brand */
+  --color-berry-milk: #fcd7f3;
+  --color-berry-soft: #fde9f6;
+  --color-strawberry: #fe3144;
+  --color-strawberry-ink: #d61a2f;
+  --color-berry-deep: #b8001f;
+  --color-espresso: #2c1a1a;
+  --color-cocoa: #6b4a4a;
+  --color-fresh: #67e844;
+
+  /* Semantic (used by the app screens) */
+  --color-paper: #fff6fb;
+  --color-sunken: #fbe9f4;
+  --color-card: #ffffff;
+  --color-ink: #2c1a1a;
+  --color-ink-2: #4a3232;
+  --color-ink-3: #6b4a4a;
+  --color-line: #f3dbe8;
+  --color-line-strong: #e6bfd4;
+
+  --color-accent: #d61a2f;
+  --color-accent-hover: #b8001f;
+  --color-accent-soft: #fde4ef;
+
+  /* Beyond-band changes share one treatment whatever their direction. */
+  --color-better: #b8001f;
+  --color-better-soft: #fde4ef;
+  --color-worse: #b8001f;
+  --color-worse-soft: #fde4ef;
+  --color-within: #6b4a4a;
+  --color-within-soft: #f7eef3;
+
+  --color-band-attention: #fe3144;
+  --color-band-moderate: #f49ac1;
+  --color-band-strength: #2c1a1a;
+
+  --color-live: #2c1a1a;
+  --color-live-soft: #ffffff;
+  --color-demo: #7a4f00;
+  --color-demo-soft: #fbefd3;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-xl: 32px;
+
+  --shadow-card: 0 1px 0 rgb(44 26 26 / 0.04), 0 10px 30px -18px rgb(184 0 31 / 0.25);
+  --shadow-lift: 0 2px 0 rgb(44 26 26 / 0.04), 0 30px 60px -30px rgb(184 0 31 / 0.35);
+  --shadow-float: 0 12px 30px -12px rgb(44 26 26 / 0.28);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --border: 214.3 31.8% 91.4%;
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-padding-top: 6rem;
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   * {
-    border-color: var(--color-border);
+    border-color: var(--color-line);
   }
-  
-  body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+
+  :focus-visible {
+    outline: 3px solid var(--color-strawberry-ink);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  ::selection {
+    background: var(--color-berry-milk);
+    color: var(--color-espresso);
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 }
 
-/* Custom utilities for smooth modern look */
 @layer utilities {
-  .glass {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.04)];
+  .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.025em;
+    font-weight: 650;
   }
-  .glass-dark {
-    @apply bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 shadow-xl;
+
+  .text-hero {
+    font-family: var(--font-display);
+    font-size: clamp(3.1rem, 7.6vw, 6.75rem);
+    line-height: 0.92;
+    letter-spacing: -0.045em;
+    font-weight: 700;
   }
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r;
+
+  .text-section {
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 5vw, 4.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+    font-weight: 700;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--color-ink-3);
+  }
+
+  .rise {
+    animation: rise 560ms var(--ease-out-soft) both;
+  }
+
+  .hatch {
+    background-image: repeating-linear-gradient(-45deg, rgb(122 79 0 / 0.1) 0 6px, transparent 6px 12px);
+  }
+
+  .berry-glow {
+    background:
+      radial-gradient(60% 70% at 15% 20%, rgb(255 255 255 / 0.55), transparent 60%),
+      radial-gradient(55% 60% at 90% 85%, rgb(254 49 68 / 0.28), transparent 65%),
+      var(--color-berry-milk);
+  }
+
+  /* Glows sit away from where text usually goes and stay subtle, so white text keeps AA contrast. */
+  .strawberry-glow {
+    background:
+      radial-gradient(40% 55% at 88% 18%, rgb(255 205 232 / 0.32), transparent 70%),
+      radial-gradient(45% 55% at 75% 100%, rgb(255 190 225 / 0.28), transparent 70%),
+      var(--color-strawberry-ink);
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Reveal: content is visible by default; hidden only once JS has opted in. */
+  .js .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 700ms var(--ease-out-soft),
+      transform 700ms var(--ease-out-soft);
+    transition-delay: var(--reveal-delay, 0ms);
+  }
+  .js .reveal[data-visible="true"] {
+    opacity: 1;
+    transform: none;
+  }
+
+  .float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .marquee {
+    animation: marquee 38s linear infinite;
+  }
+  .marquee:hover {
+    animation-play-state: paused;
+  }
+
+  /* Fade rather than stroke-draw: pathLength-scaled dash arrays are unreliable across browsers. */
+  .js .dial-draw {
+    opacity: 0;
+    transition: opacity 900ms var(--ease-out-soft) 200ms;
+  }
+  .js [data-visible="true"] .dial-draw {
+    opacity: 1;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  .marquee {
+    animation: none;
+  }
+  .js .reveal {
+    opacity: 1;
+    transform: none;
   }
 }

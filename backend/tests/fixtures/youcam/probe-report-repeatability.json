@@ -1,0 +1,170 @@
+{
+  "run_at": "2026-10-11T21:48:01.795871+00:00",
+  "file_path_template": "/s2s/v2.0/file/{feature}",
+  "runs": [
+    {
+      "variant": "F_face70",
+      "width": 720,
+      "height": 960,
+      "luminance_mean": 84.7,
+      "status": "success",
+      "duration_s": 7.19,
+      "stages": [
+        "registering",
+        "uploading",
+        "analyzing"
+      ],
+      "scores": {
+        "dark_circle": 68,
+        "acne": 99,
+        "oiliness": 99,
+        "moisture": 69,
+        "texture": 88,
+        "pore": 79,
+        "redness": 99,
+        "radiance": 82
+      },
+      "raw_scores": {
+        "dark_circle": 57.077087461948395,
+        "acne": 100.0,
+        "oiliness": 99.87129211425781,
+        "moisture": 46.507737040519714,
+        "texture": 92.08638072013855,
+        "pore": 75.61597466468811,
+        "redness": 100.0,
+        "radiance": 83.9801013469696
+      },
+      "missing": [],
+      "ignored_types": [
+        "all",
+        "skin_age",
+        "resize_image"
+      ],
+      "masks_returned": 8
+    },
+    {
+      "variant": "G_face80",
+      "width": 720,
+      "height": 960,
+      "luminance_mean": 87.7,
+      "status": "success",
+      "duration_s": 7.47,
+      "stages": [
+        "registering",
+        "uploading",
+        "analyzing"
+      ],
+      "scores": {
+        "dark_circle": 67,
+        "acne": 99,
+        "redness": 99,
+        "texture": 86,
+        "pore": 79,
+        "radiance": 82,
+        "oiliness": 99,
+        "moisture": 69
+      },
+      "raw_scores": {
+        "dark_circle": 56.40854984521866,
+        "acne": 100.0,
+        "redness": 100.0,
+        "texture": 90.82938432693481,
+        "pore": 75.15592098236084,
+        "radiance": 83.49345922470093,
+        "oiliness": 100.0,
+        "moisture": 46.23444676399231
+      },
+      "missing": [],
+      "ignored_types": [
+        "all",
+        "skin_age",
+        "resize_image"
+      ],
+      "masks_returned": 8
+    },
+    {
+      "variant": "H_face75_shift_left",
+      "width": 720,
+      "height": 961,
+      "luminance_mean": 88.6,
+      "status": "success",
+      "duration_s": 7.22,
+      "stages": [
+        "registering",
+        "uploading",
+        "analyzing"
+      ],
+      "scores": {
+        "dark_circle": 68,
+        "acne": 99,
+        "radiance": 83,
+        "pore": 79,
+        "texture": 89,
+        "redness": 99,
+        "oiliness": 99,
+        "moisture": 69
+      },
+      "raw_scores": {
+        "dark_circle": 57.23998099565506,
+        "acne": 100.0,
+        "radiance": 84.3259334564209,
+        "pore": 76.19157075881958,
+        "texture": 92.6246702671051,
+        "redness": 100.0,
+        "oiliness": 100.0,
+        "moisture": 48.26206564903259
+      },
+      "missing": [],
+      "ignored_types": [
+        "all",
+        "skin_age",
+        "resize_image"
+      ],
+      "masks_returned": 8
+    },
+    {
+      "variant": "I_face75_shift_up",
+      "width": 720,
+      "height": 961,
+      "luminance_mean": 87.1,
+      "status": "success",
+      "duration_s": 7.39,
+      "stages": [
+        "registering",
+        "uploading",
+        "analyzing"
+      ],
+      "scores": {
+        "dark_circle": 68,
+        "acne": 99,
+        "radiance": 82,
+        "redness": 99,
+        "texture": 88,
+        "oiliness": 99,
+        "pore": 80,
+        "moisture": 69
+      },
+      "raw_scores": {
+        "dark_circle": 57.45260268449783,
+        "acne": 100.0,
+        "radiance": 83.96614193916321,
+        "redness": 100.0,
+        "texture": 92.13163256645203,
+        "oiliness": 99.88426208496094,
+        "pore": 79.06799602508545,
+        "moisture": 46.64246439933777
+      },
+      "missing": [],
+      "ignored_types": [
+        "all",
+        "skin_age",
+        "resize_image"
+      ],
+      "masks_returned": 8
+    }
+  ],
+  "credit_before": 916.0,
+  "mode": "repeatability",
+  "credit_after": 868.0,
+  "units_spent": 48.0
+}

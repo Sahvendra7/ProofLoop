@@ -1,43 +1,20 @@
-# YouCam API Skin AI & eCommerce VTO Hackathon - Official Rules
+# Hackathon rules — summary
 
-## Key Dates
-- **Submission Period:** September 29, 2026 – November 2, 2026 (11:45 AM US Eastern Time).
+Source: youcam-api-skin-ai-ecommerce.devpost.com and `/rules`, read 2026-10-12. The official rules prevail.
 
-## Objective & Themes
-Participants must build a functional web or mobile experience using at least one YouCam API.
+- **Submission period:** Sep 29 – **Nov 2, 2026, 11:45 am ET**. Judging Nov 3–20; winners ~Nov 24.
+- **Build:** a working app that integrates at least one YouCam API with clear consumer or eCommerce value.
+  Existing projects must be *significantly updated* during the submission period, and the entry must explain how.
+- **Submit:** repository URL (public with licence, or private shared with contact_event@PerfectCorp.com) containing
+  everything needed to run it; a text description; screenshots; a **1–3 minute** public video (YouTube preferred)
+  that shows the project working on its target device and **explains the YouCam API used**, with no unlicensed
+  music or third-party trademarks; testing access for judges (free, until judging ends).
+- **Judging:** Stage 1 pass/fail viability; Stage 2 equally weighted — Technological Implementation, Design,
+  Potential Impact, Quality of the Idea. Ties broken in that order. Judges may judge from the text, images and
+  video alone.
+- **Prizes:** $2,500 / $1,000 / $500, plus Women in Tech ($1,000) and Rising Star (students, $1,000). One prize
+  per project. Optional social-sharing bonus of API units (requires the "Received API credits for sharing" disclosure).
+- **API units:** 1,000 free units per registrant (90-day validity from redemption).
 
-### 1. Skin AI
-Solutions that help users understand their skin, analyze skin conditions, or provide personalized skincare routines.
-
-### 2. eCommerce VTO
-New virtual try-on and shopping experiences for beauty, fashion, or accessories.
-
-## Submission Requirements
-To submit a valid project on Devpost, participants must include:
-1. **Code Repository:** A link to the source code (e.g., GitHub, GitLab).
-2. **Written Description:** A clear explanation of the project, its functionality, the problem it solves, and how it utilizes the YouCam API.
-3. **Media:** High-quality screenshots of the working application.
-4. **Demo Video:** A 1–3 minute video demonstrating the working prototype.
-5. **Testing Access:** Instructions for judges to test the app (including any necessary login credentials or API keys if required).
-
-## Eligibility & Rules
-- **Eligibility:** Open to developers, entrepreneurs, students, and technology enthusiasts worldwide (excluding restricted/embargoed countries as defined by the official terms). Participants must be of legal age of majority in their country of residence.
-- **Originality:** Projects must be functional prototypes. The core integration and application logic must be developed during the hackathon period.
-- **API Usage:** The integration of the YouCam API must be a core, central feature of the application, not an afterthought.
-
-## Judging Criteria
-Submissions will be evaluated by the judges based on:
-1. **Technological Implementation:** How well and deeply the YouCam API is integrated into the product.
-2. **Design:** The user experience, visual polish, and whether it looks and behaves like a finished consumer product.
-3. **Potential Impact:** Is the problem immediately understandable and does the product solve it effectively?
-4. **Quality of Idea:** Creativity, originality, and overall market differentiation.
-
-## Prizes ($6,000 Total Pool)
-- **1st Place:** $2,500
-- **2nd Place:** $1,000
-- **3rd Place:** $500
-- **Special Awards:** 
-  - $1,000 for "Women in Tech"
-  - $1,000 for "Student Rising Star"
-
-*(Note: Ensure all final submissions comply directly with the full legal terms on the Devpost portal).*
+Implications for ProofLoop: the video must name the endpoints used; the README must let a judge run it with or
+without a key; the "significantly updated" explanation is in `submission-copy.md`.
