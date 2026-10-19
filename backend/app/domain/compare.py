@@ -22,18 +22,40 @@ from app.domain.metrics import METRICS
 # framed in the browser (canvas resample + re-encode) moved pore +5, texture +3,
 # moisture +3. Band = observed range across all 10 + 2 points margin, floor 3.
 # acne / oiliness / redness were saturated at 99-100 on the test face, so their
-# variability is NOT characterised; the floor of 3 is an assumption.
-NOISE_BANDS: dict[str, int] = {
+# variability is NOT characterised. Until it is, they get the widest band measured
+# for any concern (7) rather than an optimistic guess: an unmeasured instrument
+# must clear the strictest bar we have evidence for, and is labelled "assumed".
+CHARACTERISED = frozenset({"moisture", "texture", "pore", "radiance", "dark_circle"})
+MEASURED_BANDS: dict[str, int] = {
     "moisture": 5,  # observed range 3
-    "oiliness": 3,  # saturated, uncharacterised
-    "redness": 3,  # saturated, uncharacterised
     "texture": 7,  # observed range 5
     "pore": 7,  # observed range 5
-    "acne": 3,  # saturated, uncharacterised
     "radiance": 3,  # observed range 1
     "dark_circle": 3,  # observed range 1
 }
-CHARACTERISED = frozenset({"moisture", "texture", "pore", "radiance", "dark_circle"})
+CONSERVATIVE_BAND = max(MEASURED_BANDS.values())
+NOISE_BANDS: dict[str, int] = {
+    "moisture": MEASURED_BANDS["moisture"],
+    "oiliness": CONSERVATIVE_BAND,  # saturated, uncharacterised
+    "redness": CONSERVATIVE_BAND,  # saturated, uncharacterised
+    "texture": MEASURED_BANDS["texture"],
+    "pore": MEASURED_BANDS["pore"],
+    "acne": CONSERVATIVE_BAND,  # saturated, uncharacterised
+    "radiance": MEASURED_BANDS["radiance"],
+    "dark_circle": MEASURED_BANDS["dark_circle"],
+}
+
+BandEvidence = Literal["measured", "assumed"]
+Detectable = Literal["both", "decline_only", "improve_only", "neither"]
+
+# The trial protocol plans one check-in this long after the baseline. Checking
+# in earlier is allowed, but the verdict is labelled an early look.
+PLANNED_CHECKIN_DAYS = 28
+
+
+def band_evidence(metric: str) -> BandEvidence:
+    return "measured" if metric in CHARACTERISED else "assumed"
+
 
 LUMINANCE_FAIR = 12.0  # mean luminance difference (0-255) that weakens a comparison
 LUMINANCE_POOR = 25.0  # difference large enough that we won't call a change
@@ -60,6 +82,43 @@ class MetricChange:
     delta: int | None
     noise_band: int
     verdict: Verdict
+    band_evidence: BandEvidence = "measured"
+
+
+@dataclass(frozen=True)
+class Detectability:
+    """What a later scan would have to read for ProofLoop to call a change.
+
+    Scores are integers 0-100 and a change must exceed the band, so from a
+    baseline b with band n an increase counts at b + n + 1 and a decrease at
+    b - n - 1. Near the top of the scale an increase is impossible to detect:
+    that trial can only ever show a decline (or nothing).
+    """
+
+    metric: str
+    baseline: int
+    noise_band: int
+    band_evidence: BandEvidence
+    improve_at: int | None
+    decline_at: int | None
+    detectable: Detectable
+
+
+def detectability(metric: str, baseline: int, band: int | None = None) -> Detectability:
+    n = NOISE_BANDS.get(metric, CONSERVATIVE_BAND) if band is None else band
+    up = baseline + n + 1
+    down = baseline - n - 1
+    improve_at = up if up <= 100 else None
+    decline_at = down if down >= 0 else None
+    if improve_at is not None and decline_at is not None:
+        kind: Detectable = "both"
+    elif decline_at is not None:
+        kind = "decline_only"
+    elif improve_at is not None:
+        kind = "improve_only"
+    else:
+        kind = "neither"
+    return Detectability(metric, baseline, n, band_evidence(metric), improve_at, decline_at, kind)
 
 
 @dataclass
@@ -77,16 +136,17 @@ class Comparison:
     focus_outcome: FocusOutcome | None
 
 
-def compare_metric(metric: str, baseline: int | None, current: int | None) -> MetricChange:
-    band = NOISE_BANDS.get(metric, 3)
+def compare_metric(metric: str, baseline: int | None, current: int | None, band: int | None = None) -> MetricChange:
+    band = NOISE_BANDS.get(metric, CONSERVATIVE_BAND) if band is None else band
+    evidence = band_evidence(metric)
     if baseline is None or current is None:
-        return MetricChange(metric, baseline, current, None, band, "missing")
+        return MetricChange(metric, baseline, current, None, band, "missing", evidence)
     delta = current - baseline
     if abs(delta) <= band:
         verdict: Verdict = "within_variation"
     else:
         verdict = "better" if delta > 0 else "worse"
-    return MetricChange(metric, baseline, current, delta, band, verdict)
+    return MetricChange(metric, baseline, current, delta, band, verdict, evidence)
 
 
 def assess_comparability(baseline: CaptureInfo, current: CaptureInfo) -> ComparabilityReport:
@@ -125,8 +185,20 @@ def compare(
     baseline_capture: CaptureInfo,
     current_capture: CaptureInfo,
     focus_metric: str | None = None,
+    focus_band: int | None = None,
 ) -> Comparison:
-    changes = [compare_metric(m.key, baseline_scores.get(m.key), current_scores.get(m.key)) for m in METRICS]
+    """Compare two scans. `focus_band` is the band registered when the trial started;
+    it overrides the current table for the focus metric so a later recalibration
+    never silently moves the goalposts of a running trial."""
+    changes = [
+        compare_metric(
+            m.key,
+            baseline_scores.get(m.key),
+            current_scores.get(m.key),
+            focus_band if m.key == focus_metric else None,
+        )
+        for m in METRICS
+    ]
     comparability = assess_comparability(baseline_capture, current_capture)
     outcome: FocusOutcome | None = None
     if focus_metric is not None:

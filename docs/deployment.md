@@ -54,6 +54,10 @@ Without that check the client would fall back to `http://localhost:8000`.
 
 - Schema is managed by Alembic (`backend/migrations`). `0001_initial_schema` mirrors `app/db/models.py`. It was checked on PostgreSQL 17 for upgrade, downgrade, re-upgrade, and `alembic check` (no drift).
 - Production runs `alembic upgrade head` before every start. The revision is already applied on Neon, so the first start is a no-op.
+- `0002_trial_protocol` (branch `feat/fair-test-protocol`, not deployed) adds three nullable columns and two
+  CHECK constraints to `trials`. It is additive: existing rows keep NULLs and are served as "reconstructed"
+  plans. Verified on a local PostgreSQL 16 (pgserver): upgrade, `alembic check` (no drift), downgrade,
+  re-upgrade, and the full test suite. It runs automatically on the next Render start after a deploy.
 - Local development and tests keep SQLite with `create_all`. `TEST_DATABASE_URL=postgresql://… pytest` runs the full suite on Postgres, rebuilding the schema through the migrations for every test.
 - Connections: direct (non-pooled) Neon host, SQLAlchemy pool of 5 + 5 overflow, `pool_pre_ping`, recycled after 240 s, because Neon closes idle connections when it scales to zero.
 - Budget reservations take a transaction-scoped Postgres advisory lock, so concurrent requests can't overspend.

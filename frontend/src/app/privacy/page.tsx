@@ -24,9 +24,10 @@ const sections: { id: string; title: string; body: React.ReactNode }[] = [
           photo twice gave identical scores. Reframing the face (65–80% of the photo width), shifting it, or making the
           photo 18% darker moved any score by at most 2 points. The same photo cropped in the browser and re-encoded moved
           pores by 5 and texture and hydration by 3 — those fine-detail measures are sensitive to image sharpness. ProofLoop
-          therefore only calls a change beyond ±3 points for most concerns, ±5 for hydration and ±7 for pores and
-          texture. Blemishes, oil balance and redness scored 99–100 on the test face, so their variation wasn&apos;t
-          measured and ±3 is an assumption. This is a small, single-face experiment, not a validation study; real
+          therefore only calls a change beyond ±3 points for radiance and under-eye, ±5 for hydration and ±7 for pores
+          and texture. Blemishes, oil balance and redness scored 99–100 on the test face, so their variation wasn&apos;t
+          measured. Rather than guess, ProofLoop gives them the widest band it measured for any concern (±7) and labels
+          it &ldquo;assumed&rdquo; wherever it&apos;s used. This is a small, single-face experiment, not a validation study; real
           re-captures on different days vary more, which is why every comparison also checks lighting and capture method
           and says &ldquo;we can&apos;t call this one&rdquo; when they differ too much.
         </p>
@@ -74,6 +75,35 @@ const sections: { id: string; title: string; body: React.ReactNode }[] = [
         from your own photo, only when you ask, and only for concerns that API supports. They show what a goal looks like.
         They are not a prediction of what any product will do.
       </p>
+    ),
+  },
+  {
+    id: "protocol",
+    title: "The fair-test plan",
+    body: (
+      <>
+        <p>
+          When you start a trial, ProofLoop fixes its plan before any check-in exists. The plan holds one focus score, the band
+          that score must move beyond, the exact scores that would count as up or down, a planned check-in date (day 28), and
+          the baseline photo&apos;s lighting and capture method. Later changes to ProofLoop&apos;s bands don&apos;t move a running
+          trial&apos;s lines.
+        </p>
+        <ul>
+          <li>
+            <strong>One score decides.</strong> A check-in shows all eight scores, but only the focus decides the verdict. With
+            eight scores compared at once, one can cross its band by chance, so the others are shown as context only.
+          </li>
+          <li>
+            <strong>Some focuses can&apos;t show a gain.</strong> The scale stops at 100. A score of 99 with a ±7 band would need
+            107 to count as an improvement, so ProofLoop says so before you start, and lists those focuses last.
+          </li>
+          <li>
+            <strong>Free check before the scan.</strong> A check-in photo is first compared with the baseline&apos;s lighting and
+            capture method, without calling YouCam. If they differ enough that the verdict could only be &ldquo;we can&apos;t call
+            this one&rdquo;, you&apos;re told before any units are spent.
+          </li>
+        </ul>
+      </>
     ),
   },
   {

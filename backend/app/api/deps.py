@@ -29,6 +29,11 @@ def current_session(
     row = resolve_session(db, x_session_token)
     if row is None:
         raise AppError("session_invalid", "This session has expired or was deleted.", 401, hint="Start a new session.")
+    # Commit the last_seen_at touch now. Left pending, it was flushed by the endpoint's
+    # first query and held a write lock on the session row until the request ended —
+    # across awaits and provider calls — so a second concurrent request from the same
+    # session blocked the event loop (SQLite) or waited on the row lock (Postgres).
+    db.commit()
     return row
 
 

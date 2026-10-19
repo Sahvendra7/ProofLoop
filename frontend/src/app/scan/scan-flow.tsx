@@ -3,10 +3,11 @@
 import { useSearchParams } from "next/navigation";
 import { useGo } from "@/lib/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Check, ImageUp, Loader2, RefreshCcw, ShieldCheck, X } from "lucide-react";
+import { Camera, Check, ImageUp, Loader2, RefreshCcw, Scale, ShieldCheck, X } from "lucide-react";
 import { api, ApiError, newIdempotencyKey } from "@/lib/api";
 import { saveCapture } from "@/lib/capture-store";
-import type { Scan } from "@/lib/types";
+import { shortDate } from "@/lib/format";
+import type { Capture, Preflight, Scan } from "@/lib/types";
 import { Button, Notice } from "@/components/ui";
 import { CheckinScreen, PhoneFrame } from "@/components/previews";
 import { SampleDataButton } from "../sample-data-button";
@@ -17,6 +18,7 @@ type Step =
   | { kind: "choose" }
   | { kind: "camera" }
   | { kind: "frame"; src: string; w: number; h: number; source: "camera" | "upload" }
+  | { kind: "preflight"; framed: FramedImage; source: "camera" | "upload" }
   | { kind: "analyzing"; framed: FramedImage; source: "camera" | "upload"; key: string; scan: Scan | null; startedAt: number }
   | { kind: "failed"; title: string; hint: string | null; code: string; retry?: Step };
 
@@ -92,7 +94,22 @@ export function ScanFlow() {
           onBack={() => setStep({ kind: "choose" })}
           onRetake={step.source === "camera" ? () => setStep({ kind: "camera" }) : undefined}
           onConfirm={(framed) =>
-            setStep({ kind: "analyzing", framed, source: step.source, key: newIdempotencyKey(), scan: null, startedAt: Date.now() })
+            setStep(
+              trialId
+                ? { kind: "preflight", framed, source: step.source }
+                : { kind: "analyzing", framed, source: step.source, key: newIdempotencyKey(), scan: null, startedAt: Date.now() },
+            )
+          }
+        />
+      )}
+      {step.kind === "preflight" && trialId && (
+        <CaptureMatch
+          trialId={trialId}
+          step={step}
+          onAnalyse={() => setStep({ kind: "analyzing", framed: step.framed, source: step.source, key: newIdempotencyKey(), scan: null, startedAt: Date.now() })}
+          onRetake={() => setStep({ kind: "choose" })}
+          onFailed={(title, hint, code) =>
+            setStep({ kind: "failed", title, hint, code, retry: { kind: "frame", src: step.framed.dataUrl, w: step.framed.width, h: step.framed.height, source: step.source } })
           }
         />
       )}
@@ -315,6 +332,136 @@ function CameraCapture({
         <Button onClick={capture} disabled={!ready}>
           <Camera aria-hidden className="size-4" /> Capture
         </Button>
+      </div>
+    </div>
+  );
+}
+
+const MATCH_COPY: Record<Preflight["level"], { tone: "info" | "warn" | "error"; title: string; body: string }> = {
+  good: {
+    tone: "info",
+    title: "This photo matches your baseline's conditions.",
+    body: "Lighting and capture method are close enough for a fair comparison.",
+  },
+  fair: {
+    tone: "warn",
+    title: "Comparable, with caveats.",
+    body: "You can go ahead, but the verdict will carry these caveats. Matching the conditions more closely gives a cleaner answer.",
+  },
+  poor: {
+    tone: "error",
+    title: "This photo won't give a fair comparison.",
+    body: "With conditions this different, ProofLoop will answer \u201cwe can't call this one\u201d whatever the scores say. Retaking it in light closer to your baseline costs nothing; analysing this one uses 12 YouCam units.",
+  },
+};
+
+function describeCapture(c: Capture) {
+  const how = c.source === "camera" ? "Camera" : c.source === "upload" ? "Upload" : "Sample";
+  return { how, light: c.luminance_mean === null ? "—" : `${Math.round(c.luminance_mean)} / 255` };
+}
+
+/** Free check of a check-in photo against the baseline before YouCam units are spent. */
+function CaptureMatch({
+  trialId,
+  step,
+  onAnalyse,
+  onRetake,
+  onFailed,
+}: {
+  trialId: string;
+  step: Extract<Step, { kind: "preflight" }>;
+  onAnalyse: () => void;
+  onRetake: () => void;
+  onFailed: (title: string, hint: string | null, code: string) => void;
+}) {
+  const [result, setResult] = useState<Preflight | null>(null);
+  const [unchecked, setUnchecked] = useState(false);
+  const latest = useRef(onFailed);
+  useEffect(() => {
+    latest.current = onFailed;
+  });
+
+  useEffect(() => {
+    let stopped = false;
+    api
+      .preflight(trialId, step.framed.blob, step.source)
+      .then((r) => !stopped && setResult(r))
+      .catch((err: unknown) => {
+        if (stopped) return;
+        const e = err instanceof ApiError ? err : null;
+        // A photo the server can't use fails here, for free. Anything else
+        // (network, server) shouldn't block the user: say it wasn't checked.
+        if (e && e.status >= 400 && e.status < 500 && e.code !== "session_required") latest.current(e.message, e.hint, e.code);
+        else setUnchecked(true);
+      });
+    return () => {
+      stopped = true;
+    };
+  }, [trialId, step.framed.blob, step.source]);
+
+  const copy = result ? MATCH_COPY[result.level] : null;
+  const base = result ? describeCapture(result.baseline_capture) : null;
+  const now = result ? describeCapture(result.candidate_capture) : null;
+
+  return (
+    <div className="grid gap-10 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-[var(--radius-xl)] bg-ink">
+        {/* eslint-disable-next-line @next/next/no-img-element -- local data URL preview */}
+        <img src={step.framed.dataUrl} alt="Your check-in photo" className="h-full w-full object-cover" />
+      </div>
+      <div aria-live="polite">
+        <p className="eyebrow inline-flex items-center gap-2"><Scale aria-hidden className="size-4" /> Capture match · free</p>
+        <h2 className="mt-2 font-display text-2xl text-ink">Is this a fair comparison?</h2>
+        <p className="mt-2 text-sm leading-relaxed text-ink-2">
+          Before spending YouCam units, ProofLoop compares this photo with your baseline&apos;s conditions. The photo is checked and
+          discarded; nothing is sent to YouCam yet.
+        </p>
+        {!result && !unchecked && (
+          <p className="mt-6 inline-flex items-center gap-2 text-ink-2"><Loader2 aria-hidden className="size-4 animate-spin" /> Checking against your baseline…</p>
+        )}
+        {unchecked && (
+          <Notice tone="warn" className="mt-6" title="We couldn't run the free check.">
+            You can still analyse; the verdict will still check lighting and capture method afterwards.
+          </Notice>
+        )}
+        {result && copy && base && now && (
+          <>
+            <Notice tone={copy.tone} className="mt-6" title={copy.title}>
+              <p>{copy.body}</p>
+              {result.issues.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-4">{result.issues.map((i) => <li key={i}>{i}</li>)}</ul>}
+            </Notice>
+            <table className="mt-5 w-full max-w-md text-left text-sm">
+              <caption className="sr-only">Baseline and check-in capture conditions</caption>
+              <thead className="text-xs uppercase tracking-wider text-ink-3">
+                <tr><th scope="col" className="py-2 font-semibold"></th><th scope="col" className="py-2 font-semibold">Baseline</th><th scope="col" className="py-2 font-semibold">This photo</th></tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                <tr><th scope="row" className="py-2 font-medium text-ink">Brightness</th><td className="tabular py-2 text-ink-2">{base.light}</td><td className="tabular py-2 text-ink">{now.light}</td></tr>
+                <tr><th scope="row" className="py-2 font-medium text-ink">Capture</th><td className="py-2 text-ink-2">{base.how}</td><td className="py-2 text-ink">{now.how}</td></tr>
+              </tbody>
+            </table>
+            {result.early && (
+              <p className="mt-4 text-sm text-ink-2">
+                Your plan&apos;s check-in date is {shortDate(result.planned_checkin_at)}. Checking in now gives an early look, labelled as such.
+              </p>
+            )}
+          </>
+        )}
+        {(result || unchecked) && (
+          <div className="mt-6 flex flex-wrap gap-3">
+            {result?.level === "poor" ? (
+              <>
+                <Button onClick={onRetake}><RefreshCcw aria-hidden className="size-4" /> Retake in better-matched light</Button>
+                <Button variant="secondary" onClick={onAnalyse}>Analyse anyway (12 units)</Button>
+              </>
+            ) : (
+              <>
+                <Button onClick={onAnalyse}>Analyse this check-in</Button>
+                <Button variant="secondary" onClick={onRetake}>Use another photo</Button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

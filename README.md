@@ -16,8 +16,12 @@ next number is actually different from the last one. ProofLoop closes that loop 
 2. **Choose one focus** — each focus is tied to one measured score.
 3. **Pick a product** — deterministic matching from a catalogue, with every reason shown and no fake percentages.
    Optional **goal preview** from YouCam AI Skin Simulation.
-4. **Check in** — a later scan is compared against noise bands we measured on the live API, with a
-   comparability check on lighting and capture method. Outcomes: measured change, no clear change, or inconclusive.
+4. **Fair-test plan** — when the trial starts, ProofLoop fixes what will count: the scores that would mean up or
+   down, the band (measured, or assumed and set to the strictest measured), and a day-28 check-in. Focuses at
+   the top of the scale, where a gain can't register, are flagged before you choose them.
+5. **Check in** — a free capture-match check compares the new photo's lighting and camera with the baseline
+   *before* any units are spent; the scan is then judged against the plan. Outcomes: measured change, no clear
+   change, or inconclusive — and "early look" before the planned date.
 
 ## How YouCam is used
 
@@ -56,7 +60,7 @@ instead of inventing results. **Try with sample data** replays a recorded YouCam
 ## Tests
 
 ```bash
-cd backend && ./venv/bin/python -m pytest          # 68 tests, no network; 2 opt-in live tests skipped
+cd backend && ./venv/bin/python -m pytest          # 91 tests, no network; 2 opt-in live tests skipped
 cd backend && TEST_DATABASE_URL=postgresql://… ./venv/bin/python -m pytest   # same suite on PostgreSQL, schema via Alembic
 cd backend && ./venv/bin/ruff check . && ./venv/bin/ruff format --check .
 cd frontend && npm run lint && npm run typecheck && npm run build
@@ -78,6 +82,7 @@ ProofLoop is not a medical device and never attributes a change to a product.
 
 ## Docs
 
+- [Innovation pass (2026-10-19)](docs/innovation/idea-selection.md): audit, research, decision, demo plan
 - [Product strategy](docs/product-strategy.md) · [Competitive analysis](docs/competitive-analysis.md)
 - [Architecture](docs/architecture.md) · [Decisions](docs/decisions/) · [Audit of the previous MVP](docs/architecture-audit.md)
 - [YouCam integration & evidence](docs/youcam-integration.md)

@@ -107,7 +107,13 @@ class ReadingRow(Base):
 
 class TrialRow(Base):
     __tablename__ = "trials"
-    __table_args__ = (CheckConstraint("provenance in ('youcam','demo')", name="ck_trial_provenance"),)
+    __table_args__ = (
+        CheckConstraint("provenance in ('youcam','demo')", name="ck_trial_provenance"),
+        CheckConstraint(
+            "band_evidence is null or band_evidence in ('measured','assumed')", name="ck_trial_band_evidence"
+        ),
+        CheckConstraint("focus_band is null or (focus_band >= 0 and focus_band <= 100)", name="ck_trial_focus_band"),
+    )
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
     session_id: Mapped[str] = mapped_column(ForeignKey("sessions.id", ondelete="CASCADE"), index=True)
     provenance: Mapped[str] = mapped_column(String(16))
@@ -115,6 +121,12 @@ class TrialRow(Base):
     product_id: Mapped[str] = mapped_column(String(64))
     baseline_scan_id: Mapped[str] = mapped_column(ForeignKey("scans.id", ondelete="CASCADE"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    # Pre-registered protocol, fixed when the trial starts (migration 0002).
+    # NULL on trials created before 0002; those fall back to the current table.
+    focus_band: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    band_evidence: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    planned_checkin_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     session: Mapped[SessionRow] = relationship(back_populates="trials")
 

@@ -1,5 +1,6 @@
 import type {
   Goal,
+  Preflight,
   Product,
   RecommendationFilters,
   Recommendations,
@@ -139,6 +140,13 @@ export const api = {
   createTrial: (body: { scan_id: string; goal: string; product_id: string }) => request<Trial>("/trials", json(body)),
   trial: (id: string) => request<Trial>(`/trials/${encodeURIComponent(id)}`),
   trials: () => request<TrialSummary[]>("/trials"),
+  /** Free: compares a check-in photo with the baseline's conditions. No YouCam call, nothing stored. */
+  preflight(trialId: string, image: Blob, source: "camera" | "upload") {
+    const form = new FormData();
+    form.append("image", image, "capture.jpg");
+    form.append("source", source);
+    return request<Preflight>(`/trials/${encodeURIComponent(trialId)}/preflight`, { method: "POST", body: form });
+  },
   demoCheckin: (id: string) => request<Trial>(`/trials/${encodeURIComponent(id)}/demo-checkin`, { method: "POST" }),
 
   simulate(image: Blob, goal: string, intensity: number) {

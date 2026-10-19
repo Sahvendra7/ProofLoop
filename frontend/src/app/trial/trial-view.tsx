@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { ArrowDownRight, ArrowUpRight, Camera, FlaskConical, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Camera, ClipboardCheck, FlaskConical, Minus } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
-import { OUTCOME_COPY, shortDate, VERDICT_COPY } from "@/lib/format";
+import { EVIDENCE_COPY, OUTCOME_COPY, shortDate, VERDICT_COPY } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
-import type { Change, Comparison, Trial } from "@/lib/types";
+import type { Change, Comparison, Protocol, Trial } from "@/lib/types";
 import { BandChart } from "@/components/band-chart";
 import { Dial } from "@/components/dial";
 import { ProvenanceNote } from "@/components/measure";
@@ -43,6 +43,8 @@ function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) =
       ) : (
         <Waiting trial={trial} onUpdate={onUpdate} />
       )}
+
+      <ProtocolCard trial={trial} protocol={trial.protocol} decided={trial.comparison !== null} />
 
       {pendingCheckin && <Notice className="mt-6" title="A check-in is still being measured.">Refresh in a few seconds.</Notice>}
 
@@ -96,9 +98,9 @@ function Waiting({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) => vo
         <p className="eyebrow">Baseline saved</p>
         <p className="mt-3 font-display text-6xl text-ink tabular">{base?.ui_score ?? "—"}</p>
         <p className="mt-1 text-ink-2">{trial.goal.metric_label} score on {shortDate(trial.baseline.observed_at)}</p>
-        <h2 className="mt-8 text-lg font-semibold text-ink">Check in after 3–4 weeks</h2>
+        <h2 className="mt-8 text-lg font-semibold text-ink">Check in on or after {shortDate(trial.protocol.planned_checkin_at)}</h2>
         <ul className="mt-3 space-y-2 text-ink-2">
-          <li>• Same spot and similar light as today — ProofLoop checks the lighting difference</li>
+          <li>• Same spot and similar light as today — before any units are spent, ProofLoop checks the new photo&apos;s lighting against this baseline</li>
           <li>• Same camera — pores and texture scores are sensitive to image sharpness</li>
           <li>• No makeup, hair off your forehead, glasses off</li>
           <li>• Keep the rest of your routine steady so the test stays fair</li>
@@ -155,6 +157,11 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
             <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${sub}`}>
               {synthetic ? "Demo verdict" : "Verdict"} · {trial.goal.metric_label} · {comparison.comparability.days_apart} days apart
             </p>
+            {comparison.early && (
+              <p className={`mt-2 text-sm font-semibold ${sub}`}>
+                Early look: day {Math.round(comparison.comparability.days_apart)} of a planned {trial.protocol.planned_checkin_days}-day test.
+              </p>
+            )}
             <h2 id="verdict" className="mt-4 font-display text-[clamp(2.2rem,4.5vw,3.75rem)] font-bold leading-[1]">
               {outcome.headline}
             </h2>
@@ -173,6 +180,7 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
                   <p className={`text-sm font-semibold ${sub}`}>
                     {focus.delta! > 0 ? "+" : ""}
                     {focus.delta} points · normal variation ±{band}
+                    {focus.band_evidence === "assumed" ? " (assumed)" : ""}
                   </p>
                 }
               >
@@ -190,7 +198,10 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
       <Card className="mt-8 overflow-hidden">
         <div className="p-6 pb-2 sm:px-8">
           <h2 className="text-lg font-semibold text-ink">Every measured concern</h2>
-          <p className="mt-1 text-sm text-ink-3">Your focus is highlighted. Other scores are shown for context; they weren&apos;t the test.</p>
+          <p className="mt-1 text-sm text-ink-3">
+            Only your focus was decided in advance, so only it gives the verdict. The others are context: with eight scores, one
+            can cross its band by chance.
+          </p>
         </div>
         {/* Focusable so keyboard users can scroll the table horizontally on small screens. */}
         <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Every measured concern, scrollable table">
@@ -230,7 +241,10 @@ function ChangeRow({ change, focus }: { change: Change; focus: boolean }) {
       </td>
       <td className={`px-6 py-3 sm:px-8 ${color}`}>
         <span className="inline-flex items-center gap-1.5"><Icon aria-hidden className="size-4" />{v.label}</span>
-        <span className="ml-1 text-xs text-ink-3">(±{change.noise_band})</span>
+        <span className="ml-1 text-xs text-ink-3">
+          (±{change.noise_band}
+          {change.band_evidence === "assumed" ? ", assumed" : ""})
+        </span>
       </td>
     </tr>
   );
@@ -247,6 +261,90 @@ function Comparability({ comparison }: { comparison: Comparison }) {
         <ul className="list-disc space-y-1 pl-4">{issues.map((i) => <li key={i}>{i}</li>)}</ul>
       )}
     </Notice>
+  );
+}
+
+function ProtocolCard({ trial, protocol, decided }: { trial: Trial; protocol: Protocol; decided: boolean }) {
+  const base = protocol.baseline_score;
+  const evidence = EVIDENCE_COPY[protocol.band_evidence];
+  const lum = protocol.baseline_capture.luminance_mean;
+  const zones = [
+    {
+      key: "down",
+      label: "Measured change, down",
+      value: protocol.decline_at !== null ? `${protocol.decline_at} or lower` : "Can't register",
+    },
+    {
+      key: "none",
+      label: "No clear change",
+      value:
+        base === null
+          ? "—"
+          : `${protocol.decline_at !== null ? protocol.decline_at + 1 : 0}–${protocol.improve_at !== null ? protocol.improve_at - 1 : 100}`,
+    },
+    {
+      key: "up",
+      label: "Measured change, up",
+      value: protocol.improve_at !== null ? `${protocol.improve_at} or higher` : "Can't register",
+    },
+  ];
+  return (
+    <section aria-labelledby="protocol-title" className="mt-8 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="eyebrow inline-flex items-center gap-2">
+            <ClipboardCheck aria-hidden className="size-4" /> {decided ? "The plan this verdict was judged against" : "Your fair-test plan"}
+          </p>
+          <h2 id="protocol-title" className="mt-2 font-display text-2xl text-ink">
+            Decided before the check-in, not after
+          </h2>
+        </div>
+        <p className="rounded-full bg-sunken px-3 py-1 text-xs font-semibold text-ink-2">
+          {protocol.registered ? `Fixed ${shortDate(trial.created_at)}` : "Reconstructed: trial predates saved plans"}
+        </p>
+      </div>
+      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-2">
+        From your baseline {trial.goal.metric_label.toLowerCase()} score of <strong className="text-ink">{base ?? "—"}</strong>, a later scan has to
+        move further than ±{protocol.noise_band} points before ProofLoop calls it a change. These lines don&apos;t move after the trial starts.
+      </p>
+      <ol className="mt-5 grid gap-2 sm:grid-cols-3" aria-label="What the check-in score would mean">
+        {zones.map((z) => (
+          <li key={z.key} className={`rounded-[var(--radius-md)] p-4 ring-1 ${z.key === "none" ? "bg-berry-milk/60 ring-line" : "bg-paper ring-line"}`}>
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink-3">{z.label}</p>
+            <p className="tabular mt-1 font-display text-2xl font-bold text-ink">{z.value}</p>
+          </li>
+        ))}
+      </ol>
+      {protocol.detectable === "decline_only" && (
+        <p className="mt-3 text-sm text-ink-2">
+          Your baseline is near the top of the scale, so this trial can only detect a drop. It watches for a downside; it can&apos;t show a gain.
+        </p>
+      )}
+      <dl className="mt-6 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-3">
+        <div>
+          <dt className="font-semibold text-ink">Normal variation</dt>
+          <dd className="mt-1 text-ink-2">
+            ±{protocol.noise_band} points, <span className="font-semibold">{evidence.label}</span>. {evidence.detail}
+          </dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-ink">Planned check-in</dt>
+          <dd className="mt-1 text-ink-2">
+            {shortDate(protocol.planned_checkin_at)} (day {protocol.planned_checkin_days}). An earlier check-in is labelled an early look.
+          </dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-ink">Conditions to match</dt>
+          <dd className="mt-1 text-ink-2">
+            {protocol.baseline_capture.source === "camera" ? "Camera photo" : protocol.baseline_capture.source === "upload" ? "Uploaded photo" : "Sample data"}
+            {lum !== null ? `, brightness ${Math.round(lum)} of 255` : ""}.{" "}
+            {protocol.baseline_capture.source === "sample"
+              ? "Sample trials take no real check-ins."
+              : "Check-in photos are compared with this before any units are spent."}
+          </dd>
+        </div>
+      </dl>
+    </section>
   );
 }
 

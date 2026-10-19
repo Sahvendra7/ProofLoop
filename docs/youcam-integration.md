@@ -112,7 +112,11 @@ Findings:
    same photo moved pores by 5 and texture by 3. Hence the "same camera" instruction on check-ins.
 
 Noise bands used by the comparison (`backend/app/domain/compare.py`): observed range + 2, floor 3 —
-moisture ±5, texture ±7, pore ±7, radiance ±3, dark circle ±3; oiliness/redness/acne ±3 (assumed floor).
+moisture ±5, texture ±7, pore ±7, radiance ±3, dark circle ±3 (**measured**). Oiliness/redness/acne were
+saturated, so their variation is uncharacterised; since 2026-10-19 they use the widest measured band, ±7,
+labelled **assumed** in the API (`band_evidence`) and UI (previously an optimistic ±3 floor). Each trial
+stores its band when it starts (migration `0002`), so recalibrating the table never changes a running
+trial's verdict.
 Limits: one face, one lighting setup, synthetic perturbations of one photo. Real re-captures on different
 days, cameras and lighting will vary more. The comparability check (lighting difference, camera vs upload,
 days apart) is the second line of defence, and a poor-comparability pair yields "inconclusive".
