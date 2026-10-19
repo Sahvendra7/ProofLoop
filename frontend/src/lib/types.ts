@@ -4,6 +4,8 @@ export type ProvenanceKind = "youcam" | "demo";
 export type Band = "attention" | "moderate" | "strength";
 export type Tier = "strong" | "good" | "possible";
 export type Verdict = "better" | "worse" | "within_variation" | "missing";
+export type BandEvidence = "measured" | "assumed";
+export type Detectable = "both" | "decline_only" | "improve_only" | "neither";
 export type FocusOutcome =
   | "measured_improvement"
   | "measured_decline"
@@ -26,6 +28,12 @@ export interface Metric {
   band: Band;
   band_label: string;
   mask_url: string | null;
+  /** What a later scan would need to read for ProofLoop to call a change. null = can't be detected. */
+  noise_band: number;
+  band_evidence: BandEvidence;
+  improve_at: number | null;
+  decline_at: number | null;
+  detectable: Detectable;
 }
 
 export interface Scan {
@@ -38,7 +46,7 @@ export interface Scan {
   observed_at: string;
   completed_at: string | null;
   synthetic_timeline: boolean;
-  capture: { source: string; width: number | null; height: number | null; luminance_mean: number | null };
+  capture: Capture;
   metrics: Metric[];
   missing_metrics: string[];
   masks_available: boolean;
@@ -116,6 +124,7 @@ export interface Change {
   delta: number | null;
   noise_band: number;
   verdict: Verdict;
+  band_evidence: BandEvidence;
 }
 
 export interface Comparison {
@@ -124,6 +133,41 @@ export interface Comparison {
   focus_outcome: FocusOutcome;
   comparability: { level: "good" | "fair" | "poor"; issues: string[]; days_apart: number };
   changes: Change[];
+  /** The check-in came before the protocol's planned date. */
+  early: boolean;
+}
+
+export interface Capture {
+  source: string;
+  width: number | null;
+  height: number | null;
+  luminance_mean: number | null;
+}
+
+/** The fair-test plan fixed when the trial started. */
+export interface Protocol {
+  registered: boolean;
+  focus_metric: string;
+  baseline_score: number | null;
+  noise_band: number;
+  band_evidence: BandEvidence;
+  improve_at: number | null;
+  decline_at: number | null;
+  detectable: Detectable;
+  planned_checkin_days: number;
+  planned_checkin_at: string;
+  baseline_capture: Capture;
+}
+
+export interface Preflight {
+  level: "good" | "fair" | "poor";
+  issues: string[];
+  days_since_baseline: number;
+  early: boolean;
+  planned_checkin_at: string;
+  baseline_capture: Capture;
+  candidate_capture: Capture;
+  units_spent: number;
 }
 
 export interface Trial {
@@ -137,6 +181,7 @@ export interface Trial {
   history: { scan_id: string; observed_at: string; focus_score: number | null; synthetic: boolean; is_baseline: boolean }[];
   comparison: Comparison | null;
   focus_noise_band: number;
+  protocol: Protocol;
 }
 
 export interface TrialSummary {

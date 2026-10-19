@@ -202,10 +202,11 @@ function Insight() {
         </Reveal>
         <Reveal className="mx-auto mt-6 max-w-3xl text-center" delay={150}>
           <p className="leading-relaxed text-ink-2">
-            So ProofLoop only calls a change beyond <strong className="text-espresso">±3</strong> points for most concerns,{" "}
-            <strong className="text-espresso">±5</strong> for hydration and <strong className="text-espresso">±7</strong> for pores
-            and texture — measured on one face in ten live analyses, a floor for real-world variation rather than a
-            validation study.
+            So ProofLoop only calls a change beyond <strong className="text-espresso">±3</strong> points for radiance and
+            under-eye, <strong className="text-espresso">±5</strong> for hydration and <strong className="text-espresso">±7</strong> for
+            pores and texture — measured on one face in ten live analyses, a floor for real-world variation rather than a
+            validation study. Concerns we couldn&apos;t measure get the strictest band, ±7, and are labelled
+            &ldquo;assumed&rdquo;.
           </p>
           <Link href="/privacy#measurement" className="mt-4 inline-flex items-center gap-1.5 font-semibold text-strawberry-ink underline decoration-strawberry-ink/30 underline-offset-4 hover:decoration-strawberry-ink">
             Read the method and its limits <ArrowRight aria-hidden className="size-4" />

@@ -2,22 +2,69 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Response, status
+from datetime import timedelta
+
+from fastapi import APIRouter, Depends, File, Form, Response, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api import presenters as p
 from app.api import schemas as s
-from app.api.deps import current_session, owned_scan, owned_trial
+from app.api.deps import current_session, owned_scan, owned_trial, settings_dep
+from app.core.config import Settings
 from app.core.errors import AppError
 from app.db.models import ScanRow, SessionRow, TrialRow, utcnow
 from app.db.session import get_db
 from app.domain.catalog import load_catalog
-from app.domain.compare import NOISE_BANDS, compare
+from app.domain.compare import (
+    NOISE_BANDS,
+    PLANNED_CHECKIN_DAYS,
+    CaptureInfo,
+    assess_comparability,
+    band_evidence,
+    compare,
+    detectability,
+)
 from app.domain.metrics import GOALS_BY_KEY
 from app.services import demo
+from app.services.imaging import prepare_image
 
 router = APIRouter(prefix="/trials", tags=["trials"])
+
+
+def _registered_band(trial: TrialRow) -> int:
+    goal = GOALS_BY_KEY[trial.goal]
+    return trial.focus_band if trial.focus_band is not None else NOISE_BANDS[goal.metric]
+
+
+def _planned_days(trial: TrialRow) -> int:
+    return trial.planned_checkin_days if trial.planned_checkin_days is not None else PLANNED_CHECKIN_DAYS
+
+
+def _protocol_out(trial: TrialRow, baseline: ScanRow) -> s.ProtocolOut:
+    goal = GOALS_BY_KEY[trial.goal]
+    band = _registered_band(trial)
+    base_score = p.scores_of(baseline).get(goal.metric)
+    days = _planned_days(trial)
+    evidence = trial.band_evidence or band_evidence(goal.metric)
+    if base_score is not None:
+        d = detectability(goal.metric, base_score, band)
+        improve_at, decline_at, kind = d.improve_at, d.decline_at, d.detectable
+    else:
+        improve_at, decline_at, kind = None, None, "neither"
+    return s.ProtocolOut(
+        registered=trial.focus_band is not None,
+        focus_metric=goal.metric,
+        baseline_score=base_score,
+        noise_band=band,
+        band_evidence=evidence,
+        improve_at=improve_at,
+        decline_at=decline_at,
+        detectable=kind,
+        planned_checkin_days=days,
+        planned_checkin_at=p.capture_of(baseline).captured_at + timedelta(days=days),
+        baseline_capture=p.capture_out(baseline),
+    )
 
 
 def _trial_out(db: Session, trial: TrialRow) -> s.TrialOut:
@@ -58,9 +105,14 @@ def _trial_out(db: Session, trial: TrialRow) -> s.TrialOut:
     if complete:
         latest = complete[-1]
         result = compare(
-            p.scores_of(baseline), p.scores_of(latest), p.capture_of(baseline), p.capture_of(latest), goal.metric
+            p.scores_of(baseline),
+            p.scores_of(latest),
+            p.capture_of(baseline),
+            p.capture_of(latest),
+            goal.metric,
+            focus_band=_registered_band(trial),
         )
-        comparison = p.comparison_out(latest, result)
+        comparison = p.comparison_out(latest, result, _planned_days(trial))
 
     return s.TrialOut(
         id=trial.id,
@@ -72,7 +124,8 @@ def _trial_out(db: Session, trial: TrialRow) -> s.TrialOut:
         checkins=[p.scan_out(c, now) for c in checkins],
         history=history,
         comparison=comparison,
-        focus_noise_band=NOISE_BANDS[goal.metric],
+        focus_noise_band=_registered_band(trial),
+        protocol=_protocol_out(trial, baseline),
     )
 
 
@@ -96,6 +149,9 @@ def create_trial(body: s.TrialCreateIn, session: SessionRow = Depends(current_se
         goal=goal.key,
         product_id=body.product_id,
         baseline_scan_id=scan.id,
+        focus_band=NOISE_BANDS[goal.metric],
+        band_evidence=band_evidence(goal.metric),
+        planned_checkin_days=PLANNED_CHECKIN_DAYS,
     )
     db.add(trial)
     db.flush()
@@ -145,6 +201,53 @@ def demo_checkin(trial_id: str, session: SessionRow = Depends(current_session), 
     db.add(demo.build_demo_followup(baseline, trial.id))
     db.flush()
     return _trial_out(db, trial)
+
+
+@router.post("/{trial_id}/preflight", response_model=s.PreflightOut)
+def preflight(
+    trial_id: str,
+    image: UploadFile = File(...),
+    source: str = Form("upload"),
+    session: SessionRow = Depends(current_session),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(settings_dep),
+) -> s.PreflightOut:
+    """Check a check-in photo against the baseline's capture conditions without calling YouCam.
+
+    The photo goes through the same cleaning as a real scan (so an unusable photo
+    fails here, for free) and is discarded; nothing is stored and no units are reserved.
+    A plain `def` on purpose: FastAPI runs it in the threadpool, so its blocking
+    database calls and image decoding never stall the event loop.
+    """
+    trial = owned_trial(db, session, trial_id)
+    if trial.provenance != "youcam":
+        raise AppError("provenance_mismatch", "A sample-data trial can't take a live check-in.", 409)
+    if source not in ("camera", "upload"):
+        raise AppError("invalid_request", "source must be 'camera' or 'upload'.", 422)
+    raw = image.file.read(settings.max_upload_bytes + 1)
+    if len(raw) > settings.max_upload_bytes:
+        raise AppError("image_too_large", "Photos must be under 10 MB.", 413)
+    prepared = prepare_image(raw)
+    del raw
+
+    baseline = db.get(ScanRow, trial.baseline_scan_id)
+    assert baseline is not None
+    now = utcnow()
+    report = assess_comparability(
+        p.capture_of(baseline), CaptureInfo(luminance_mean=prepared.luminance_mean, source=source, captured_at=now)
+    )
+    days = _planned_days(trial)
+    return s.PreflightOut(
+        level=report.level,
+        issues=report.issues,
+        days_since_baseline=report.days_apart,
+        early=report.days_apart < days,
+        planned_checkin_at=p.capture_of(baseline).captured_at + timedelta(days=days),
+        baseline_capture=p.capture_out(baseline),
+        candidate_capture=s.CaptureOut(
+            source=source, width=prepared.width, height=prepared.height, luminance_mean=prepared.luminance_mean
+        ),
+    )
 
 
 @router.delete("/{trial_id}", status_code=status.HTTP_204_NO_CONTENT)

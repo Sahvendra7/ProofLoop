@@ -171,7 +171,8 @@ export function VerdictScreen() {
       </div>
       <ul className="mt-3 space-y-1 text-[0.68rem]">
         <li className="flex justify-between"><span className="text-ink-2">Texture</span><span className="text-ink-3">+5 · within ±7</span></li>
-        <li className="flex justify-between"><span className="text-ink-2">Blemishes</span><span className="font-semibold text-berry-deep">−5 · beyond ±3</span></li>
+        <li className="flex justify-between"><span className="text-ink-2">Radiance</span><span className="font-semibold text-berry-deep">−5 · beyond ±3</span></li>
+        <li className="flex justify-between"><span className="text-ink-2">Blemishes</span><span className="text-ink-3">−5 · within ±7 (assumed)</span></li>
       </ul>
     </div>
   );

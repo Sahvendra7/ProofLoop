@@ -19,11 +19,11 @@ export const SAMPLE_SCORES = [
 
 export const NOISE_BANDS: Record<string, number> = {
   moisture: 5,
-  oiliness: 3,
-  redness: 3,
+  oiliness: 7, // assumed: widest measured band
+  redness: 7, // assumed
   texture: 7,
   pore: 7,
-  acne: 3,
+  acne: 7, // assumed
   radiance: 3,
   dark_circle: 3,
 };
@@ -35,7 +35,7 @@ export const SYNTHETIC_FOLLOWUP: Record<string, number> = {
   texture: 93,
   pore: 79,
   acne: 94,
-  radiance: 85,
+  radiance: 77,
   dark_circle: 69,
 };
 

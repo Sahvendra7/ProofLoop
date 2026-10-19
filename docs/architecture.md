@@ -55,6 +55,12 @@ cascades to scans, readings and trials.
   Idempotency-Key makes retries safe. Details: `youcam-integration.md`.
 - **Recommendations** — `GET /scans/{id}/recommendations?goal=&budget_max=&fragrance_free=&finish=`
   runs `domain.recommend` against the validated catalogue (`app/data/catalog.json`).
+- **Trial protocol** — `POST /trials` also fixes the plan: focus band, band evidence and planned check-in
+  days are stored on the trial (migration `0002`); `TrialOut.protocol` returns the lines that count as up or
+  down (`detectability()`, the same rule the verdict uses). `POST /trials/{id}/preflight` checks a check-in
+  photo against the baseline's lighting and capture source with the scan's own image pipeline, without
+  calling YouCam or storing anything. Scan metrics carry `improve_at` / `decline_at` so the focus picker can
+  flag ceiling focuses.
 - **Trial** — `POST /trials` (baseline), check-ins via `POST /scans` with `trial_id`, verdict computed on
   read by `domain.compare` (latest complete check-in vs baseline).
 - **Demo** — `POST /scans/demo` replays a recorded live response through the same normaliser;

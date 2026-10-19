@@ -139,7 +139,11 @@ def test_demo_journey_end_to_end(api):
         comp = after["comparison"]
         assert comp["focus_outcome"] == "measured_improvement"  # +8 vs band 5
         verdicts = {c["metric"]: c["verdict"] for c in comp["changes"]}
-        assert verdicts["acne"] == "worse" and verdicts["pore"] == "within_variation"
+        assert verdicts["radiance"] == "worse" and verdicts["pore"] == "within_variation"
+        # acne's band is assumed (uncharacterised), so -5 stays inside the conservative band
+        acne = next(c for c in comp["changes"] if c["metric"] == "acne")
+        assert acne["verdict"] == "within_variation" and acne["band_evidence"] == "assumed" and acne["noise_band"] == 7
+        assert comp["early"] is True  # the synthetic follow-up is 21 days in; the protocol plans 28
         assert verdicts["texture"] == "within_variation"  # +5 is inside texture's 7-point band
         assert comp["comparability"]["days_apart"] == 21.0
         assert [p["is_baseline"] for p in after["history"]] == [True, False]
@@ -221,3 +225,70 @@ def test_catalog_and_goals(api):
         catalog = client.get(f"{V1}/products").json()
         assert "fictional" in catalog["disclaimer"]
         assert client.get(f"{V1}/products/nope").status_code == 404
+
+
+def test_concurrent_scan_uploads_do_not_stall_the_server(api):
+    """Two uploads from one session at once (double tap, retry) must both be accepted.
+    A transaction left open across `await image.read()` blocked the event loop on SQLite,
+    and would wait on Postgres' row lock with no timeout."""
+    import asyncio
+    import time
+
+    import httpx
+
+    with api() as client:
+        h = new_session(client)
+
+        async def both():
+            transport = httpx.ASGITransport(app=client.app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
+
+                def post(key):
+                    return ac.post(
+                        f"{V1}/scans",
+                        headers={**h, "Idempotency-Key": key},
+                        data={"consent": "true", "source": "camera"},
+                        files={"image": ("me.jpg", face_jpeg(), "image/jpeg")},
+                    )
+
+                return await asyncio.gather(post("concurrent-a"), post("concurrent-b"))
+
+        started = time.monotonic()
+        responses = asyncio.run(both())
+        assert [r.status_code for r in responses] == [202, 202]
+        assert time.monotonic() - started < 3
+
+
+def test_concurrent_idempotent_replays_do_not_stall(api):
+    """Regression: replays of one Idempotency-Key return without an explicit commit, so the
+    session's last_seen_at write stayed open across the response and serialised (SQLite:
+    stalled) concurrent requests. Found while testing the preflight; fixed in current_session."""
+    import asyncio
+    import time
+
+    import httpx
+
+    with api() as client:
+        h = new_session(client)
+        first = upload(client, h, key="replay-key-1").json()
+        wait_for_scan(client, h, first["id"])
+
+        async def three():
+            transport = httpx.ASGITransport(app=client.app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://test") as ac:
+
+                def post():
+                    return ac.post(
+                        f"{V1}/scans",
+                        headers={**h, "Idempotency-Key": "replay-key-1"},
+                        data={"consent": "true", "source": "camera"},
+                        files={"image": ("me.jpg", face_jpeg(), "image/jpeg")},
+                    )
+
+                return await asyncio.gather(post(), post(), post())
+
+        started = time.monotonic()
+        responses = asyncio.run(three())
+        assert [r.status_code for r in responses] == [200, 200, 200]
+        assert {r.json()["id"] for r in responses} == {first["id"]}
+        assert time.monotonic() - started < 3

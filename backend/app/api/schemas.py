@@ -31,6 +31,13 @@ class MetricOut(BaseModel):
     band: Literal["attention", "moderate", "strength"]
     band_label: str
     mask_url: str | None = None
+    # What a later scan would need to read for ProofLoop to call a change from
+    # this score (see app.domain.compare.detectability). None = undetectable.
+    noise_band: int
+    band_evidence: Literal["measured", "assumed"]
+    improve_at: int | None
+    decline_at: int | None
+    detectable: Literal["both", "decline_only", "improve_only", "neither"]
 
 
 class FailureOut(BaseModel):
@@ -163,6 +170,7 @@ class ChangeOut(BaseModel):
     delta: int | None
     noise_band: int
     verdict: Literal["better", "worse", "within_variation", "missing"]
+    band_evidence: Literal["measured", "assumed"]
 
 
 class ComparabilityOut(BaseModel):
@@ -179,6 +187,8 @@ class ComparisonOut(BaseModel):
     ]
     comparability: ComparabilityOut
     changes: list[ChangeOut]
+    # True when the check-in came before the protocol's planned check-in date.
+    early: bool
 
 
 class HistoryPointOut(BaseModel):
@@ -187,6 +197,35 @@ class HistoryPointOut(BaseModel):
     focus_score: int | None
     synthetic: bool
     is_baseline: bool
+
+
+class ProtocolOut(BaseModel):
+    """The fair-test plan fixed when the trial started."""
+
+    registered: bool  # False for trials created before protocols were stored
+    focus_metric: str
+    baseline_score: int | None
+    noise_band: int
+    band_evidence: Literal["measured", "assumed"]
+    improve_at: int | None
+    decline_at: int | None
+    detectable: Literal["both", "decline_only", "improve_only", "neither"]
+    planned_checkin_days: int
+    planned_checkin_at: datetime
+    baseline_capture: CaptureOut
+
+
+class PreflightOut(BaseModel):
+    """Free, local check of a check-in photo against the baseline, before any units are spent."""
+
+    level: Literal["good", "fair", "poor"]
+    issues: list[str]
+    days_since_baseline: float
+    early: bool
+    planned_checkin_at: datetime
+    baseline_capture: CaptureOut
+    candidate_capture: CaptureOut
+    units_spent: int = 0
 
 
 class TrialOut(BaseModel):
@@ -200,6 +239,7 @@ class TrialOut(BaseModel):
     history: list[HistoryPointOut]
     comparison: ComparisonOut | None
     focus_noise_band: int
+    protocol: ProtocolOut
 
 
 class TrialSummaryOut(BaseModel):

@@ -23,7 +23,10 @@ from app.providers.youcam.models import AnalysisPollResponse
 
 FIXTURE_PATH = Path(__file__).resolve().parents[1] / "data" / "demo_fixture.json"
 
-# Deliberately mixed so the demo shows every verdict type, not a rosy story.
+# Deliberately mixed so the demo shows every verdict type, not a rosy story:
+# moisture up beyond its measured band, radiance down beyond its measured band,
+# texture/pore inside theirs, and acne -5 inside the conservative band that
+# applies while acne's scan-to-scan variation is uncharacterised.
 DEMO_FOLLOWUP_DELTAS = {
     "moisture": 8,
     "oiliness": 2,
@@ -31,7 +34,7 @@ DEMO_FOLLOWUP_DELTAS = {
     "texture": 5,
     "pore": 0,
     "acne": -5,
-    "radiance": 3,
+    "radiance": -5,
     "dark_circle": 1,
 }
 DEMO_FOLLOWUP_DAYS = 21

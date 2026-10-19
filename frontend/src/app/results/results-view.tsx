@@ -7,7 +7,7 @@ import { useMemo, useState } from "react";
 import { ArrowRight, Eye } from "lucide-react";
 import { api } from "@/lib/api";
 import { loadCapture } from "@/lib/capture-store";
-import { shortDate, summarise } from "@/lib/format";
+import { countsAsChange, shortDate, summarise } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
 import type { Goal, Metric, Scan } from "@/lib/types";
 import { BandLegend, MetricBar, ProvenanceNote } from "@/components/measure";
@@ -160,18 +160,24 @@ function MaskViewer({ scan, capture }: { scan: Scan; capture: string | null }) {
 function GoalPicker({ scan, goals }: { scan: Scan; goals: Goal[] | null }) {
   const go = useGo();
   const scores = Object.fromEntries(scan.metrics.map((m) => [m.key, m]));
+  // Testable focuses first (a gain could register), lowest score first; ceiling
+  // focuses next; unmeasured last. A focus at the ceiling can still be chosen to
+  // watch for a drop, but it can never show an improvement.
+  const rank = (m?: Metric) => (!m ? 2 : m.improve_at === null ? 1 : 0);
   const ordered = (goals ?? [])
     .map((g) => ({ goal: g, metric: scores[g.metric] as Metric | undefined }))
-    .sort((a, b) => (a.metric?.ui_score ?? 999) - (b.metric?.ui_score ?? 999));
+    .sort((a, b) => rank(a.metric) - rank(b.metric) || (a.metric?.ui_score ?? 999) - (b.metric?.ui_score ?? 999));
   const [choice, setChoice] = useState<string>("");
   const selected = choice || ordered[0]?.goal.key || "";
+  const selectedMetric = ordered.find((o) => o.goal.key === selected)?.metric;
 
   return (
     <Card className="p-6 sm:p-8">
       <p className="eyebrow">Step 3 of 4 · Choose</p>
       <h2 className="mt-2 font-display text-2xl text-ink">Pick one focus to test</h2>
       <p className="mt-2 text-sm leading-relaxed text-ink-2">
-        Each focus is tied to one measured score, so a later check-in can say whether it moved. Ordered from your lowest score.
+        Each focus is tied to one measured score. Before you start, ProofLoop shows the score a later check-in would need for
+        it to call a change, so the test is decided in advance.
       </p>
       {!goals ? (
         <div className="mt-5 space-y-2"><Skeleton className="h-14" /><Skeleton className="h-14" /><Skeleton className="h-14" /></div>
@@ -195,12 +201,26 @@ function GoalPicker({ scan, goals }: { scan: Scan; goals: Goal[] | null }) {
                   <span className="block text-xs text-ink-3">
                     {metric ? `${goal.metric_label} ${metric.ui_score} · ${metric.band_label.toLowerCase()}` : "Not measured in this scan"}
                   </span>
+                  {metric && (
+                    <span className="mt-0.5 block text-xs text-ink-2">
+                      {countsAsChange(metric)}
+                      {metric.band_evidence === "assumed" && <span className="text-ink-3"> · band assumed</span>}
+                    </span>
+                  )}
                 </span>
-                {i === 0 && metric && <span className="rounded-full bg-card px-2 py-0.5 text-[0.7rem] font-semibold text-accent ring-1 ring-accent/30">Lowest score</span>}
+                {i === 0 && metric && metric.improve_at !== null && <span className="shrink-0 rounded-full bg-card px-2 py-0.5 text-[0.7rem] font-semibold text-accent ring-1 ring-accent/30">Most room</span>}
+                {metric && metric.improve_at === null && <span className="shrink-0 rounded-full bg-sunken px-2 py-0.5 text-[0.7rem] font-semibold text-ink-2">Can&apos;t show gains</span>}
               </label>
             ))}
           </div>
         </fieldset>
+      )}
+      {selectedMetric && selectedMetric.improve_at === null && (
+        <Notice tone="warn" className="mt-5" title={`${selectedMetric.label} is already at ${selectedMetric.ui_score}.`}>
+          A later scan can&apos;t score high enough to count as an improvement — the scale stops at 100 and the change would
+          have to exceed ±{selectedMetric.noise_band}. This focus can only show a drop, so it suits keeping an eye on a
+          new product rather than testing whether it helps.
+        </Notice>
       )}
       <Button className="mt-6 w-full" disabled={!selected} onClick={() => go(`/matches?scan=${scan.id}&goal=${selected}`)}>
         See matching products <ArrowRight aria-hidden className="size-4" />
