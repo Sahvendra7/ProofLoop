@@ -170,7 +170,7 @@ class ChangeOut(BaseModel):
     delta: int | None
     noise_band: int
     verdict: Literal["better", "worse", "within_variation", "missing"]
-    band_evidence: Literal["measured", "assumed"]
+    band_evidence: Literal["measured", "assumed", "personal"]
 
 
 class ComparabilityOut(BaseModel):
@@ -189,6 +189,17 @@ class ComparisonOut(BaseModel):
     changes: list[ChangeOut]
     # True when the check-in came before the protocol's planned check-in date.
     early: bool
+    next_step: NextStepOut
+
+
+class NextStepOut(BaseModel):
+    """The one action that follows from the pre-registered plan (domain.compare.next_step)."""
+
+    action: Literal[
+        "retake", "pause_and_review", "finish_the_test", "keep_going", "consider_switching", "nothing_to_gain"
+    ]
+    goal: str
+    baseline_scan_id: str
 
 
 class HistoryPointOut(BaseModel):
@@ -206,13 +217,31 @@ class ProtocolOut(BaseModel):
     focus_metric: str
     baseline_score: int | None
     noise_band: int
-    band_evidence: Literal["measured", "assumed"]
+    band_evidence: Literal["measured", "assumed", "personal"]
     improve_at: int | None
     decline_at: int | None
     detectable: Literal["both", "decline_only", "improve_only", "neither"]
     planned_checkin_days: int
     planned_checkin_at: datetime
     baseline_capture: CaptureOut
+    instrument_check: InstrumentCheckOut
+
+
+class InstrumentCheckOut(BaseModel):
+    """An optional second baseline capture that can only widen the focus band."""
+
+    status: Literal["available", "processing", "complete", "failed", "unavailable"]
+    unavailable_reason: Literal["sealed"] | None
+    scan_id: str | None
+    sample: bool
+    note: str | None  # provenance of the recorded replay, for sample trials
+    units: int  # what running it costs
+    table_band: int
+    spread: int | None
+    personal_band: int | None
+    widened: bool
+    sealed: bool
+    changes: list[ChangeOut]
 
 
 class PreflightOut(BaseModel):
@@ -225,6 +254,8 @@ class PreflightOut(BaseModel):
     planned_checkin_at: datetime
     baseline_capture: CaptureOut
     candidate_capture: CaptureOut
+    # The exact same photo as the baseline: its scores would be identical, so the scan is refused.
+    same_photo: bool = False
     units_spent: int = 0
 
 

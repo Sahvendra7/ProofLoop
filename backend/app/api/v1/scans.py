@@ -18,7 +18,7 @@ from app.db.models import ScanRow, SessionRow, utcnow
 from app.db.session import get_db
 from app.domain.metrics import REQUESTED_PROVIDER_ACTIONS
 from app.providers.youcam import endpoints as ep
-from app.services import demo, usage
+from app.services import demo, protocol, usage
 from app.services.imaging import prepare_image
 from app.services.scans import ScanJobRunner
 
@@ -34,6 +34,7 @@ async def create_scan(
     consent: bool = Form(...),
     source: str = Form("upload"),
     trial_id: str | None = Form(None),
+    purpose: str = Form("checkin"),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     session: SessionRow = Depends(current_session),
     db: Session = Depends(get_db),
@@ -44,6 +45,10 @@ async def create_scan(
         raise AppError("consent_required", "Please confirm consent before analysing a photo.", 400)
     if source not in ("camera", "upload"):
         raise AppError("invalid_request", "source must be 'camera' or 'upload'.", 422)
+    if purpose not in ("checkin", "repeat_baseline"):
+        raise AppError("invalid_request", "purpose must be 'checkin' or 'repeat_baseline'.", 422)
+    if purpose == "repeat_baseline" and not trial_id:
+        raise AppError("invalid_request", "An instrument check needs the trial it belongs to.", 422)
     if idempotency_key is not None and not _IDEMPOTENCY.match(idempotency_key):
         raise AppError("invalid_request", "Idempotency-Key must be 8-64 URL-safe characters.", 422)
 
@@ -75,11 +80,24 @@ async def create_scan(
     prepared = prepare_image(raw)
     del raw
 
+    repeat = purpose == "repeat_baseline"
+    if trial is not None:
+        # All of these refuse before any units are reserved. No awaits from here to the commit.
+        protocol.lock(db, trial)
+        baseline = db.get(ScanRow, trial.baseline_scan_id)
+        assert baseline is not None
+        protocol.ensure_not_same_photo(baseline, prepared.digest)
+        if repeat:
+            protocol.ensure_repeat_allowed(db, trial)
+        else:
+            protocol.seal(db, trial)
+
     units = ep.analysis_units(len(REQUESTED_PROVIDER_ACTIONS))
     call = usage.reserve(db, settings, session_id=session.id, kind="skin_analysis", units=units)
     scan = ScanRow(
         session_id=session.id,
-        trial_id=trial.id if trial else None,
+        # A repeat baseline is linked from the trial, never as a check-in.
+        trial_id=trial.id if trial and not repeat else None,
         provenance="youcam",
         status="processing",
         stage="queued",
@@ -87,11 +105,15 @@ async def create_scan(
         width=prepared.width,
         height=prepared.height,
         luminance_mean=prepared.luminance_mean,
+        content_digest=prepared.digest,
         idempotency_key=idempotency_key,
         requested_metrics=json.dumps(list(REQUESTED_PROVIDER_ACTIONS)),
         units_estimated=units,
     )
     db.add(scan)
+    if trial is not None and repeat:
+        db.flush()
+        trial.repeat_scan_id = scan.id
     db.commit()  # the job runs in the background and must see this row
     runner.start(scan.id, call.id, prepared)
     return p.scan_out(scan, utcnow())

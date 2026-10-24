@@ -33,7 +33,7 @@ class PreparedImage:
     height: int
     luminance_mean: float
     luminance_std: float
-    digest: str  # sha256 of the cleaned bytes; used for idempotency, never stored with the image
+    digest: str  # sha256 of the cleaned bytes; stored on the scan (not the image) to spot a reused photo
 
 
 def prepare_image(raw: bytes) -> PreparedImage:

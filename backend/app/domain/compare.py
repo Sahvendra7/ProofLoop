@@ -9,7 +9,7 @@ concern looks less visible. ProofLoop never attributes a change to a product.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Literal
 
@@ -45,8 +45,19 @@ NOISE_BANDS: dict[str, int] = {
     "dark_circle": MEASURED_BANDS["dark_circle"],
 }
 
-BandEvidence = Literal["measured", "assumed"]
+# "personal": widened by this user's own instrument check (see personal_band).
+BandEvidence = Literal["measured", "assumed", "personal"]
 Detectable = Literal["both", "decline_only", "improve_only", "neither"]
+NextAction = Literal[
+    "retake", "pause_and_review", "finish_the_test", "keep_going", "consider_switching", "nothing_to_gain"
+]
+
+# Instrument check: a second capture taken before the first check-in. The focus
+# band becomes max(table band, |repeat - baseline| + margin), the same margin the
+# table was built with. One pair can show noise is larger than assumed but never
+# that it is smaller (a single difference usually understates the spread), so the
+# rule only ever widens. Same-session, so it is still a lower bound on real noise.
+PERSONAL_MARGIN = 2
 
 # The trial protocol plans one check-in this long after the baseline. Checking
 # in earlier is allowed, but the verdict is labelled an early look.
@@ -121,6 +132,51 @@ def detectability(metric: str, baseline: int, band: int | None = None) -> Detect
     return Detectability(metric, baseline, n, band_evidence(metric), improve_at, decline_at, kind)
 
 
+def personal_band(table_band: int, spread: int | None) -> int:
+    return table_band if spread is None else max(table_band, spread + PERSONAL_MARGIN)
+
+
+@dataclass(frozen=True)
+class InstrumentCheck:
+    focus_metric: str
+    table_band: int
+    spread: int | None  # |repeat - baseline| on the focus; None if either lacks a reading
+    personal_band: int
+    widened: bool
+    changes: list[MetricChange]  # every concern, against the current table, as context
+
+
+def instrument_check(
+    baseline_scores: Mapping[str, int], repeat_scores: Mapping[str, int], focus_metric: str, table_band: int
+) -> InstrumentCheck:
+    changes = [
+        compare_metric(
+            m.key,
+            baseline_scores.get(m.key),
+            repeat_scores.get(m.key),
+            table_band if m.key == focus_metric else None,
+        )
+        for m in METRICS
+    ]
+    focus = next(c for c in changes if c.metric == focus_metric)
+    spread = abs(focus.delta) if focus.delta is not None else None
+    band = personal_band(table_band, spread)
+    return InstrumentCheck(focus_metric, table_band, spread, band, band > table_band, changes)
+
+
+def next_step(outcome: FocusOutcome, early: bool, detectable: Detectable) -> NextAction:
+    """One action that follows from the pre-registered plan. Never a claim about the product."""
+    if outcome in ("insufficient_data", "inconclusive"):
+        return "retake"
+    if outcome == "measured_decline":
+        return "pause_and_review"
+    if early:
+        return "finish_the_test"
+    if outcome == "measured_improvement":
+        return "keep_going"
+    return "consider_switching" if detectable in ("both", "improve_only") else "nothing_to_gain"
+
+
 @dataclass
 class ComparabilityReport:
     level: Comparability
@@ -149,7 +205,10 @@ def compare_metric(metric: str, baseline: int | None, current: int | None, band:
     return MetricChange(metric, baseline, current, delta, band, verdict, evidence)
 
 
-def assess_comparability(baseline: CaptureInfo, current: CaptureInfo) -> ComparabilityReport:
+def assess_comparability(
+    baseline: CaptureInfo, current: CaptureInfo, *, expect_interval: bool = True
+) -> ComparabilityReport:
+    """expect_interval=False for an instrument check, whose second photo is meant to be minutes later."""
     issues: list[str] = []
     level: Comparability = "good"
     days = (current.captured_at - baseline.captured_at).total_seconds() / 86400
@@ -171,7 +230,7 @@ def assess_comparability(baseline: CaptureInfo, current: CaptureInfo) -> Compara
             level = "fair"
         issues.append("One photo came from the camera and the other was uploaded, so conditions may differ.")
 
-    if days < 7:
+    if expect_interval and days < 7:
         issues.append(
             "These scans are less than a week apart. Most skincare is used for several weeks before changes would be expected."
         )
@@ -186,10 +245,12 @@ def compare(
     current_capture: CaptureInfo,
     focus_metric: str | None = None,
     focus_band: int | None = None,
+    focus_evidence: BandEvidence | None = None,
 ) -> Comparison:
-    """Compare two scans. `focus_band` is the band registered when the trial started;
-    it overrides the current table for the focus metric so a later recalibration
-    never silently moves the goalposts of a running trial."""
+    """Compare two scans. `focus_band` is the band registered when the trial started
+    (widened by an instrument check, if one was taken); it overrides the current table
+    for the focus metric so a later recalibration never silently moves the goalposts
+    of a running trial. `focus_evidence` relabels the focus band when it is personal."""
     changes = [
         compare_metric(
             m.key,
@@ -199,6 +260,8 @@ def compare(
         )
         for m in METRICS
     ]
+    if focus_evidence is not None:
+        changes = [replace(c, band_evidence=focus_evidence) if c.metric == focus_metric else c for c in changes]
     comparability = assess_comparability(baseline_capture, current_capture)
     outcome: FocusOutcome | None = None
     if focus_metric is not None:

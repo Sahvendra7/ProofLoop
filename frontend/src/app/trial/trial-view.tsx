@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { ArrowDownRight, ArrowUpRight, Camera, ClipboardCheck, FlaskConical, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Camera, ClipboardCheck, FlaskConical, Gauge, Minus } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
-import { EVIDENCE_COPY, OUTCOME_COPY, shortDate, VERDICT_COPY } from "@/lib/format";
+import { EVIDENCE_COPY, NEXT_STEP_COPY, OUTCOME_COPY, shortDate, VERDICT_COPY } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
-import type { Change, Comparison, Protocol, Trial } from "@/lib/types";
+import type { Change, Comparison, InstrumentCheck as Check, Protocol, Trial } from "@/lib/types";
 import { BandChart } from "@/components/band-chart";
 import { Dial } from "@/components/dial";
 import { ProvenanceNote } from "@/components/measure";
@@ -43,6 +43,8 @@ function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) =
       ) : (
         <Waiting trial={trial} onUpdate={onUpdate} />
       )}
+
+      <InstrumentCheck trial={trial} check={trial.protocol.instrument_check} onUpdate={onUpdate} />
 
       <ProtocolCard trial={trial} protocol={trial.protocol} decided={trial.comparison !== null} />
 
@@ -105,7 +107,7 @@ function Waiting({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) => vo
           <li>• No makeup, hair off your forehead, glasses off</li>
           <li>• Keep the rest of your routine steady so the test stays fair</li>
         </ul>
-        {!demo && (
+        {!demo && trial.protocol.instrument_check.status !== "processing" && (
           <ButtonLink href={`/scan?trial=${trial.id}`} className="mt-6">
             <Camera aria-hidden className="size-4" /> Check in now
           </ButtonLink>
@@ -193,6 +195,8 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
         </div>
       </section>
 
+      <NextStep trial={trial} comparison={comparison} synthetic={synthetic} />
+
       <Comparability comparison={comparison} />
 
       <Card className="mt-8 overflow-hidden">
@@ -222,6 +226,157 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
         </div>
       </Card>
     </>
+  );
+}
+
+function NextStep({ trial, comparison, synthetic }: { trial: Trial; comparison: Comparison; synthetic: boolean }) {
+  const step = comparison.next_step;
+  const copy = NEXT_STEP_COPY[step.action];
+  const live = trial.provenance.kind !== "demo";
+  return (
+    <section aria-labelledby="next-step" className="mt-6 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
+      <p className="eyebrow inline-flex items-center gap-2">
+        <ArrowRight aria-hidden className="size-4" /> {synthetic ? "Next step (demo)" : "Next step"} · follows from your plan
+      </p>
+      <h2 id="next-step" className="mt-2 font-display text-2xl text-ink">{copy.title}</h2>
+      <p className="mt-2 max-w-3xl leading-relaxed text-ink-2">{copy.body}</p>
+      {step.action === "consider_switching" && (
+        <ButtonLink href={`/matches?scan=${step.baseline_scan_id}&goal=${step.goal}`} variant="secondary" className="mt-5">
+          See other matches for {trial.goal.label.toLowerCase()}
+        </ButtonLink>
+      )}
+      {step.action === "retake" && live && (
+        <ButtonLink href={`/scan?trial=${trial.id}`} variant="secondary" className="mt-5">
+          <Camera aria-hidden className="size-4" /> Retake the check-in
+        </ButtonLink>
+      )}
+    </section>
+  );
+}
+
+/** Measure how much this user's own score moves on unchanged skin, before the trial counts anything. */
+function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Check; onUpdate: (t: Trial) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
+  const metric = trial.goal.metric_label;
+  const metricLower = metric.toLowerCase();
+
+  async function runSample() {
+    setBusy(true);
+    setError(null);
+    try {
+      onUpdate(await api.demoRepeat(trial.id));
+    } catch (err) {
+      setError(err instanceof ApiError ? err : new ApiError("unknown", "Couldn't run the sample instrument check.", 0));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (check.status === "unavailable") {
+    return (
+      <p className="mt-8 max-w-3xl text-sm text-ink-3">
+        No instrument check was taken before the first check-in, so this trial uses the standard ±{check.table_band}-point band.
+      </p>
+    );
+  }
+
+  const start =
+    check.status === "available" || check.status === "failed" ? (
+      check.sample ? (
+        <Button className="mt-5" onClick={runSample} loading={busy}>
+          <Gauge aria-hidden className="size-4" /> Run the sample instrument check (recorded, free)
+        </Button>
+      ) : (
+        <ButtonLink href={`/scan?trial=${trial.id}&repeat=1`} className="mt-5">
+          <Camera aria-hidden className="size-4" /> Take a second photo now ({check.units} units)
+        </ButtonLink>
+      )
+    ) : null;
+
+  return (
+    <section aria-labelledby="instrument-title" className="mt-8 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
+      <p className="eyebrow inline-flex items-center gap-2">
+        <Gauge aria-hidden className="size-4" /> Instrument check{check.sealed ? " · part of the plan" : " · optional, before your first check-in"}
+      </p>
+      <h2 id="instrument-title" className="mt-2 font-display text-2xl text-ink">
+        {check.status === "complete" && check.spread !== null
+          ? check.widened
+            ? `Your two scans differed by ${check.spread} on ${metricLower}. Your band is now ±${check.personal_band}.`
+            : `Your two scans differed by ${check.spread} on ${metricLower}: your band stays ±${check.table_band}.`
+          : "How much does your own score move when nothing has changed?"}
+      </h2>
+
+      {(check.status === "available" || check.status === "failed") && (
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-2">
+          ProofLoop&apos;s ±{check.table_band}-point band was measured on one stock photo. Step away, come back and take a fresh photo in
+          the same spot: if your two scans disagree by more than that, your band widens to fit them before anything counts. It can only
+          make the test stricter, never easier.
+        </p>
+      )}
+      {check.status === "failed" && (
+        <Notice tone="warn" className="mt-4" title="Your instrument check didn't complete.">
+          Your band is unchanged, and you can try again.
+        </Notice>
+      )}
+      {check.status === "processing" && (
+        <p className="mt-3 text-ink-2">Your second photo is being measured. Refresh in a few seconds. Check-ins wait until it&apos;s done.</p>
+      )}
+
+      {check.status === "complete" && (
+        <>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-ink-2">
+            {check.widened
+              ? `Wider than the standard ±${check.table_band} band, so your plan's lines moved out to match it. A later scan now has to move further before ProofLoop calls a change.`
+              : `That's within the standard ±${check.table_band} band, so your plan is unchanged.`}{" "}
+            This check can only widen a band, never narrow it. Because the photos are minutes apart, day-to-day differences in light and skin
+            can still add more.
+          </p>
+          {check.changes.length > 0 && (
+            <div className="mt-5 overflow-x-auto" tabIndex={0} role="region" aria-label="Instrument check, scrollable table">
+              <table className="w-full min-w-[460px] text-left text-sm">
+                <caption className="sr-only">Baseline scan and second scan of unchanged skin, by concern</caption>
+                <thead className="text-xs uppercase tracking-wider text-ink-3">
+                  <tr>
+                    <th scope="col" className="py-2 pr-3 font-semibold">Concern</th>
+                    <th scope="col" className="px-3 py-2 text-right font-semibold">Baseline</th>
+                    <th scope="col" className="px-3 py-2 text-right font-semibold">Second scan</th>
+                    <th scope="col" className="px-3 py-2 text-right font-semibold">Difference</th>
+                    <th scope="col" className="py-2 pl-3 font-semibold">Standard band</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {check.changes.map((c) => (
+                    <tr key={c.metric} className={c.metric === trial.goal.metric ? "bg-accent-soft/50" : undefined}>
+                      <th scope="row" className="py-2 pr-3 font-medium text-ink">
+                        {c.label}
+                        {c.metric === trial.goal.metric && <span className="ml-1 rounded-full bg-accent px-2 py-0.5 text-[0.65rem] font-semibold text-white">Focus</span>}
+                      </th>
+                      <td className="tabular px-3 py-2 text-right text-ink-2">{c.baseline ?? "—"}</td>
+                      <td className="tabular px-3 py-2 text-right text-ink">{c.current ?? "—"}</td>
+                      <td className="tabular px-3 py-2 text-right font-semibold text-ink">
+                        {c.delta === null ? "—" : `${c.delta > 0 ? "+" : ""}${c.delta}`}
+                      </td>
+                      <td className="py-2 pl-3 text-ink-2">
+                        {c.delta === null ? "Not measured twice" : c.verdict === "within_variation" ? `Within ±${c.noise_band}` : `Beyond ±${c.noise_band}`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
+
+      {check.sample && check.note && (
+        <p className="hatch mt-5 rounded-[var(--radius-md)] bg-demo-soft p-3 text-xs leading-relaxed text-ink-2 ring-1 ring-demo/25">
+          <FlaskConical aria-hidden className="mr-1 inline size-3.5 text-demo" /> {check.note}
+        </p>
+      )}
+      {error && <p role="alert" className="mt-3 text-sm text-worse">{error.message}</p>}
+      {start}
+    </section>
   );
 }
 

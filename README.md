@@ -19,16 +19,21 @@ next number is actually different from the last one. ProofLoop closes that loop 
 4. **Fair-test plan** — when the trial starts, ProofLoop fixes what will count: the scores that would mean up or
    down, the band (measured, or assumed and set to the strictest measured), and a day-28 check-in. Focuses at
    the top of the scale, where a gain can't register, are flagged before you choose them.
-5. **Check in** — a free capture-match check compares the new photo's lighting and camera with the baseline
-   *before* any units are spent; the scan is then judged against the plan. Outcomes: measured change, no clear
-   change, or inconclusive — and "early look" before the planned date.
+5. **Instrument check (optional)** — before the first check-in, take a second photo of unchanged skin. ProofLoop
+   compares the two scans; if they disagree by more than the standard band, *your* band widens to fit them
+   (max(band, difference + 2)). It never narrows, and it's sealed into the plan at the first check-in.
+6. **Check in** — a free capture-match check compares the new photo's lighting and camera with the baseline
+   *before* any units are spent (and refuses the baseline photo itself, which would score identically); the scan
+   is then judged against the plan. Outcomes: measured change, no clear change, or inconclusive — and "early
+   look" before the planned date. Each verdict ends in one next step that follows from the plan: keep going,
+   finish the test, consider switching (back to same-goal matches), pause and review, or retake.
 
 ## How YouCam is used
 
 | API | Endpoint | Where |
 |---|---|---|
 | File upload | `POST /s2s/v2.0/file/skin-analysis` + presigned `PUT` | every live scan / preview |
-| AI Skin Analysis | `POST /s2s/v2.0/task/skin-analysis`, `GET …/{task_id}` (`format: json`, 8 SD concerns, 12 units) | baseline and check-in scans; per-concern detection masks shown over the user's photo |
+| AI Skin Analysis | `POST /s2s/v2.0/task/skin-analysis`, `GET …/{task_id}` (`format: json`, 8 SD concerns, 12 units) | baseline, instrument-check and check-in scans; per-concern detection masks shown over the user's photo |
 | AI Skin Simulation | `POST /s2s/v2.0/task/skin-simulation`, `GET …/{task_id}` (4 units) | optional goal preview on the product page |
 
 All of the above were verified against the live API through ProofLoop's own client — see

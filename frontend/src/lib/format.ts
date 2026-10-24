@@ -1,4 +1,4 @@
-import type { Band, BandEvidence, Detectable, FocusOutcome, Metric, Tier, Verdict } from "./types";
+import type { Band, BandEvidence, Detectable, FocusOutcome, Metric, NextAction, Tier, Verdict } from "./types";
 
 export const money = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: n % 1 ? 2 : 0 }).format(n);
@@ -101,5 +101,37 @@ export const EVIDENCE_COPY: Record<BandEvidence, { label: string; detail: string
     label: "assumed",
     detail:
       "This concern scored 99–100 in our repeat-scan test, so its variation is unmeasured. ProofLoop applies the widest band it measured for any concern instead of guessing.",
+  },
+  personal: {
+    label: "widened by your instrument check",
+    detail: "Your two baseline scans differed by more than the standard band allows, so your band was widened to fit them. It can only ever widen.",
+  },
+};
+
+/** What to do after a verdict. The action comes from the API; this is only its wording. */
+export const NEXT_STEP_COPY: Record<NextAction, { title: string; body: string }> = {
+  keep_going: {
+    title: "Keep going, if you like it.",
+    body: "The change cleared the line you set before you started. It can't show that the product caused it, but you have no measured reason to stop.",
+  },
+  finish_the_test: {
+    title: "Finish the test before deciding.",
+    body: "This is an early look. Keep your routine steady and check in on the planned date: that's the comparison your plan was set up to make.",
+  },
+  consider_switching: {
+    title: "Consider switching.",
+    body: "After the full planned time, the score you cared about hasn't moved beyond normal variation. If this result was the reason you bought it, another product for the same goal may suit you better.",
+  },
+  pause_and_review: {
+    title: "Pause and review.",
+    body: "The score dropped beyond normal variation. If your skin feels irritated, stop using it. Otherwise look at what else changed (season, sleep, other products) and check in again in similar light.",
+  },
+  retake: {
+    title: "Retake the check-in.",
+    body: "This comparison can't support a decision. Take a new photo in light that matches your baseline; the free capture match checks it before any units are spent.",
+  },
+  nothing_to_gain: {
+    title: "Decide on feel, not on this score.",
+    body: "Your baseline was already near the top of the scale, so this test could only watch for a drop, and there wasn't one. Whether to keep it is down to how you like it.",
   },
 };

@@ -37,6 +37,8 @@ export function ScanFlow() {
   const go = useGo();
   const params = useSearchParams();
   const trialId = params.get("trial") ?? undefined;
+  // Instrument check: a second baseline photo of unchanged skin, taken before the first check-in.
+  const repeat = Boolean(trialId) && params.get("repeat") === "1";
   const [step, setStep] = useState<Step>(() => {
     try {
       return sessionStorage.getItem(CONSENT_KEY) ? { kind: "choose" } : { kind: "consent" };
@@ -52,12 +54,14 @@ export function ScanFlow() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <header className="mb-10 max-w-2xl">
-        <p className="mb-4 inline-flex rounded-full bg-berry-milk px-3 py-1 text-xs font-semibold text-berry-deep">{trialId ? "Trial check-in" : "Step 1 of 4 · Measure"}</p>
+        <p className="mb-4 inline-flex rounded-full bg-berry-milk px-3 py-1 text-xs font-semibold text-berry-deep">{repeat ? "Instrument check" : trialId ? "Trial check-in" : "Step 1 of 4 · Measure"}</p>
         <h1 className="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold leading-[0.98] text-espresso">
-          {trialId ? "Check in on your trial" : "Take your baseline"}
+          {repeat ? "Take a second baseline photo" : trialId ? "Check in on your trial" : "Take your baseline"}
         </h1>
         <p className="mt-3 text-lg leading-relaxed text-ink-2">
-          {trialId
+          {repeat
+            ? "Step away, come back and take a fresh photo in the same spot and light. Your skin hasn't changed, so any difference between the two scans is the instrument's own variation."
+            : trialId
             ? "For a fair comparison, use the same spot and similar light as your first scan, with no makeup."
             : "One clear, front-facing photo. YouCam's Skin Analysis API scores eight visible concerns from it."}
         </p>
@@ -105,6 +109,7 @@ export function ScanFlow() {
       {step.kind === "preflight" && trialId && (
         <CaptureMatch
           trialId={trialId}
+          repeat={repeat}
           step={step}
           onAnalyse={() => setStep({ kind: "analyzing", framed: step.framed, source: step.source, key: newIdempotencyKey(), scan: null, startedAt: Date.now() })}
           onRetake={() => setStep({ kind: "choose" })}
@@ -117,6 +122,7 @@ export function ScanFlow() {
         <Analyzing
           step={step}
           trialId={trialId}
+          purpose={repeat ? "repeat_baseline" : undefined}
           onUpdate={(scan) => setStep((s) => (s.kind === "analyzing" ? { ...s, scan } : s))}
           onFailed={(title, hint, code, retryFrame) =>
             setStep({ kind: "failed", title, hint, code, retry: retryFrame })
@@ -363,12 +369,14 @@ function describeCapture(c: Capture) {
 /** Free check of a check-in photo against the baseline before YouCam units are spent. */
 function CaptureMatch({
   trialId,
+  repeat,
   step,
   onAnalyse,
   onRetake,
   onFailed,
 }: {
   trialId: string;
+  repeat: boolean;
   step: Extract<Step, { kind: "preflight" }>;
   onAnalyse: () => void;
   onRetake: () => void;
@@ -384,7 +392,7 @@ function CaptureMatch({
   useEffect(() => {
     let stopped = false;
     api
-      .preflight(trialId, step.framed.blob, step.source)
+      .preflight(trialId, step.framed.blob, step.source, repeat ? "repeat_baseline" : "checkin")
       .then((r) => !stopped && setResult(r))
       .catch((err: unknown) => {
         if (stopped) return;
@@ -397,7 +405,7 @@ function CaptureMatch({
     return () => {
       stopped = true;
     };
-  }, [trialId, step.framed.blob, step.source]);
+  }, [trialId, step.framed.blob, step.source, repeat]);
 
   const copy = result ? MATCH_COPY[result.level] : null;
   const base = result ? describeCapture(result.baseline_capture) : null;
@@ -407,7 +415,7 @@ function CaptureMatch({
     <div className="grid gap-10 md:grid-cols-[minmax(0,320px)_1fr] md:items-start">
       <div className="relative aspect-[3/4] overflow-hidden rounded-[var(--radius-xl)] bg-ink">
         {/* eslint-disable-next-line @next/next/no-img-element -- local data URL preview */}
-        <img src={step.framed.dataUrl} alt="Your check-in photo" className="h-full w-full object-cover" />
+        <img src={step.framed.dataUrl} alt={repeat ? "Your second baseline photo" : "Your check-in photo"} className="h-full w-full object-cover" />
       </div>
       <div aria-live="polite">
         <p className="eyebrow inline-flex items-center gap-2"><Scale aria-hidden className="size-4" /> Capture match · free</p>
@@ -440,7 +448,7 @@ function CaptureMatch({
                 <tr><th scope="row" className="py-2 font-medium text-ink">Capture</th><td className="py-2 text-ink-2">{base.how}</td><td className="py-2 text-ink">{now.how}</td></tr>
               </tbody>
             </table>
-            {result.early && (
+            {result.early && !repeat && (
               <p className="mt-4 text-sm text-ink-2">
                 Your plan&apos;s check-in date is {shortDate(result.planned_checkin_at)}. Checking in now gives an early look, labelled as such.
               </p>
@@ -449,14 +457,16 @@ function CaptureMatch({
         )}
         {(result || unchecked) && (
           <div className="mt-6 flex flex-wrap gap-3">
-            {result?.level === "poor" ? (
+            {result?.same_photo ? (
+              <Button onClick={onRetake}><RefreshCcw aria-hidden className="size-4" /> Take a fresh photo</Button>
+            ) : result?.level === "poor" ? (
               <>
                 <Button onClick={onRetake}><RefreshCcw aria-hidden className="size-4" /> Retake in better-matched light</Button>
                 <Button variant="secondary" onClick={onAnalyse}>Analyse anyway (12 units)</Button>
               </>
             ) : (
               <>
-                <Button onClick={onAnalyse}>Analyse this check-in</Button>
+                <Button onClick={onAnalyse}>{repeat ? "Analyse the second photo (12 units)" : "Analyse this check-in"}</Button>
                 <Button variant="secondary" onClick={onRetake}>Use another photo</Button>
               </>
             )}
@@ -470,12 +480,14 @@ function CaptureMatch({
 function Analyzing({
   step,
   trialId,
+  purpose,
   onUpdate,
   onDone,
   onFailed,
 }: {
   step: Extract<Step, { kind: "analyzing" }>;
   trialId?: string;
+  purpose?: "repeat_baseline";
   onUpdate: (scan: Scan) => void;
   onDone: (scan: Scan) => void;
   onFailed: (title: string, hint: string | null, code: string, retry?: Step) => void;
@@ -514,7 +526,7 @@ function Analyzing({
     }
 
     api
-      .startScan(step.framed.blob, { source: step.source, idempotencyKey: step.key, trialId })
+      .startScan(step.framed.blob, { source: step.source, idempotencyKey: step.key, trialId, purpose })
       .then((scan) => {
         latest.current.onUpdate(scan);
         poll(scan.id);
@@ -527,7 +539,7 @@ function Analyzing({
       stopped = true;
       clearTimeout(timer);
     };
-  }, [step.framed, step.key, step.source, trialId]);
+  }, [step.framed, step.key, step.source, trialId, purpose]);
 
   const stage = step.scan?.stage ?? "queued";
   const activeIndex = Math.max(0, STAGES.findIndex((s) => s.id === stage));
