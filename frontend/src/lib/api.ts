@@ -117,12 +117,16 @@ export const api = {
   goals: () => request<Goal[]>("/goals"),
   product: (id: string) => request<Product>(`/products/${encodeURIComponent(id)}`),
 
-  startScan(image: Blob, opts: { source: "camera" | "upload"; idempotencyKey: string; trialId?: string }) {
+  startScan(
+    image: Blob,
+    opts: { source: "camera" | "upload"; idempotencyKey: string; trialId?: string; purpose?: "checkin" | "repeat_baseline" },
+  ) {
     const form = new FormData();
     form.append("image", image, "capture.jpg");
     form.append("consent", "true");
     form.append("source", opts.source);
     if (opts.trialId) form.append("trial_id", opts.trialId);
+    if (opts.purpose) form.append("purpose", opts.purpose);
     return request<Scan>("/scans", { method: "POST", body: form, headers: { "Idempotency-Key": opts.idempotencyKey } });
   },
   demoScan: () => request<Scan>("/scans/demo", { method: "POST" }),
@@ -141,13 +145,16 @@ export const api = {
   trial: (id: string) => request<Trial>(`/trials/${encodeURIComponent(id)}`),
   trials: () => request<TrialSummary[]>("/trials"),
   /** Free: compares a check-in photo with the baseline's conditions. No YouCam call, nothing stored. */
-  preflight(trialId: string, image: Blob, source: "camera" | "upload") {
+  preflight(trialId: string, image: Blob, source: "camera" | "upload", purpose: "checkin" | "repeat_baseline" = "checkin") {
     const form = new FormData();
     form.append("image", image, "capture.jpg");
     form.append("source", source);
+    form.append("purpose", purpose);
     return request<Preflight>(`/trials/${encodeURIComponent(trialId)}/preflight`, { method: "POST", body: form });
   },
   demoCheckin: (id: string) => request<Trial>(`/trials/${encodeURIComponent(id)}/demo-checkin`, { method: "POST" }),
+  /** Sample trials only: replays a recorded second analysis of the sample portrait. */
+  demoRepeat: (id: string) => request<Trial>(`/trials/${encodeURIComponent(id)}/demo-repeat`, { method: "POST" }),
 
   simulate(image: Blob, goal: string, intensity: number) {
     const form = new FormData();

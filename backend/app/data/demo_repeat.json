@@ -1,0 +1,16 @@
+{
+  "note": "Recorded, not simulated: a second YouCam Skin Analysis of the same sample portrait, re-framed through ProofLoop's browser pipeline on 2026-10-11. It is a second analysis of one photo, not a second photo of a person; a real instrument check uses a fresh capture of your face.",
+  "source": "Run \"UI\" in the repeatability table, docs/youcam-integration.md",
+  "recorded_at": "2026-10-11",
+  "capture_note": "Capture size and brightness were not recorded for this run, so they are left empty rather than guessed.",
+  "scores": {
+    "moisture": 72,
+    "oiliness": 99,
+    "redness": 99,
+    "texture": 91,
+    "pore": 84,
+    "acne": 99,
+    "radiance": 83,
+    "dark_circle": 68
+  }
+}

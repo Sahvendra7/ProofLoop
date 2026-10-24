@@ -183,10 +183,11 @@ def test_preflight_is_free_and_stores_nothing(api, fake_youcam):
         committed_before = client.get(f"{V1}/system/status").json()["budget"]["committed"]
         scans_before = len(client.get(f"{V1}/scans", headers=h).json())
 
-        r = _preflight(client, h, trial["id"])
+        # Same colour, different size: same brightness, but not the baseline's exact bytes.
+        r = _preflight(client, h, trial["id"], image=face_jpeg(width=724))
         assert r.status_code == 200, r.text
         body = r.json()
-        assert body["level"] == "good" and body["units_spent"] == 0
+        assert body["level"] == "good" and body["units_spent"] == 0 and body["same_photo"] is False
         assert body["early"] is True and body["days_since_baseline"] < 1
         assert any("less than a week" in i for i in body["issues"])
         assert body["candidate_capture"]["luminance_mean"] == body["baseline_capture"]["luminance_mean"]

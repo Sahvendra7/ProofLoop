@@ -22,6 +22,7 @@ from app.domain.normalize import normalize_outputs
 from app.providers.youcam.models import AnalysisPollResponse
 
 FIXTURE_PATH = Path(__file__).resolve().parents[1] / "data" / "demo_fixture.json"
+REPEAT_PATH = Path(__file__).resolve().parents[1] / "data" / "demo_repeat.json"
 
 # Deliberately mixed so the demo shows every verdict type, not a rosy story:
 # moisture up beyond its measured band, radiance down beyond its measured band,
@@ -75,6 +76,39 @@ def build_demo_scan(session_id: str) -> ScanRow:
         ReadingRow(metric=r.metric, ui_score=r.ui_score, raw_score=r.raw_score, mask_url=None)
         for r in normalized.readings
     ]
+    return scan
+
+
+@lru_cache
+def load_repeat() -> dict:
+    return json.loads(REPEAT_PATH.read_text(encoding="utf-8"))
+
+
+def repeat_note() -> str:
+    return load_repeat()["note"]
+
+
+def build_demo_repeat(baseline: ScanRow) -> ScanRow:
+    """The sample instrument check: a recorded second analysis of the sample portrait.
+
+    Scores are replayed as recorded, never adjusted. trial_id stays NULL: a repeat is
+    linked from the trial (trials.repeat_scan_id) so it is never counted as a check-in.
+    """
+    now = utcnow()
+    scores = load_repeat()["scores"]
+    scan = ScanRow(
+        session_id=baseline.session_id,
+        provenance="demo",
+        status="complete",
+        stage="complete",
+        source="sample",
+        requested_metrics=baseline.requested_metrics,
+        missing_metrics="[]",  # the recorded run returned all eight concerns
+        units_estimated=0,
+        observed_at=now,
+        completed_at=now,
+    )
+    scan.readings = [ReadingRow(metric=k, ui_score=v, raw_score=None, mask_url=None) for k, v in scores.items()]
     return scan
 
 

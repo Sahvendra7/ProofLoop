@@ -70,6 +70,9 @@ class ScanRow(Base):
     width: Mapped[int | None] = mapped_column(Integer, nullable=True)
     height: Mapped[int | None] = mapped_column(Integer, nullable=True)
     luminance_mean: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # SHA-256 of the cleaned image bytes (not the image), to refuse re-using the
+    # baseline photo for a repeat or check-in (migration 0003). NULL for sample scans.
+    content_digest: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     requested_metrics: Mapped[str] = mapped_column(Text, default="[]")  # JSON list
     missing_metrics: Mapped[str] = mapped_column(Text, default="[]")  # JSON list
@@ -113,6 +116,9 @@ class TrialRow(Base):
             "band_evidence is null or band_evidence in ('measured','assumed')", name="ck_trial_band_evidence"
         ),
         CheckConstraint("focus_band is null or (focus_band >= 0 and focus_band <= 100)", name="ck_trial_focus_band"),
+        CheckConstraint(
+            "repeat_spread is null or (repeat_spread >= 0 and repeat_spread <= 100)", name="ck_trial_repeat_spread"
+        ),
     )
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=new_id)
     session_id: Mapped[str] = mapped_column(ForeignKey("sessions.id", ondelete="CASCADE"), index=True)
@@ -127,6 +133,15 @@ class TrialRow(Base):
     focus_band: Mapped[int | None] = mapped_column(Integer, nullable=True)
     band_evidence: Mapped[str | None] = mapped_column(String(16), nullable=True)
     planned_checkin_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Instrument check (migration 0003): an optional second baseline capture taken
+    # before any check-in. The repeat scan keeps trial_id NULL so it never counts as a
+    # check-in. repeat_spread is the focus |repeat - baseline|, written ("sealed") at
+    # the first check-in so deleting the repeat afterwards can't narrow the band.
+    repeat_scan_id: Mapped[str | None] = mapped_column(
+        ForeignKey("scans.id", ondelete="SET NULL", name="fk_trials_repeat_scan_id_scans"), nullable=True
+    )
+    repeat_spread: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     session: Mapped[SessionRow] = relationship(back_populates="trials")
 

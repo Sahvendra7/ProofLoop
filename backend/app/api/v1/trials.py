@@ -24,29 +24,60 @@ from app.domain.compare import (
     band_evidence,
     compare,
     detectability,
+    next_step,
 )
-from app.domain.metrics import GOALS_BY_KEY
+from app.domain.metrics import GOALS_BY_KEY, REQUESTED_PROVIDER_ACTIONS
+from app.providers.youcam import endpoints as ep
 from app.services import demo
+from app.services import protocol as proto
 from app.services.imaging import prepare_image
 
 router = APIRouter(prefix="/trials", tags=["trials"])
-
-
-def _registered_band(trial: TrialRow) -> int:
-    goal = GOALS_BY_KEY[trial.goal]
-    return trial.focus_band if trial.focus_band is not None else NOISE_BANDS[goal.metric]
 
 
 def _planned_days(trial: TrialRow) -> int:
     return trial.planned_checkin_days if trial.planned_checkin_days is not None else PLANNED_CHECKIN_DAYS
 
 
-def _protocol_out(trial: TrialRow, baseline: ScanRow) -> s.ProtocolOut:
+def _instrument_out(db: Session, trial: TrialRow, baseline: ScanRow, sealed: bool) -> s.InstrumentCheckOut:
+    repeat = proto.repeat_scan(db, trial)
+    table = proto.registered_band(trial)
+    check = proto.check_of(trial, baseline, repeat)
+    spread = proto.spread_of(db, trial, baseline)
+    band = proto.effective_band(db, trial, baseline) if spread is not None else None
+    if repeat is not None:
+        status = "complete" if repeat.status == "complete" else repeat.status
+    elif trial.repeat_spread is not None:
+        status = "complete"  # sealed, and the repeat scan was deleted afterwards
+    else:
+        status = "unavailable" if sealed else "available"
+    sample = trial.provenance == "demo"
+    return s.InstrumentCheckOut(
+        status=status,
+        unavailable_reason="sealed" if status == "unavailable" else None,
+        scan_id=repeat.id if repeat is not None else None,
+        sample=sample,
+        note=demo.repeat_note() if sample else None,
+        units=0 if sample else ep.analysis_units(len(REQUESTED_PROVIDER_ACTIONS)),
+        table_band=table,
+        spread=spread,
+        personal_band=band,
+        widened=band is not None and band > table,
+        sealed=sealed,
+        changes=[p.change_out(c) for c in check.changes] if check else [],
+    )
+
+
+def _band_evidence(trial: TrialRow, widened: bool) -> str:
+    return "personal" if widened else (trial.band_evidence or band_evidence(GOALS_BY_KEY[trial.goal].metric))
+
+
+def _protocol_out(db: Session, trial: TrialRow, baseline: ScanRow, sealed: bool) -> s.ProtocolOut:
     goal = GOALS_BY_KEY[trial.goal]
-    band = _registered_band(trial)
+    band = proto.effective_band(db, trial, baseline)
     base_score = p.scores_of(baseline).get(goal.metric)
     days = _planned_days(trial)
-    evidence = trial.band_evidence or band_evidence(goal.metric)
+    evidence = _band_evidence(trial, band > proto.registered_band(trial))
     if base_score is not None:
         d = detectability(goal.metric, base_score, band)
         improve_at, decline_at, kind = d.improve_at, d.decline_at, d.detectable
@@ -64,6 +95,7 @@ def _protocol_out(trial: TrialRow, baseline: ScanRow) -> s.ProtocolOut:
         planned_checkin_days=days,
         planned_checkin_at=p.capture_of(baseline).captured_at + timedelta(days=days),
         baseline_capture=p.capture_out(baseline),
+        instrument_check=_instrument_out(db, trial, baseline, sealed),
     )
 
 
@@ -101,6 +133,8 @@ def _trial_out(db: Session, trial: TrialRow) -> s.TrialOut:
         for c in complete
     ]
 
+    sealed = proto.has_checkins(db, trial)
+    protocol = _protocol_out(db, trial, baseline, sealed)
     comparison = None
     if complete:
         latest = complete[-1]
@@ -110,9 +144,15 @@ def _trial_out(db: Session, trial: TrialRow) -> s.TrialOut:
             p.capture_of(baseline),
             p.capture_of(latest),
             goal.metric,
-            focus_band=_registered_band(trial),
+            focus_band=protocol.noise_band,
+            focus_evidence="personal" if protocol.band_evidence == "personal" else None,
         )
-        comparison = p.comparison_out(latest, result, _planned_days(trial))
+        days = _planned_days(trial)
+        action = next_step(
+            result.focus_outcome or "insufficient_data", result.comparability.days_apart < days, protocol.detectable
+        )
+        step = s.NextStepOut(action=action, goal=goal.key, baseline_scan_id=baseline.id)
+        comparison = p.comparison_out(latest, result, days, step)
 
     return s.TrialOut(
         id=trial.id,
@@ -124,8 +164,8 @@ def _trial_out(db: Session, trial: TrialRow) -> s.TrialOut:
         checkins=[p.scan_out(c, now) for c in checkins],
         history=history,
         comparison=comparison,
-        focus_noise_band=_registered_band(trial),
-        protocol=_protocol_out(trial, baseline),
+        focus_noise_band=protocol.noise_band,
+        protocol=protocol,
     )
 
 
@@ -196,9 +236,33 @@ def demo_checkin(trial_id: str, session: SessionRow = Depends(current_session), 
             "Synthetic follow-ups are only available for sample-data trials. Real trials need a real check-in scan.",
             409,
         )
+    proto.lock(db, trial)
     baseline = db.get(ScanRow, trial.baseline_scan_id)
     assert baseline is not None
+    proto.seal(db, trial)
     db.add(demo.build_demo_followup(baseline, trial.id))
+    db.flush()
+    return _trial_out(db, trial)
+
+
+@router.post("/{trial_id}/demo-repeat", response_model=s.TrialOut, status_code=status.HTTP_201_CREATED)
+def demo_repeat(trial_id: str, session: SessionRow = Depends(current_session), db: Session = Depends(get_db)):
+    """The sample instrument check: replays a recorded second analysis of the sample portrait."""
+    trial = owned_trial(db, session, trial_id)
+    if trial.provenance != "demo":
+        raise AppError(
+            "provenance_mismatch",
+            "The recorded sample repeat is only for sample-data trials. Real trials need a fresh capture of your face.",
+            409,
+        )
+    proto.lock(db, trial)
+    proto.ensure_repeat_allowed(db, trial)
+    baseline = db.get(ScanRow, trial.baseline_scan_id)
+    assert baseline is not None
+    repeat = demo.build_demo_repeat(baseline)
+    db.add(repeat)
+    db.flush()
+    trial.repeat_scan_id = repeat.id
     db.flush()
     return _trial_out(db, trial)
 
@@ -208,6 +272,7 @@ def preflight(
     trial_id: str,
     image: UploadFile = File(...),
     source: str = Form("upload"),
+    purpose: str = Form("checkin"),
     session: SessionRow = Depends(current_session),
     db: Session = Depends(get_db),
     settings: Settings = Depends(settings_dep),
@@ -224,6 +289,8 @@ def preflight(
         raise AppError("provenance_mismatch", "A sample-data trial can't take a live check-in.", 409)
     if source not in ("camera", "upload"):
         raise AppError("invalid_request", "source must be 'camera' or 'upload'.", 422)
+    if purpose not in ("checkin", "repeat_baseline"):
+        raise AppError("invalid_request", "purpose must be 'checkin' or 'repeat_baseline'.", 422)
     raw = image.file.read(settings.max_upload_bytes + 1)
     if len(raw) > settings.max_upload_bytes:
         raise AppError("image_too_large", "Photos must be under 10 MB.", 413)
@@ -234,12 +301,21 @@ def preflight(
     assert baseline is not None
     now = utcnow()
     report = assess_comparability(
-        p.capture_of(baseline), CaptureInfo(luminance_mean=prepared.luminance_mean, source=source, captured_at=now)
+        p.capture_of(baseline),
+        CaptureInfo(luminance_mean=prepared.luminance_mean, source=source, captured_at=now),
+        expect_interval=purpose == "checkin",
     )
+    same = baseline.content_digest is not None and baseline.content_digest == prepared.digest
+    if same:
+        report.level = "poor"
+        report.issues.insert(
+            0, "This is the same photo as your baseline, so its scores would be identical. Take a fresh one."
+        )
     days = _planned_days(trial)
     return s.PreflightOut(
         level=report.level,
         issues=report.issues,
+        same_photo=same,
         days_since_baseline=report.days_apart,
         early=report.days_apart < days,
         planned_checkin_at=p.capture_of(baseline).captured_at + timedelta(days=days),

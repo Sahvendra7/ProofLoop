@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from app.api import schemas as s
 from app.db.models import ScanRow
 from app.domain.catalog import Product
-from app.domain.compare import CaptureInfo, Comparison, detectability
+from app.domain.compare import CaptureInfo, Comparison, MetricChange, detectability
 from app.domain.metrics import BAND_LABELS, METRICS, METRICS_BY_KEY, Goal, band_for
 from app.domain.recommend import RecommendationResult
 from app.providers.youcam import endpoints as ep
@@ -167,7 +167,22 @@ def capture_out(scan: ScanRow) -> s.CaptureOut:
     return s.CaptureOut(source=scan.source, width=scan.width, height=scan.height, luminance_mean=scan.luminance_mean)
 
 
-def comparison_out(current: ScanRow, comparison: Comparison, planned_checkin_days: int) -> s.ComparisonOut:
+def change_out(c: MetricChange) -> s.ChangeOut:
+    return s.ChangeOut(
+        metric=c.metric,
+        label=METRICS_BY_KEY[c.metric].label,
+        baseline=c.baseline,
+        current=c.current,
+        delta=c.delta,
+        noise_band=c.noise_band,
+        verdict=c.verdict,
+        band_evidence=c.band_evidence,
+    )
+
+
+def comparison_out(
+    current: ScanRow, comparison: Comparison, planned_checkin_days: int, next_step: s.NextStepOut
+) -> s.ComparisonOut:
     return s.ComparisonOut(
         current_scan_id=current.id,
         focus_metric=comparison.focus_metric or "",
@@ -177,18 +192,7 @@ def comparison_out(current: ScanRow, comparison: Comparison, planned_checkin_day
             issues=comparison.comparability.issues,
             days_apart=comparison.comparability.days_apart,
         ),
-        changes=[
-            s.ChangeOut(
-                metric=c.metric,
-                label=METRICS_BY_KEY[c.metric].label,
-                baseline=c.baseline,
-                current=c.current,
-                delta=c.delta,
-                noise_band=c.noise_band,
-                verdict=c.verdict,
-                band_evidence=c.band_evidence,
-            )
-            for c in comparison.changes
-        ],
+        changes=[change_out(c) for c in comparison.changes],
         early=comparison.comparability.days_apart < planned_checkin_days,
+        next_step=next_step,
     )

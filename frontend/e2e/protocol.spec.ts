@@ -114,3 +114,32 @@ test("check-in preflight warns before any units are spent, and retaking is free"
   await expect(appAlert(page)).toContainText("Live analysis isn't configured on this server.");
   expect(scanCalls).toBe(1);
 });
+
+test("instrument check replays a recorded repeat, and the verdict ends in one next step", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explore with sample data" }).click();
+  await page.getByRole("radio", { name: /Look more hydrated/ }).check({ force: true });
+  await page.getByRole("button", { name: "See matching products" }).click();
+  await page.getByRole("link", { name: /Details & trial/ }).first().click();
+  await page.getByRole("button", { name: "Save baseline & start trial" }).click();
+  await expect(page).toHaveURL(/\/trial\?id=/);
+
+  const check = page.getByRole("region", { name: /How much does your own score move/ });
+  await expect(check).toContainText("optional, before your first check-in");
+  await check.getByRole("button", { name: "Run the sample instrument check (recorded, free)" }).click();
+
+  // Recorded truth: hydration +3 on a re-analysis of the same portrait, inside ±5, so the plan doesn't move.
+  const done = page.getByRole("region", { name: "Your two scans differed by 3 on hydration: your band stays ±5." });
+  await expect(done).toBeVisible();
+  await expect(done).toContainText("Recorded, not simulated");
+  await expect(done.getByRole("row", { name: /Pores/ })).toContainText("+5");
+  await expect(done.getByRole("row", { name: /Pores/ })).toContainText("Within ±7");
+  await expect(page.getByRole("region", { name: "Decided before the check-in, not after" })).toContainText("±5 points, measured");
+  await expectNoSeriousA11yViolations(page);
+
+  await page.getByRole("button", { name: "Show synthetic 21-day follow-up" }).click();
+  await expect(done).toContainText("part of the plan");
+  const step = page.getByRole("region", { name: "Finish the test before deciding." });
+  await expect(step).toContainText("Next step (demo)");
+  await expectNoSeriousA11yViolations(page);
+});

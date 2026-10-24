@@ -4,7 +4,9 @@ export type ProvenanceKind = "youcam" | "demo";
 export type Band = "attention" | "moderate" | "strength";
 export type Tier = "strong" | "good" | "possible";
 export type Verdict = "better" | "worse" | "within_variation" | "missing";
-export type BandEvidence = "measured" | "assumed";
+/** "personal": widened by this user's own instrument check (trials only). */
+export type BandEvidence = "measured" | "assumed" | "personal";
+export type NextAction = "retake" | "pause_and_review" | "finish_the_test" | "keep_going" | "consider_switching" | "nothing_to_gain";
 export type Detectable = "both" | "decline_only" | "improve_only" | "neither";
 export type FocusOutcome =
   | "measured_improvement"
@@ -135,6 +137,30 @@ export interface Comparison {
   changes: Change[];
   /** The check-in came before the protocol's planned date. */
   early: boolean;
+  next_step: NextStep;
+}
+
+/** The one action that follows from the pre-registered plan (computed by the API). */
+export interface NextStep {
+  action: NextAction;
+  goal: string;
+  baseline_scan_id: string;
+}
+
+/** An optional second baseline capture that can only widen the focus band. */
+export interface InstrumentCheck {
+  status: "available" | "processing" | "complete" | "failed" | "unavailable";
+  unavailable_reason: "sealed" | null;
+  scan_id: string | null;
+  sample: boolean;
+  note: string | null;
+  units: number;
+  table_band: number;
+  spread: number | null;
+  personal_band: number | null;
+  widened: boolean;
+  sealed: boolean;
+  changes: Change[];
 }
 
 export interface Capture {
@@ -157,6 +183,7 @@ export interface Protocol {
   planned_checkin_days: number;
   planned_checkin_at: string;
   baseline_capture: Capture;
+  instrument_check: InstrumentCheck;
 }
 
 export interface Preflight {
@@ -167,6 +194,8 @@ export interface Preflight {
   planned_checkin_at: string;
   baseline_capture: Capture;
   candidate_capture: Capture;
+  /** The exact same photo as the baseline: the scan would be refused. */
+  same_photo: boolean;
   units_spent: number;
 }
 

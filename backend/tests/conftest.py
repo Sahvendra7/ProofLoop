@@ -121,7 +121,9 @@ def _fresh_postgres(url: str) -> str:
     from alembic.config import Config
 
     cfg = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
-    cfg.attributes["database_url"] = Settings(_env_file=None, DATABASE_URL=url).database_url
+    # Normalised to the psycopg driver, so tests that open their own engine work too.
+    url = Settings(_env_file=None, DATABASE_URL=url).database_url
+    cfg.attributes["database_url"] = url
     command.downgrade(cfg, "base")
     command.upgrade(cfg, "head")
     return url

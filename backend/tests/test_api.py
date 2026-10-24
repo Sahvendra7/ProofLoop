@@ -171,7 +171,10 @@ def test_real_and_demo_records_never_mix(api):
         r = client.post(f"{V1}/trials/{live_trial['id']}/demo-checkin", headers=h)
         assert r.status_code == 409
 
-        checkin = wait_for_scan(client, h, upload(client, h, trial_id=live_trial["id"]).json()["id"])
+        # A different photo: re-sending the baseline's exact bytes is refused (same_photo).
+        checkin = wait_for_scan(
+            client, h, upload(client, h, trial_id=live_trial["id"], image=face_jpeg(width=724)).json()["id"]
+        )
         trial = client.get(f"{V1}/trials/{live_trial['id']}", headers=h).json()
         assert trial["checkins"][0]["id"] == checkin["id"]
         assert trial["comparison"]["focus_outcome"] in {"no_clear_change", "inconclusive"}  # same fixture -> delta 0
