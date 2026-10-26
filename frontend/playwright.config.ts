@@ -32,6 +32,9 @@ export default defineConfig({
       reuseExistingServer: false,
       env: {
         YOUCAM_API_KEY: "",
+        // backend/.env may hold a real Gemini key for local testing; the suite must never call it.
+        GEMINI_API_KEY: "",
+        GEMINI_FREE_TEXT_ENABLED: "false",
         DATABASE_URL: `sqlite:///${e2eDb}`,
         CORS_ORIGINS: "http://localhost:3100",
         LOG_LEVEL: "WARNING",

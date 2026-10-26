@@ -1,4 +1,8 @@
 import type {
+  AssistantConfig,
+  AssistantConsent,
+  AssistantIntent,
+  AssistantReply,
   Goal,
   Preflight,
   Product,
@@ -89,12 +93,16 @@ async function request<T>(path: string, init: RequestInit = {}, retried = false)
   } catch {
     throw networkError();
   }
-  if (res.status === 401 && !retried) {
-    memoryToken = null;
-    writeToken(null);
-    return request<T>(path, init, true);
+  if (!res.ok) {
+    const err = await toError(res);
+    // Only a session problem resets the session. Other 401s (the assistant's owner key) must not lose it.
+    if (res.status === 401 && !retried && (err.code === "session_required" || err.code === "session_invalid")) {
+      memoryToken = null;
+      writeToken(null);
+      return request<T>(path, init, true);
+    }
+    throw err;
   }
-  if (!res.ok) throw await toError(res);
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
@@ -151,6 +159,26 @@ export const api = {
     form.append("source", source);
     form.append("purpose", purpose);
     return request<Preflight>(`/trials/${encodeURIComponent(trialId)}/preflight`, { method: "POST", body: form });
+  },
+  assistantConfig: () => request<AssistantConfig>("/assistant/config"),
+  /** Fixed wording from the trial's own numbers. No LLM, no units. */
+  assistantQuick: (trialId: string, intent: AssistantIntent) =>
+    request<AssistantReply>(`/trials/${encodeURIComponent(trialId)}/assistant/quick`, json({ intent })),
+  /** Free text, limited to the prototype owner: Gemini picks approved explanations; falls back to fixed wording. */
+  assistantAsk: (trialId: string, message: string, consent: AssistantConsent | null, ownerKey: string) => {
+    const init = json({ message, consent });
+    init.headers = { ...init.headers, Authorization: `Bearer ${ownerKey}` };
+    return request<AssistantReply>(`/trials/${encodeURIComponent(trialId)}/assistant/ask`, init);
+  },
+  /** True when the server accepts this owner key. Checked on the server; nothing is decided in the browser. */
+  assistantOwnerCheck: async (ownerKey: string) => {
+    try {
+      await request<void>("/assistant/owner", { method: "POST", headers: { Authorization: `Bearer ${ownerKey}` } });
+      return true;
+    } catch (err) {
+      if (err instanceof ApiError && err.code === "owner_auth_required") return false;
+      throw err;
+    }
   },
   demoCheckin: (id: string) => request<Trial>(`/trials/${encodeURIComponent(id)}/demo-checkin`, { method: "POST" }),
   /** Sample trials only: replays a recorded second analysis of the sample portrait. */

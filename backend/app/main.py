@@ -5,18 +5,20 @@ from __future__ import annotations
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app.api.v1 import catalog, scans, system, trials
+from app.api.v1 import assistant, catalog, scans, system, trials
 from app.core.config import Settings, get_settings
 from app.core.errors import install_error_handlers
 from app.core.logging import RequestContextMiddleware, configure_logging, get_logger
 from app.db.session import get_engine, init_engine
 from app.domain.catalog import load_catalog
 from app.providers.youcam.client import PollPolicy, YouCamClient
+from app.services.assistant.limits import AskLimiter
 from app.services.demo import load_fixture
 from app.services.scans import ScanJobRunner, recover_interrupted_scans
 
@@ -68,6 +70,7 @@ def create_app(
         )
         yield
         await app.state.job_runner.drain()
+        await app.state.gemini_http.aclose()
         client = app.state.provider_factory()
         if client is not None:
             await client.aclose()
@@ -81,6 +84,9 @@ def create_app(
     app.state.settings = settings
     app.state.provider_factory = provider_factory or _default_provider_factory(settings)
     app.state.job_runner = ScanJobRunner(app.state.provider_factory, settings.max_concurrent_provider_jobs)
+    # Trial assistant: Gemini is only ever called for free text, behind GEMINI_FREE_TEXT_ENABLED.
+    app.state.gemini_http = httpx.AsyncClient()
+    app.state.ask_limiter = AskLimiter(settings.assistant_asks_per_session_per_hour, settings.assistant_asks_per_day)
 
     app.add_middleware(RequestContextMiddleware)
     app.add_middleware(
@@ -88,12 +94,12 @@ def create_app(
         allow_origins=settings.cors_origins,
         allow_credentials=False,
         allow_methods=["GET", "POST", "DELETE"],
-        allow_headers=["Content-Type", "X-Session-Token", "Idempotency-Key", "X-Request-ID"],
+        allow_headers=["Content-Type", "X-Session-Token", "Idempotency-Key", "X-Request-ID", "Authorization"],
         expose_headers=["X-Request-ID"],
     )
     install_error_handlers(app)
 
-    for module in (system, scans, catalog, trials):
+    for module in (system, scans, catalog, trials, assistant):
         app.include_router(module.router, prefix="/api/v1")
 
     @app.get("/health", tags=["system"])
