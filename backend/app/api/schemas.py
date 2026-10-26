@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 Provenance = Literal["youcam", "demo"]
 
@@ -176,6 +176,8 @@ class ChangeOut(BaseModel):
 class ComparabilityOut(BaseModel):
     level: Literal["good", "fair", "poor"]
     issues: list[str]
+    # Stable codes, one per issue: lighting_differs_a_lot, lighting_differs, lighting_missing, source_differs, under_a_week.
+    issue_codes: list[str] = []
     days_apart: float
 
 
@@ -310,3 +312,110 @@ class SystemStatusOut(BaseModel):
     noise_bands: dict[str, int]
     demo_note: str
     catalog_disclaimer: str
+
+
+# --- Trial assistant (read-only) -----------------------------------------------
+
+AssistantIntent = Literal["is_it_working", "when_check_in", "should_switch"]
+AssistantAction = Literal["open_checkin", "open_instrument_check", "open_matches", "run_sample_checkin", "none"]
+ASSISTANT_CONSENT_VERSION = "2026-10-26"
+ASSISTANT_MAX_MESSAGE_CHARS = 500
+
+
+class AssistantConfigOut(BaseModel):
+    free_text_available: bool
+    consent_version: str
+    quick_intents: list[AssistantIntent]
+    max_message_chars: int
+    # Typed questions are limited to the prototype owner: the client must present the owner key.
+    owner_access_required: bool = True
+
+
+class AssistantQuickIn(BaseModel):
+    intent: AssistantIntent
+
+
+class AssistantConsentIn(BaseModel):
+    version: str = Field(max_length=32)
+    adult: Literal[True]
+    region_ok: Literal[True]
+
+
+class AssistantAskIn(BaseModel):
+    message: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=ASSISTANT_MAX_MESSAGE_CHARS)
+    ]
+    consent: AssistantConsentIn | None = None
+
+
+class AssistantActionOut(BaseModel):
+    code: AssistantAction
+    available: bool
+
+
+class AssistantTraceOut(BaseModel):
+    tool: str
+    args: dict[str, str]
+    ok: bool
+
+
+class AssistantVerdictOut(BaseModel):
+    """The plan's verdict and next step, derived on the server (services/assistant/verdict.py). Never model-written."""
+
+    code: Literal[
+        "no_checkin_yet",
+        "checkin_processing",
+        "measured_improvement",
+        "measured_decline",
+        "no_clear_change",
+        "inconclusive",
+        "insufficient_data",
+        "unavailable",
+    ]
+    next_step: Literal[
+        "check_in",
+        "wait_for_analysis",
+        "retake",
+        "pause_and_review",
+        "finish_the_test",
+        "keep_going",
+        "consider_switching",
+        "nothing_to_gain",
+        "none",
+    ]
+    early: bool
+    statement: str
+
+
+class AssistantExplanationOut(BaseModel):
+    """One approved explanation (services/assistant/explanations.py), rendered by the server. Never model-written."""
+
+    id: str
+    title: str
+    text: str
+
+
+class AssistantReplyOut(BaseModel):
+    """One answer. Every text field is server-written: `reply` and `verdict` are the plan's fixed wording, and
+    `explanations` are approved registry texts. In mode "gemini", Gemini chose which explanations to show; it never
+    writes any of them. units_spent is always 0: the assistant cannot call YouCam."""
+
+    mode: Literal["deterministic", "gemini", "deterministic_fallback"]
+    fallback_reason: (
+        Literal[
+            "disabled",
+            "rate_limited",
+            "timeout",
+            "provider_error",
+            "malformed",
+            "inconsistent_data",
+        ]
+        | None
+    ) = None
+    verdict: AssistantVerdictOut
+    reply: str
+    explanations: list[AssistantExplanationOut] = []
+    action: AssistantActionOut | None
+    trace: list[AssistantTraceOut]
+    sources: list[str]
+    units_spent: Literal[0] = 0

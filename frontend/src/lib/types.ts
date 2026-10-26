@@ -133,7 +133,7 @@ export interface Comparison {
   current_scan_id: string;
   focus_metric: string;
   focus_outcome: FocusOutcome;
-  comparability: { level: "good" | "fair" | "poor"; issues: string[]; days_apart: number };
+  comparability: { level: "good" | "fair" | "poor"; issues: string[]; issue_codes: string[]; days_apart: number };
   changes: Change[];
   /** The check-in came before the protocol's planned date. */
   early: boolean;
@@ -250,4 +250,70 @@ export interface RecommendationFilters {
   budget_max?: number;
   fragrance_free?: boolean;
   finish?: "light" | "rich";
+}
+
+export type AssistantIntent = "is_it_working" | "when_check_in" | "should_switch";
+export type AssistantAction = "open_checkin" | "open_instrument_check" | "open_matches" | "run_sample_checkin" | "none";
+export type AssistantMode = "deterministic" | "gemini" | "deterministic_fallback";
+export type AssistantFallback =
+  | "disabled"
+  | "rate_limited"
+  | "timeout"
+  | "provider_error"
+  | "malformed"
+  | "inconsistent_data";
+
+export interface AssistantConfig {
+  free_text_available: boolean;
+  consent_version: string;
+  quick_intents: AssistantIntent[];
+  max_message_chars: number;
+  /** Typed questions need the prototype owner's key, checked by the server. */
+  owner_access_required: boolean;
+}
+
+export interface AssistantConsent {
+  version: string;
+  adult: true;
+  region_ok: true;
+}
+
+/** The plan's verdict, derived on the server. Never written by the model. */
+export interface AssistantVerdict {
+  code:
+    | "no_checkin_yet"
+    | "checkin_processing"
+    | "measured_improvement"
+    | "measured_decline"
+    | "no_clear_change"
+    | "inconclusive"
+    | "insufficient_data"
+    | "unavailable";
+  next_step: string;
+  early: boolean;
+  statement: string;
+}
+
+/** One approved explanation, rendered by the server from its registry. Never model-written. */
+export interface AssistantExplanation {
+  id: string;
+  title: string;
+  text: string;
+}
+
+/**
+ * One answer from the read-only trial assistant. Every text field is server-written: `reply` is the plan's fixed
+ * wording, `explanations` are approved registry texts. In mode "gemini" Gemini only chose which explanations to show.
+ * units_spent is always 0.
+ */
+export interface AssistantReply {
+  mode: AssistantMode;
+  fallback_reason: AssistantFallback | null;
+  verdict: AssistantVerdict;
+  reply: string;
+  explanations: AssistantExplanation[];
+  action: { code: AssistantAction; available: boolean } | null;
+  trace: { tool: string; args: Record<string, string>; ok: boolean }[];
+  sources: string[];
+  units_spent: 0;
 }

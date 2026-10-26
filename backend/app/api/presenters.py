@@ -190,6 +190,7 @@ def comparison_out(
         comparability=s.ComparabilityOut(
             level=comparison.comparability.level,
             issues=comparison.comparability.issues,
+            issue_codes=comparison.comparability.codes,
             days_apart=comparison.comparability.days_apart,
         ),
         changes=[change_out(c) for c in comparison.changes],

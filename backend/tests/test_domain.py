@@ -8,7 +8,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from app.domain.catalog import load_catalog
-from app.domain.compare import CaptureInfo, compare, compare_metric
+from app.domain.compare import CaptureInfo, assess_comparability, compare, compare_metric, focus_outcome
 from app.domain.metrics import REQUESTED_PROVIDER_ACTIONS
 from app.domain.normalize import normalize_outputs
 from app.domain.recommend import Preferences, Tier, UnknownGoal, recommend
@@ -230,3 +230,37 @@ def test_source_mismatch_and_short_gap_are_disclosed():
     assert result.comparability.level == "fair"
     assert any("camera" in i for i in result.comparability.issues)
     assert any("less than a week" in i for i in result.comparability.issues)
+
+
+def test_comparability_reports_a_code_per_issue():
+    t0 = datetime(2026, 10, 1, tzinfo=UTC)
+    report = assess_comparability(
+        CaptureInfo(luminance_mean=70.0, source="camera", captured_at=t0),
+        CaptureInfo(luminance_mean=120.0, source="upload", captured_at=t0 + timedelta(days=2)),
+    )
+    assert report.codes == ["lighting_differs_a_lot", "source_differs", "under_a_week"]
+    assert len(report.codes) == len(report.issues)
+
+
+def test_comparability_codes_for_missing_and_fair_lighting():
+    t0 = datetime(2026, 10, 1, tzinfo=UTC)
+    later = t0 + timedelta(days=30)
+    missing = assess_comparability(
+        CaptureInfo(luminance_mean=None, source="camera", captured_at=t0),
+        CaptureInfo(luminance_mean=80.0, source="camera", captured_at=later),
+    )
+    fair = assess_comparability(
+        CaptureInfo(luminance_mean=80.0, source="camera", captured_at=t0),
+        CaptureInfo(luminance_mean=95.0, source="camera", captured_at=later),
+    )
+    assert missing.codes == ["lighting_missing"]
+    assert fair.codes == ["lighting_differs"]
+
+
+def test_focus_outcome_rule_is_shared_with_compare():
+    # The assistant re-derives the verdict with this same function, so compare() must use it too.
+    assert focus_outcome("missing", "poor") == "insufficient_data"
+    assert focus_outcome("better", "poor") == "inconclusive"
+    assert focus_outcome("within_variation", "good") == "no_clear_change"
+    assert focus_outcome("better", "fair") == "measured_improvement"
+    assert focus_outcome("worse", "good") == "measured_decline"

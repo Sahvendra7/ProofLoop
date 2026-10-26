@@ -36,6 +36,20 @@ class Settings(BaseSettings):
     simulations_per_session_per_hour: int = Field(default=6, alias="SIMULATIONS_PER_SESSION_PER_HOUR")
     max_concurrent_provider_jobs: int = Field(default=3, alias="MAX_CONCURRENT_PROVIDER_JOBS")
 
+    # --- Trial assistant (Gemini) ------------------------------------------
+    # Free text is off unless explicitly enabled AND a key is set; quick answers never need either.
+    gemini_free_text_enabled: bool = Field(default=False, alias="GEMINI_FREE_TEXT_ENABLED")
+    gemini_api_key: SecretStr | None = Field(default=None, alias="GEMINI_API_KEY")
+    gemini_model: str = Field(default="gemini-3.5-flash-lite", alias="GEMINI_MODEL")
+    gemini_api_url: str = Field(default="https://generativelanguage.googleapis.com/v1beta", alias="GEMINI_API_URL")
+    gemini_timeout_s: float = Field(default=8.0, alias="GEMINI_TIMEOUT_S")
+    assistant_turn_deadline_s: float = Field(default=15.0, alias="ASSISTANT_TURN_DEADLINE_S")
+    assistant_asks_per_session_per_hour: int = Field(default=20, alias="ASSISTANT_ASKS_PER_SESSION_PER_HOUR")
+    assistant_asks_per_day: int = Field(default=200, alias="ASSISTANT_ASKS_PER_DAY")
+    # SHA-256 (hex) of the prototype owner's access key. Free text (which calls Gemini) is only available when this is
+    # set, and every typed question must present the key. Only the hash lives in the environment.
+    assistant_owner_token_sha256: str | None = Field(default=None, alias="ASSISTANT_OWNER_TOKEN_SHA256")
+
     # --- Uploads ---------------------------------------------------------
     max_upload_bytes: int = Field(default=10 * 1024 * 1024, alias="MAX_UPLOAD_BYTES")
 
@@ -66,6 +80,17 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env.strip().lower() == "production"
+
+    @property
+    def free_text_available(self) -> bool:
+        key = self.gemini_api_key.get_secret_value().strip() if self.gemini_api_key else ""
+        return self.gemini_free_text_enabled and bool(key) and self.owner_hash is not None
+
+    @property
+    def owner_hash(self) -> str | None:
+        """The configured owner-key hash, if it is a well-formed SHA-256 hex digest; otherwise None (fail closed)."""
+        h = (self.assistant_owner_token_sha256 or "").strip().lower()
+        return h if len(h) == 64 and all(c in "0123456789abcdef" for c in h) else None
 
     @property
     def provider_configured(self) -> bool:

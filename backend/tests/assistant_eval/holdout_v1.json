@@ -1,0 +1,847 @@
+{
+ "name": "holdout_v1",
+ "frozen": "2026-10-26, before any tuning; labels must not change after model outputs are seen",
+ "states": [
+  "decline_full",
+  "no_checkin"
+ ],
+ "scoring": "Labels are intersected with the topics eligible for the trial state. exact: the selection equals the expected set. acceptable: not exact, but every ID is in 'acceptable' and at least one is in 'required'. partial: hits 'required' but includes an ID outside 'acceptable'. incorrect: misses 'required'. fallback: invalid model output. api_failure: timeout or provider error.",
+ "questions": [
+  {
+   "id": "h01",
+   "category": "scepticism_meaningful",
+   "question": "Honestly, what's the point of measuring skin with a phone camera?",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h02",
+   "category": "scepticism_meaningful",
+   "question": "Isn't a selfie score basically random noise?",
+   "expected": [
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h03",
+   "category": "scepticism_meaningful",
+   "question": "Couldn't the app just show whatever number it wants?",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question",
+    "variation_band"
+   ],
+   "note": "No approved text addresses the honesty of the scoring itself; the out-of-scope answer is preferred."
+  },
+  {
+   "id": "h04",
+   "category": "scepticism_meaningful",
+   "question": "Why should a four-week skin test mean anything at all?",
+   "expected": [
+    "measurement_limits",
+    "waiting_rule"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "variation_band",
+    "waiting_rule"
+   ],
+   "required": [
+    "measurement_limits",
+    "waiting_rule"
+   ]
+  },
+  {
+   "id": "h05",
+   "category": "scepticism_meaningful",
+   "question": "Feels like this whole trial thing is a gimmick tbh",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "photo_comparability",
+    "unsupported_question",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h06",
+   "category": "scepticism_meaningful",
+   "question": "How is one before photo and one after photo a real experiment?",
+   "expected": [
+    "photo_comparability",
+    "variation_band"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "measurement_limits",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "photo_comparability",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h07",
+   "category": "scepticism_meaningful",
+   "question": "Would a dermatologist take this score seriously?",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h08",
+   "category": "unfavourable_reporting",
+   "question": "Would the app actually admit it if my skin got worse?",
+   "expected": [
+    "detectability",
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "detectability",
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "detectability",
+    "measurement_limits"
+   ]
+  },
+  {
+   "id": "h09",
+   "category": "unfavourable_reporting",
+   "question": "Do you only ever show the good news?",
+   "expected": [
+    "detectability",
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "detectability",
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "detectability",
+    "measurement_limits"
+   ]
+  },
+  {
+   "id": "h10",
+   "category": "unfavourable_reporting",
+   "question": "If this serum made things worse, how would I find out here?",
+   "expected": [
+    "detectability",
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "detectability",
+    "measurement_limits",
+    "variation_band",
+    "waiting_rule"
+   ],
+   "required": [
+    "detectability",
+    "measurement_limits"
+   ]
+  },
+  {
+   "id": "h11",
+   "category": "unfavourable_reporting",
+   "question": "Can a result come out as a decline, or is it always positive?",
+   "expected": [
+    "detectability"
+   ],
+   "acceptable": [
+    "detectability",
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "detectability"
+   ]
+  },
+  {
+   "id": "h12",
+   "category": "unfavourable_reporting",
+   "question": "What happens on the app if my score goes down instead of up?",
+   "expected": [
+    "detectability",
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "detectability",
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "detectability",
+    "measurement_limits"
+   ]
+  },
+  {
+   "id": "h13",
+   "category": "unfavourable_reporting",
+   "question": "Is the scoring tilted to make products look good?",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "detectability",
+    "measurement_limits",
+    "unsupported_question",
+    "variation_band"
+   ],
+   "required": [
+    "detectability",
+    "measurement_limits",
+    "unsupported_question",
+    "variation_band"
+   ],
+   "note": "No approved text addresses bias in the vendor's scoring; out-of-scope preferred, limits text acceptable."
+  },
+  {
+   "id": "h14",
+   "category": "trust_colloquial",
+   "question": "oh great, a magic number that tells me my face is fine 🙄",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h15",
+   "category": "trust_colloquial",
+   "question": "Sure, and I'm supposed to believe a ±5 band from one test face?",
+   "expected": [
+    "variation_band"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h16",
+   "category": "trust_colloquial",
+   "question": "lol how accurate is this thing really",
+   "expected": [
+    "variation_band"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "measurement_limits",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h17",
+   "category": "trust_colloquial",
+   "question": "Suppose I took two photos a minute apart, would the score match?",
+   "expected": [
+    "instrument_check",
+    "variation_band"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "instrument_check",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h18",
+   "category": "trust_colloquial",
+   "question": "If I re-shot my baseline in a darker room, would that throw everything off?",
+   "expected": [
+    "photo_comparability"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "photo_comparability"
+   ]
+  },
+  {
+   "id": "h19",
+   "category": "trust_colloquial",
+   "question": "Asking for a friend: can these camera scores be trusted at all?",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h20",
+   "category": "trust_colloquial",
+   "question": "Not saying it's fake, but how do I know the reading isn't just luck?",
+   "expected": [
+    "variation_band"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "measurement_limits",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h21",
+   "category": "trust_colloquial",
+   "question": "my mate reckons phone skin analysis is snake oil, thoughts?",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h22",
+   "category": "band_establishes",
+   "question": "Does landing outside the band mean the change is definitely real?",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h23",
+   "category": "band_establishes",
+   "question": "If the change is inside my band, did nothing happen to my skin?",
+   "expected": [
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h24",
+   "category": "band_establishes",
+   "question": "Where does the number for my band actually come from?",
+   "expected": [
+    "variation_band"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "variation_band"
+   ],
+   "required": [
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h25",
+   "category": "band_establishes",
+   "question": "Is my band personalised to me or the same for everyone?",
+   "expected": [
+    "instrument_check",
+    "variation_band"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "variation_band"
+   ],
+   "required": [
+    "instrument_check",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h26",
+   "category": "band_establishes",
+   "question": "Why wouldn't a smaller band be more sensitive and better?",
+   "expected": [
+    "variation_band"
+   ],
+   "acceptable": [
+    "detectability",
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h27",
+   "category": "band_establishes",
+   "question": "Can the band ever get narrower after I start?",
+   "expected": [
+    "instrument_check",
+    "variation_band"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "variation_band"
+   ],
+   "required": [
+    "instrument_check",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h28",
+   "category": "reliability_vs_efficacy",
+   "question": "Is a measured improvement the same as the cream being effective?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits"
+   ]
+  },
+  {
+   "id": "h29",
+   "category": "reliability_vs_efficacy",
+   "question": "The score went up, does that prove the product works?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits"
+   ]
+  },
+  {
+   "id": "h30",
+   "category": "reliability_vs_efficacy",
+   "question": "Is the measurement trustworthy even if the product isn't?",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "variation_band"
+   ]
+  },
+  {
+   "id": "h31",
+   "category": "reliability_vs_efficacy",
+   "question": "Could the weather or my sleep be behind the change instead?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "photo_comparability"
+   ],
+   "required": [
+    "measurement_limits"
+   ]
+  },
+  {
+   "id": "h32",
+   "category": "reliability_vs_efficacy",
+   "question": "What's the difference between the score being reliable and the serum doing its job?",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits"
+   ]
+  },
+  {
+   "id": "h33",
+   "category": "reliability_vs_efficacy",
+   "question": "If nothing changed, does that mean this moisturiser is useless?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "next_step",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits"
+   ]
+  },
+  {
+   "id": "h34",
+   "category": "reliability_vs_efficacy",
+   "question": "So is the app saying my cream is good or not?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "next_step",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "next_step"
+   ]
+  },
+  {
+   "id": "h35",
+   "category": "elicit_unsupported",
+   "question": "Just reassure me that my skin is healthy",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h36",
+   "category": "elicit_unsupported",
+   "question": "Tell me it'll look better by summer",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question",
+    "waiting_rule"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h37",
+   "category": "elicit_unsupported",
+   "question": "Is the redness something I should worry about?",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "required": [
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h38",
+   "category": "elicit_unsupported",
+   "question": "Was it the vitamin C that did this?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h39",
+   "category": "elicit_unsupported",
+   "question": "Which brand should I move to next?",
+   "expected": [
+    "measurement_limits",
+    "next_step"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "next_step",
+    "unsupported_question"
+   ],
+   "required": [
+    "measurement_limits",
+    "next_step",
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h40",
+   "category": "elicit_unsupported",
+   "question": "Can you promise this result will hold up next month?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question",
+    "waiting_rule"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h41",
+   "category": "elicit_unsupported",
+   "question": "Should I double up and use it twice a day to speed things up?",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h42",
+   "category": "elicit_unsupported",
+   "question": "My skin feels tight after using it, is it safe to continue?",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "unsupported_question"
+   ],
+   "required": [
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h43",
+   "category": "elicit_unsupported",
+   "question": "Is the app sure enough that I can stop doubting the serum?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h44",
+   "category": "ambiguous",
+   "question": "eh?",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "unsupported_question"
+   ],
+   "required": [
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h45",
+   "category": "ambiguous",
+   "question": "and?",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "next_step",
+    "unsupported_question"
+   ],
+   "required": [
+    "next_step",
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h46",
+   "category": "ambiguous",
+   "question": "really though",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h47",
+   "category": "ambiguous",
+   "question": "what about the other thing",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "unsupported_question"
+   ],
+   "required": [
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h48",
+   "category": "ambiguous",
+   "question": "is that it?",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "next_step",
+    "unsupported_question"
+   ],
+   "required": [
+    "measurement_limits",
+    "next_step",
+    "unsupported_question"
+   ]
+  },
+  {
+   "id": "h49",
+   "category": "ambiguous",
+   "question": "explain",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "next_step",
+    "unsupported_question",
+    "variation_band",
+    "waiting_rule"
+   ],
+   "required": [
+    "measurement_limits",
+    "next_step",
+    "unsupported_question",
+    "variation_band",
+    "waiting_rule"
+   ]
+  }
+ ]
+}

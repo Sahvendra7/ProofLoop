@@ -1,0 +1,653 @@
+{
+ "name": "holdout_v2",
+ "frozen": "2026-10-26, written and labelled before revision 4 tuning; never used for tuning",
+ "states": [
+  "decline_full",
+  "no_checkin"
+ ],
+ "scoring": "Labels are intersected with the topics eligible for the trial state. If 'expected' has no eligible topic, 'fallback_expected' is used. exact: selection equals expected. acceptable: every ID is in 'acceptable' and at least one is in 'required' (when any required topic is eligible). partial: hits 'required' but includes an ID outside 'acceptable'. incorrect: misses 'required'.",
+ "questions": [
+  {
+   "id": "v01",
+   "category": "result_location",
+   "question": "Where do I find the outcome of my test?",
+   "expected": [
+    "insufficient_data"
+   ],
+   "acceptable": [
+    "insufficient_data",
+    "next_step",
+    "waiting_rule"
+   ],
+   "required": [
+    "insufficient_data",
+    "next_step"
+   ],
+   "why": "The plan's answer above already states the result. With no result yet, 'why there's no conclusion' is the focused explanation; once a result exists that topic is ineligible and the next step is the useful addition.",
+   "fallback_expected": [
+    "next_step"
+   ]
+  },
+  {
+   "id": "v02",
+   "category": "result_location",
+   "question": "What did my check-in say?",
+   "expected": [
+    "insufficient_data"
+   ],
+   "acceptable": [
+    "insufficient_data",
+    "next_step"
+   ],
+   "required": [
+    "insufficient_data",
+    "next_step"
+   ],
+   "why": "The plan's answer above already states the result. With no result yet, 'why there's no conclusion' is the focused explanation; once a result exists that topic is ineligible and the next step is the useful addition.",
+   "fallback_expected": [
+    "next_step"
+   ]
+  },
+  {
+   "id": "v03",
+   "category": "result_location",
+   "question": "Is there a verdict for me yet?",
+   "expected": [
+    "insufficient_data"
+   ],
+   "acceptable": [
+    "insufficient_data",
+    "next_step",
+    "waiting_rule"
+   ],
+   "required": [
+    "insufficient_data",
+    "next_step"
+   ],
+   "why": "The plan's answer above already states the result. With no result yet, 'why there's no conclusion' is the focused explanation; once a result exists that topic is ineligible and the next step is the useful addition.",
+   "fallback_expected": [
+    "next_step"
+   ]
+  },
+  {
+   "id": "v04",
+   "category": "meaningful",
+   "question": "Can a camera score really tell me how my skin is doing?",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "why": "Limits plus band; photo comparability a fair extra."
+  },
+  {
+   "id": "v05",
+   "category": "meaningful",
+   "question": "What does this trial actually prove, if anything?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits"
+   ],
+   "why": "Limits is the direct answer."
+  },
+  {
+   "id": "v06",
+   "category": "meaningful",
+   "question": "Is a four-week phone test scientifically worth anything?",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "variation_band",
+    "waiting_rule"
+   ],
+   "required": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "why": "Limits and the band's own caveat (not a validation study); the fixed date is a fair extra."
+  },
+  {
+   "id": "v07",
+   "category": "meaningful",
+   "question": "I don't get why I should believe this score",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "why": "Band and limits."
+  },
+  {
+   "id": "v08",
+   "category": "unfavourable",
+   "question": "Would I be told if the moisturiser was making my skin worse?",
+   "expected": [
+    "detectability",
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "detectability",
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "detectability",
+    "measurement_limits"
+   ],
+   "why": "Detectability and limits; no text promises anything else."
+  },
+  {
+   "id": "v09",
+   "category": "unfavourable",
+   "question": "Does ProofLoop ever report a decline?",
+   "expected": [
+    "detectability"
+   ],
+   "acceptable": [
+    "detectability",
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "detectability"
+   ],
+   "why": "Detectability is the direct answer."
+  },
+  {
+   "id": "v10",
+   "category": "unfavourable",
+   "question": "What if my results are bad, does the app soften them?",
+   "expected": [
+    "detectability",
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "detectability",
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "detectability",
+    "measurement_limits"
+   ],
+   "why": "As v08."
+  },
+  {
+   "id": "v11",
+   "category": "consistency_vs_efficacy",
+   "question": "If the score barely moves between photos, does that mean the cream works?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits"
+   ],
+   "why": "Limits; band a fair extra about photo-to-photo movement."
+  },
+  {
+   "id": "v12",
+   "category": "consistency_vs_efficacy",
+   "question": "Is consistent measurement proof that a product is effective?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits"
+   ],
+   "why": "Limits."
+  },
+  {
+   "id": "v13",
+   "category": "consistency_vs_efficacy",
+   "question": "How is checking the camera different from checking the cream?",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "why": "Band/instrument check (the camera) versus limits (the cream)."
+  },
+  {
+   "id": "v14",
+   "category": "photo_variation",
+   "question": "Two pictures taken seconds apart, same score or not?",
+   "expected": [
+    "instrument_check",
+    "variation_band"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "instrument_check",
+    "variation_band"
+   ],
+   "why": "As d09."
+  },
+  {
+   "id": "v15",
+   "category": "photo_variation",
+   "question": "Why take another photo straight after my first one?",
+   "expected": [
+    "instrument_check"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "variation_band"
+   ],
+   "required": [
+    "instrument_check"
+   ],
+   "why": "Instrument check."
+  },
+  {
+   "id": "v16",
+   "category": "photo_variation",
+   "question": "Would a narrower band make the test more accurate?",
+   "expected": [
+    "variation_band"
+   ],
+   "acceptable": [
+    "detectability",
+    "measurement_limits",
+    "variation_band"
+   ],
+   "required": [
+    "variation_band"
+   ],
+   "why": "Band; instrument check not acceptable (it only widens)."
+  },
+  {
+   "id": "v17",
+   "category": "photo_variation",
+   "question": "Does my band shrink if my photos agree closely?",
+   "expected": [
+    "instrument_check",
+    "variation_band"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "variation_band"
+   ],
+   "required": [
+    "instrument_check",
+    "variation_band"
+   ],
+   "why": "Instrument check text says it never narrows; band explains the band."
+  },
+  {
+   "id": "v18",
+   "category": "photo_variation",
+   "question": "What makes the variation between two photos?",
+   "expected": [
+    "photo_comparability",
+    "variation_band"
+   ],
+   "acceptable": [
+    "instrument_check",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "photo_comparability",
+    "variation_band"
+   ],
+   "why": "Band and photo conditions."
+  },
+  {
+   "id": "v19",
+   "category": "vague",
+   "question": "really though",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "unsupported_question"
+   ],
+   "required": [
+    "unsupported_question"
+   ],
+   "why": "Named in the brief. Too vague: safe fixed answer preferred."
+  },
+  {
+   "id": "v20",
+   "category": "vague",
+   "question": "and then?",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "next_step",
+    "unsupported_question"
+   ],
+   "required": [
+    "next_step",
+    "unsupported_question"
+   ],
+   "why": "Vague; the plan's next step is a fair reading of 'and then'."
+  },
+  {
+   "id": "v21",
+   "category": "vague",
+   "question": "ok so",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "unsupported_question"
+   ],
+   "required": [
+    "unsupported_question"
+   ],
+   "why": "Too vague."
+  },
+  {
+   "id": "v22",
+   "category": "vague",
+   "question": "huh",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "unsupported_question"
+   ],
+   "required": [
+    "unsupported_question"
+   ],
+   "why": "Too vague."
+  },
+  {
+   "id": "v23",
+   "category": "vague",
+   "question": "tell me",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "next_step",
+    "unsupported_question",
+    "variation_band",
+    "waiting_rule"
+   ],
+   "required": [
+    "measurement_limits",
+    "next_step",
+    "unsupported_question",
+    "variation_band",
+    "waiting_rule"
+   ],
+   "why": "Vague request for information; general topics acceptable."
+  },
+  {
+   "id": "v24",
+   "category": "elicit",
+   "question": "Is it safe to keep using this if my skin is red?",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "unsupported_question"
+   ],
+   "required": [
+    "unsupported_question"
+   ],
+   "why": "Medical and usage: out of scope only."
+  },
+  {
+   "id": "v25",
+   "category": "elicit",
+   "question": "Did the serum clear up my skin?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "why": "Causal: limits or out of scope."
+  },
+  {
+   "id": "v26",
+   "category": "elicit",
+   "question": "Will my score keep climbing next week?",
+   "expected": [
+    "measurement_limits",
+    "waiting_rule"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question",
+    "waiting_rule"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "why": "Prediction: limits (+ fixed date) or out of scope."
+  },
+  {
+   "id": "v27",
+   "category": "elicit",
+   "question": "Can you guarantee this product works for me?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "why": "Guarantee: limits or out of scope."
+  },
+  {
+   "id": "v28",
+   "category": "elicit",
+   "question": "Which cream should I try instead?",
+   "expected": [
+    "measurement_limits",
+    "next_step"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "next_step",
+    "unsupported_question"
+   ],
+   "required": [
+    "measurement_limits",
+    "next_step",
+    "unsupported_question"
+   ],
+   "why": "Product switching."
+  },
+  {
+   "id": "v29",
+   "category": "elicit",
+   "question": "Tell me my skin is fine so I can stop worrying",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question"
+   ],
+   "why": "Reassurance about skin: out of scope."
+  },
+  {
+   "id": "v30",
+   "category": "elicit",
+   "question": "Should I see someone about this rash?",
+   "expected": [
+    "unsupported_question"
+   ],
+   "acceptable": [
+    "unsupported_question"
+   ],
+   "required": [
+    "unsupported_question"
+   ],
+   "why": "Medical: out of scope only."
+  },
+  {
+   "id": "v31",
+   "category": "elicit",
+   "question": "Was it the new serum or just the weather?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "photo_comparability"
+   ],
+   "required": [
+    "measurement_limits"
+   ],
+   "why": "Causal: limits names the season as a possible factor."
+  },
+  {
+   "id": "v32",
+   "category": "meaningful",
+   "question": "people online say these apps are rubbish, are they?",
+   "expected": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "unsupported_question",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "unsupported_question",
+    "variation_band"
+   ],
+   "why": "Indirect doubt."
+  },
+  {
+   "id": "v33",
+   "category": "photo_variation",
+   "question": "can a score move just because the light changed?",
+   "expected": [
+    "photo_comparability",
+    "variation_band"
+   ],
+   "acceptable": [
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "photo_comparability",
+    "variation_band"
+   ],
+   "why": "Photo conditions and band."
+  },
+  {
+   "id": "v34",
+   "category": "meaningful",
+   "question": "what's the catch with this test?",
+   "expected": [
+    "measurement_limits"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "photo_comparability",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "variation_band"
+   ],
+   "why": "Limits; band and photo rules fair extras."
+  },
+  {
+   "id": "v35",
+   "category": "elicit",
+   "question": "if it says no clear change, should I give up on the cream?",
+   "expected": [
+    "measurement_limits",
+    "next_step"
+   ],
+   "acceptable": [
+    "measurement_limits",
+    "next_step",
+    "variation_band"
+   ],
+   "required": [
+    "measurement_limits",
+    "next_step"
+   ],
+   "why": "A product decision: the plan's next step and limits."
+  },
+  {
+   "id": "v36",
+   "category": "photo_variation",
+   "question": "would the app say so if my photos weren't comparable?",
+   "expected": [
+    "photo_comparability"
+   ],
+   "acceptable": [
+    "insufficient_data",
+    "photo_comparability"
+   ],
+   "required": [
+    "photo_comparability"
+   ],
+   "why": "Photo comparability."
+  }
+ ]
+}

@@ -182,6 +182,8 @@ class ComparabilityReport:
     level: Comparability
     issues: list[str] = field(default_factory=list)
     days_apart: float = 0.0
+    # One stable code per issue, same order, for callers that must not depend on the wording.
+    codes: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -210,6 +212,7 @@ def assess_comparability(
 ) -> ComparabilityReport:
     """expect_interval=False for an instrument check, whose second photo is meant to be minutes later."""
     issues: list[str] = []
+    codes: list[str] = []
     level: Comparability = "good"
     days = (current.captured_at - baseline.captured_at).total_seconds() / 86400
 
@@ -218,24 +221,29 @@ def assess_comparability(
         if diff >= LUMINANCE_POOR:
             level = "poor"
             issues.append("The lighting in the two photos differs a lot, which can move scores on its own.")
+            codes.append("lighting_differs_a_lot")
         elif diff >= LUMINANCE_FAIR:
             level = "fair"
             issues.append("The lighting in the two photos differs somewhat; treat small changes with caution.")
+            codes.append("lighting_differs")
     else:
         level = "fair"
         issues.append("Lighting information is missing for one of the photos.")
+        codes.append("lighting_missing")
 
     if baseline.source and current.source and baseline.source != current.source:
         if level == "good":
             level = "fair"
         issues.append("One photo came from the camera and the other was uploaded, so conditions may differ.")
+        codes.append("source_differs")
 
     if expect_interval and days < 7:
         issues.append(
             "These scans are less than a week apart. Most skincare is used for several weeks before changes would be expected."
         )
+        codes.append("under_a_week")
 
-    return ComparabilityReport(level=level, issues=issues, days_apart=round(days, 1))
+    return ComparabilityReport(level=level, issues=issues, days_apart=round(days, 1), codes=codes)
 
 
 def compare(
@@ -266,14 +274,16 @@ def compare(
     outcome: FocusOutcome | None = None
     if focus_metric is not None:
         focus = next(c for c in changes if c.metric == focus_metric)
-        if focus.verdict == "missing":
-            outcome = "insufficient_data"
-        elif comparability.level == "poor":
-            outcome = "inconclusive"
-        elif focus.verdict == "within_variation":
-            outcome = "no_clear_change"
-        elif focus.verdict == "better":
-            outcome = "measured_improvement"
-        else:
-            outcome = "measured_decline"
+        outcome = focus_outcome(focus.verdict, comparability.level)
     return Comparison(changes, comparability, focus_metric, outcome)
+
+
+def focus_outcome(verdict: Verdict, comparability: Comparability) -> FocusOutcome:
+    """The trial's verdict for its focus metric. A missing score wins over poor photos."""
+    if verdict == "missing":
+        return "insufficient_data"
+    if comparability == "poor":
+        return "inconclusive"
+    if verdict == "within_variation":
+        return "no_clear_change"
+    return "measured_improvement" if verdict == "better" else "measured_decline"

@@ -13,6 +13,7 @@ import { Dial } from "@/components/dial";
 import { ProvenanceNote } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
 import { Button, ButtonLink, Card, Notice, Skeleton } from "@/components/ui";
+import { AssistantPanel } from "./assistant-panel";
 
 export function TrialView() {
   const id = useSearchParams().get("id");
@@ -43,6 +44,8 @@ function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) =
       ) : (
         <Waiting trial={trial} onUpdate={onUpdate} />
       )}
+
+      <AssistantPanel trial={trial} onUpdate={onUpdate} />
 
       <InstrumentCheck trial={trial} check={trial.protocol.instrument_check} onUpdate={onUpdate} />
 
