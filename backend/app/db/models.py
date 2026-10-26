@@ -73,6 +73,9 @@ class ScanRow(Base):
     # SHA-256 of the cleaned image bytes (not the image), to refuse re-using the
     # baseline photo for a repeat or check-in (migration 0003). NULL for sample scans.
     content_digest: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # YouCam's skin-type reading of this photo (migration 0004): JSON {whole, t_zone, u_zone, unrecognised}.
+    # NULL when not requested or not returned; {"removed": true} (no label) once the user removed it.
+    skin_type_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     requested_metrics: Mapped[str] = mapped_column(Text, default="[]")  # JSON list
     missing_metrics: Mapped[str] = mapped_column(Text, default="[]")  # JSON list
@@ -142,6 +145,9 @@ class TrialRow(Base):
         ForeignKey("scans.id", ondelete="SET NULL", name="fk_trials_repeat_scan_id_scans"), nullable=True
     )
     repeat_spread: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # The optional checked skin profile, frozen when the trial (and its plan) was created (migration 0004).
+    # Never read by the plan, band, verdict or next step. See domain/profile.py.
+    profile_json: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     session: Mapped[SessionRow] = relationship(back_populates="trials")
 

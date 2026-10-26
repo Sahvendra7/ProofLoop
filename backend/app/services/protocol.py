@@ -8,6 +8,8 @@ no repeat can be added and deleting the repeat scan changes nothing.
 
 from __future__ import annotations
 
+import json
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -28,6 +30,11 @@ def lock(db: Session, trial: TrialRow) -> None:
     one writer at a time). Callers must not await between this and their commit.
     """
     db.refresh(trial, with_for_update=True)
+
+
+def trial_actions(baseline: ScanRow) -> tuple[str, ...]:
+    """The action set every later scan of a trial uses: its baseline's, so a flag flip never mixes them."""
+    return tuple(json.loads(baseline.requested_metrics or "[]"))
 
 
 def registered_band(trial: TrialRow) -> int:

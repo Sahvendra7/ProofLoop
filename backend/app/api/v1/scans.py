@@ -16,9 +16,10 @@ from app.core.config import Settings
 from app.core.errors import AppError
 from app.db.models import ScanRow, SessionRow, utcnow
 from app.db.session import get_db
-from app.domain.metrics import REQUESTED_PROVIDER_ACTIONS
+from app.domain import profile as pf
+from app.domain.metrics import baseline_actions
 from app.providers.youcam import endpoints as ep
-from app.services import demo, protocol, usage
+from app.services import demo, profiles, protocol, usage
 from app.services.imaging import prepare_image
 from app.services.scans import ScanJobRunner
 
@@ -81,18 +82,20 @@ async def create_scan(
     del raw
 
     repeat = purpose == "repeat_baseline"
+    actions = baseline_actions(settings.skin_profile_enabled)
     if trial is not None:
         # All of these refuse before any units are reserved. No awaits from here to the commit.
         protocol.lock(db, trial)
         baseline = db.get(ScanRow, trial.baseline_scan_id)
         assert baseline is not None
         protocol.ensure_not_same_photo(baseline, prepared.digest)
+        actions = protocol.trial_actions(baseline)
         if repeat:
             protocol.ensure_repeat_allowed(db, trial)
         else:
             protocol.seal(db, trial)
 
-    units = ep.analysis_units(len(REQUESTED_PROVIDER_ACTIONS))
+    units = ep.analysis_units(len(actions))
     call = usage.reserve(db, settings, session_id=session.id, kind="skin_analysis", units=units)
     scan = ScanRow(
         session_id=session.id,
@@ -107,7 +110,7 @@ async def create_scan(
         luminance_mean=prepared.luminance_mean,
         content_digest=prepared.digest,
         idempotency_key=idempotency_key,
-        requested_metrics=json.dumps(list(REQUESTED_PROVIDER_ACTIONS)),
+        requested_metrics=json.dumps(list(actions)),
         units_estimated=units,
     )
     db.add(scan)
@@ -115,16 +118,42 @@ async def create_scan(
         db.flush()
         trial.repeat_scan_id = scan.id
     db.commit()  # the job runs in the background and must see this row
-    runner.start(scan.id, call.id, prepared)
+    runner.start(scan.id, call.id, prepared, actions)
     return p.scan_out(scan, utcnow())
 
 
 @router.post("/demo", response_model=s.ScanOut, status_code=status.HTTP_201_CREATED)
-def create_demo_scan(session: SessionRow = Depends(current_session), db: Session = Depends(get_db)) -> s.ScanOut:
-    scan = demo.build_demo_scan(session.id)
+def create_demo_scan(
+    session: SessionRow = Depends(current_session),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(settings_dep),
+) -> s.ScanOut:
+    scan = demo.build_demo_scan(session.id, skin_type=settings.skin_profile_enabled)
     db.add(scan)
     db.flush()
     return p.scan_out(scan, utcnow())
+
+
+@router.post("/{scan_id}/focus-plan", response_model=s.FocusPlanOut)
+def focus_plan(
+    scan_id: str,
+    body: s.FocusPlanIn,
+    session: SessionRow = Depends(current_session),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(settings_dep),
+) -> s.FocusPlanOut:
+    """Order the focuses for this scan and explain them. Writes nothing and calls no provider.
+
+    A POST only because the answers travel in the body, never in the URL.
+    """
+    profiles.ensure_enabled(settings)
+    scan = owned_scan(db, session, scan_id)
+    if scan.status != "complete":
+        raise AppError("scan_not_complete", "This scan hasn't finished.", 409)
+    reading = profiles.reading_of(scan) if body.use_camera_reading else None
+    plan = pf.focus_plan(p.scores_of(scan), reading, profiles.self_report(body.self_report))
+    camera = p.skin_type_out(scan) if body.use_camera_reading else None
+    return p.focus_plan_out(plan, camera)
 
 
 @router.get("", response_model=list[s.ScanOut])

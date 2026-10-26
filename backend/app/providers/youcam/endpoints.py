@@ -28,7 +28,9 @@ ANALYSIS_TASK_PATH = "/s2s/v2.0/task/skin-analysis"
 SIMULATION_TASK_PATH = "/s2s/v2.0/task/skin-simulation"
 CREDIT_PATH = "/s2s/v1.0/client/credit"
 
-# Documented SD price table for skin analysis (units per task, by concern count).
+# Documented SD price table for skin analysis (units per task, by concern count). `skin_type` counts as a
+# concern: 8 actions cost 12 and 8 + skin_type cost 14, measured by the paired gate on 2026-10-26
+# (tests/fixtures/youcam/skin-type-gate-report-20261026T094239Z.json).
 _ANALYSIS_SD_UNITS = ((4, 9), (8, 12), (12, 14), (16, 16))
 # Documented price table for skin simulation.
 _SIMULATION_UNITS = ((4, 4), (10, 6))

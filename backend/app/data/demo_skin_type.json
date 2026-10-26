@@ -1,0 +1,6 @@
+{
+  "note": "Sample skin-type reading, recorded 2026-10-26 by ProofLoop's own client from the same stock portrait as the sample scores, in a separate framing. Not your face.",
+  "recorded_at": "2026-10-26T09:42:39Z",
+  "source": "tests/fixtures/youcam/skin-type-success-live.json",
+  "labels": {"whole": "Dry", "t_zone": "Normal", "u_zone": "Dry"}
+}

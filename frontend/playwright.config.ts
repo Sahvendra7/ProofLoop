@@ -35,6 +35,9 @@ export default defineConfig({
         // backend/.env may hold a real Gemini key for local testing; the suite must never call it.
         GEMINI_API_KEY: "",
         GEMINI_FREE_TEXT_ENABLED: "false",
+        // The checked skin profile is on by default here so every journey runs with it; E2E_SKIN_PROFILE=false
+        // runs the suite against today's flag-off path (the profile spec skips itself then).
+        SKIN_PROFILE_ENABLED: process.env.E2E_SKIN_PROFILE ?? "true",
         DATABASE_URL: `sqlite:///${e2eDb}`,
         CORS_ORIGINS: "http://localhost:3100",
         LOG_LEVEL: "WARNING",

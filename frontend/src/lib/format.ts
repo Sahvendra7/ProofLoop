@@ -6,10 +6,17 @@ import type {
   Band,
   BandEvidence,
   Detectable,
+  FocusBadge,
   FocusOutcome,
+  Frequency,
   Metric,
   NextAction,
+  Reactive,
+  SelfReport,
+  SkinRegion,
+  Stability,
   Tier,
+  UserView,
   Verdict,
 } from "./types";
 
@@ -198,3 +205,80 @@ export const ASSISTANT_ACTIONS: Record<Exclude<AssistantAction, "none">, string>
   open_matches: "See other matches for this goal",
   run_sample_checkin: "Show synthetic check-in",
 };
+
+// --- Checked skin profile (docs/innovation/18-SKIN-PROFILE-UX-SPEC.md) ------------------------------
+// The camera's label describes one photo. These strings never call it a diagnosis or a skin "type" for
+// good, never link redness to sensitivity, and never tie a product to a skin type.
+
+export const REGION_LABELS: Record<SkinRegion, { name: string; detail: string }> = {
+  whole: { name: "Whole face", detail: "" },
+  t_zone: { name: "T-zone", detail: "forehead and nose" },
+  u_zone: { name: "Cheeks", detail: "U-zone" },
+};
+
+export const READING_ISNT =
+  "It isn't a diagnosis, and it isn't your skin “type” for good: oiliness changes with season and between parts of the face. It doesn't tell you what to buy. ProofLoop's test uses the scores, not this label.";
+
+export const READING_SNAPSHOT = "Describes this photo only. Readings can shift with season, time since washing and light.";
+
+export const READING_MISSING = "The camera didn't return a skin-type reading for this photo. Your scores are unaffected.";
+
+export const READING_REMOVED =
+  "You removed this photo's skin-type reading when you removed your profile from a trial. Your scores are unaffected.";
+
+export const READING_NOT_REQUESTED =
+  "No skin-type reading for this scan: it was analysed before skin-type readings were switched on. Your answers below still work.";
+
+export const PROFILE_NOT_SAVED =
+  "No profile was saved with this trial: you didn't choose to save your answers when you started it. The camera's reading, if any, stays with the baseline scan and never affects the plan.";
+
+export const FREQUENCY_OPTIONS: { value: Frequency; label: string }[] = [
+  { value: "often", label: "Often" },
+  { value: "sometimes", label: "Sometimes" },
+  { value: "rarely", label: "Rarely" },
+  { value: "unsure", label: "Not sure" },
+];
+
+export const REACTIVE_OPTIONS: { value: Reactive; label: string }[] = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+  { value: "unsure", label: "Not sure" },
+];
+
+export const USER_VIEW_OPTIONS: { value: UserView; label: string }[] = [
+  { value: "agree", label: "Yes" },
+  { value: "disagree", label: "Not really" },
+  { value: "unsure", label: "Not sure" },
+];
+
+export const USER_VIEW_COPY: Record<UserView, string> = {
+  agree: "sounded like you",
+  disagree: "didn't sound like you",
+  unsure: "you weren't sure",
+};
+
+export const BADGE_COPY: Record<FocusBadge, string> = {
+  picked: "You picked this",
+  most_room: "Most room",
+  cant_show_gains: "Can't show gains",
+  not_measured: "Not measured",
+};
+
+export const STABILITY_COPY: Record<Stability, string> = {
+  held: "Held: both instrument-check photos gave the same reading. That's consistency across two photos minutes apart, not proof the reading is right.",
+  changed: "Changed: the reading differed between two photos taken minutes apart, so ProofLoop won't lean on it.",
+  partial: "Can't tell: one of the photos didn't return a full reading.",
+  not_checked: "Not checked yet. Your instrument check will show whether the reading holds across two photos.",
+  no_reading: "No camera reading was saved with this trial.",
+  not_used: "You chose not to use the camera's reading.",
+};
+
+export function describeAnswers(r: SelfReport | null): string {
+  if (!r) return "No answers saved";
+  const parts = [
+    r.shine && `shine ${r.shine === "unsure" ? "not sure" : r.shine}`,
+    r.tightness && `tight or flaky ${r.tightness === "unsure" ? "not sure" : r.tightness}`,
+    r.reactive && `reacts easily: ${r.reactive === "unsure" ? "not sure" : r.reactive}`,
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "No answers given";
+}

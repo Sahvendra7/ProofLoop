@@ -67,6 +67,30 @@ const sections: { id: string; title: string; body: React.ReactNode }[] = [
     ),
   },
   {
+    id: "skin-profile",
+    title: "Skin-type reading and your answers",
+    body: (
+      <>
+        <p>
+          Where skin profiles are switched on, the same YouCam request that measures your eight concerns also returns a
+          skin-type reading of the photo for the whole face, the T-zone and the cheeks (for example, &ldquo;T-zone:
+          oily&rdquo;). It costs 14 units instead of 12; adding it left the eight scores unchanged when we tested the same
+          photo with and without it. The reading is stored with the scan, like the scores, and describes how your skin looks
+          in that one photo. It isn&apos;t a diagnosis,
+          it can change with season, washing and light, and ProofLoop never uses it to measure your trial or to choose
+          products. A redness reading describes appearance only; it never means your skin is sensitive.
+        </p>
+        <p>
+          Your own answers are optional. They stay in this browser tab unless you tick &ldquo;Save my answers with this
+          trial&rdquo;, in which case they are stored with that trial, together with the reading, as they were when the plan
+          was fixed. Changing them later is recorded beside the original and never changes the plan or the result.
+          &ldquo;Remove profile&rdquo; on the trial page deletes the answers and the readings; &ldquo;Delete all my
+          data&rdquo; deletes everything. The answers and readings are never logged and are never sent to Gemini.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "preview",
     title: "About goal previews",
     body: (

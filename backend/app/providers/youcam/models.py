@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -52,6 +52,10 @@ class SkinOutput(_Lenient):
     raw_score: float | None = None
     score: float | None = None
     mask_urls: list[str] = Field(default_factory=list)
+    # Only on `skin_type` entries (verified live 2026-10-26): one per region with a label string.
+    # Typed loosely so one odd value can't fail the whole response; domain.profile validates them.
+    region: Any = None
+    skin_type: Any = None
 
 
 class AnalysisResults(_Lenient):

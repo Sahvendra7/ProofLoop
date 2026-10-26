@@ -10,7 +10,7 @@ import math
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 
-from app.domain.metrics import METRICS_BY_PROVIDER_TYPE
+from app.domain.metrics import METRICS_BY_PROVIDER_TYPE, SKIN_TYPE_ACTION
 
 
 @dataclass(frozen=True)
@@ -26,6 +26,10 @@ class Normalized:
     readings: list[Reading] = field(default_factory=list)
     missing: list[str] = field(default_factory=list)
     ignored_types: list[str] = field(default_factory=list)
+
+
+# Outputs with their own parser: the skin-type labels (domain/profile.py), which carry no score.
+_READ_ELSEWHERE = frozenset({SKIN_TYPE_ACTION})
 
 
 class _Output:
@@ -45,6 +49,8 @@ def normalize_outputs(outputs: Iterable[_Output], requested_provider_types: Sequ
     result = Normalized()
     seen: set[str] = set()
     for out in outputs:
+        if out.type in _READ_ELSEWHERE:
+            continue
         metric = METRICS_BY_PROVIDER_TYPE.get(out.type)
         if metric is None:
             # e.g. "all", "skin_age", "resize_image": not part of ProofLoop's measured set.

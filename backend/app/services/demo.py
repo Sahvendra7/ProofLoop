@@ -17,12 +17,14 @@ from functools import lru_cache
 from pathlib import Path
 
 from app.db.models import ReadingRow, ScanRow, utcnow
-from app.domain.metrics import REQUESTED_PROVIDER_ACTIONS
+from app.domain.metrics import REQUESTED_PROVIDER_ACTIONS, baseline_actions
 from app.domain.normalize import normalize_outputs
+from app.domain.profile import SkinTypeReading, reading_to_json
 from app.providers.youcam.models import AnalysisPollResponse
 
 FIXTURE_PATH = Path(__file__).resolve().parents[1] / "data" / "demo_fixture.json"
 REPEAT_PATH = Path(__file__).resolve().parents[1] / "data" / "demo_repeat.json"
+SKIN_TYPE_PATH = Path(__file__).resolve().parents[1] / "data" / "demo_skin_type.json"
 
 # Deliberately mixed so the demo shows every verdict type, not a rosy story:
 # moisture up beyond its measured band, radiance down beyond its measured band,
@@ -50,7 +52,16 @@ def fixture_note() -> str:
     return load_fixture()["note"]
 
 
-def build_demo_scan(session_id: str) -> ScanRow:
+@lru_cache
+def load_skin_type() -> dict:
+    return json.loads(SKIN_TYPE_PATH.read_text(encoding="utf-8"))
+
+
+def skin_type_note() -> str:
+    return load_skin_type()["note"]
+
+
+def build_demo_scan(session_id: str, skin_type: bool = False) -> ScanRow:
     fixture = load_fixture()
     parsed = AnalysisPollResponse.model_validate(fixture["response"])
     normalized = normalize_outputs(
@@ -66,7 +77,7 @@ def build_demo_scan(session_id: str) -> ScanRow:
         width=fixture["capture"]["width"],
         height=fixture["capture"]["height"],
         luminance_mean=fixture["capture"]["luminance_mean"],
-        requested_metrics=json.dumps([m for m in REQUESTED_PROVIDER_ACTIONS]),
+        requested_metrics=json.dumps(list(baseline_actions(skin_type))),
         missing_metrics=json.dumps(normalized.missing),
         units_estimated=0,
         observed_at=now,
@@ -76,6 +87,9 @@ def build_demo_scan(session_id: str) -> ScanRow:
         ReadingRow(metric=r.metric, ui_score=r.ui_score, raw_score=r.raw_score, mask_url=None)
         for r in normalized.readings
     ]
+    if skin_type:
+        labels = load_skin_type()["labels"]
+        scan.skin_type_json = reading_to_json(SkinTypeReading(labels["whole"], labels["t_zone"], labels["u_zone"]))
     return scan
 
 
@@ -102,7 +116,8 @@ def build_demo_repeat(baseline: ScanRow) -> ScanRow:
         status="complete",
         stage="complete",
         source="sample",
-        requested_metrics=baseline.requested_metrics,
+        # As recorded: the repeat predates skin-type readings, so it never claims one.
+        requested_metrics=json.dumps(list(REQUESTED_PROVIDER_ACTIONS)),
         missing_metrics="[]",  # the recorded run returned all eight concerns
         units_estimated=0,
         observed_at=now,
@@ -124,7 +139,7 @@ def build_demo_followup(baseline: ScanRow, trial_id: str) -> ScanRow:
         width=baseline.width,
         height=baseline.height,
         luminance_mean=(baseline.luminance_mean or 0) + 4,
-        requested_metrics=baseline.requested_metrics,
+        requested_metrics=json.dumps(list(REQUESTED_PROVIDER_ACTIONS)),  # synthetic scores only
         missing_metrics=baseline.missing_metrics,
         units_estimated=0,
         synthetic_timeline=True,

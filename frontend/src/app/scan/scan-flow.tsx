@@ -7,6 +7,7 @@ import { Camera, Check, ImageUp, Loader2, RefreshCcw, Scale, ShieldCheck, X } fr
 import { api, ApiError, newIdempotencyKey } from "@/lib/api";
 import { saveCapture } from "@/lib/capture-store";
 import { shortDate } from "@/lib/format";
+import { useResource } from "@/lib/hooks";
 import type { Capture, Preflight, Scan } from "@/lib/types";
 import { Button, Notice } from "@/components/ui";
 import { CheckinScreen, PhoneFrame } from "@/components/previews";
@@ -161,7 +162,7 @@ export function ScanFlow() {
 }
 
 function FairPhotoGuide() {
-  const tips = ["Face a window or soft, even light", "No makeup, hair off your forehead", "Glasses off, mouth closed", "Same spot and camera every time"];
+  const tips = ["Face a window or soft, even light", "No makeup, hair off your forehead", "Glasses off, mouth closed", "Same spot and camera every time", "Same time of day if you can"];
   return (
     <aside aria-label="What makes a fair photo" className="strawberry-glow hidden overflow-hidden rounded-[2rem] p-8 text-white lg:block">
       <p className="font-display text-2xl font-bold leading-tight">A fair test starts with a fair photo.</p>
@@ -182,12 +183,16 @@ function FairPhotoGuide() {
 
 function Consent({ onAccept }: { onAccept: () => void }) {
   const [agreed, setAgreed] = useState(false);
+  const status = useResource("status", api.status);
   return (
     <section aria-labelledby="consent-title" className="max-w-2xl rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
       <ShieldCheck aria-hidden className="size-7 text-accent" />
       <h2 id="consent-title" className="mt-4 font-display text-2xl text-ink">Before you take a photo</h2>
       <ul className="mt-5 space-y-3 leading-relaxed text-ink-2">
         <li><strong className="text-ink">What&apos;s sent:</strong> one photo, with location and camera metadata removed, goes from our server to the YouCam Skin Analysis API.</li>
+        {status.data?.skin_profile_enabled && (
+          <li><strong className="text-ink">What&apos;s read:</strong> the eight concern scores, plus a skin-type reading (for example, &ldquo;T-zone: oily&rdquo;) that describes how your skin looks in this photo. Neither is a medical assessment.</li>
+        )}
         <li><strong className="text-ink">What&apos;s kept:</strong> ProofLoop stores the scores, not the photo. Your browser keeps the framed photo in this tab only, for the overlays and preview, until you close it.</li>
         <li><strong className="text-ink">What it isn&apos;t:</strong> a medical assessment. Scores describe how skin looks in one photo, and lighting can shift them.</li>
         <li><strong className="text-ink">Your control:</strong> delete everything at any time from My trials.</li>
