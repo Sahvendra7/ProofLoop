@@ -73,7 +73,7 @@ cascades to scans, readings and trials.
 - Real and demo data never mix; a failed provider call never produces a "complete" scan.
 - Budget ceiling (`PROVIDER_UNIT_BUDGET`) and per-session hourly limits, enforced by reserving units
   before any provider request.
-- Upload limits: 10 MB, JPEG/PNG/WebP only, decompression-bomb guard, ≥480 px short side, very dark
+- Upload limits: 10 MB, JPEG/PNG/WebP only, at most 12 MP (checked from the header before decoding), ≥480 px short side, very dark
   photos rejected locally before spending units.
 - No image is written to disk or DB; logs never include image bytes, tokens or presigned URLs
   (httpx URL logging is suppressed). Every response carries `X-Request-ID`.
