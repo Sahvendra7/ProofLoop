@@ -12,7 +12,9 @@ import {
   TOOL_DESCRIPTIONS,
 } from "@/lib/format";
 import type { AssistantAction, AssistantConfig, AssistantIntent, AssistantReply, Trial } from "@/lib/types";
+import { useAnnounce } from "@/components/announcer";
 import { Button, ButtonLink } from "@/components/ui";
+import { focusWhenRendered } from "@/lib/focus";
 
 const CONSENT_KEY = "proofloop.assistant.consent";
 const INTENTS: AssistantIntent[] = ["is_it_working", "when_check_in", "should_switch"];
@@ -78,6 +80,7 @@ export function AssistantPanel({ trial, onUpdate }: { trial: Trial; onUpdate: (t
   const [ownerError, setOwnerError] = useState<string | null>(null);
   const [checkingOwner, setCheckingOwner] = useState(false);
   const inFlight = useRef(false);
+  const announce = useAnnounce();
 
   useEffect(() => {
     let live = true;
@@ -98,9 +101,11 @@ export function AssistantPanel({ trial, onUpdate }: { trial: Trial; onUpdate: (t
     inFlight.current = true;
     setPending(true);
     setError(null);
+    announce("Checking your plan…");
     try {
       const answer = await call();
       setEntries((prev) => [...prev, { question, answer }]);
+      announce(announcement(answer));
       return true;
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Couldn't get an answer. Try again.");
@@ -125,6 +130,8 @@ export function AssistantPanel({ trial, onUpdate }: { trial: Trial; onUpdate: (t
     setConsented(null);
     setAdult(false);
     setRegion(false);
+    // The "Stop using Gemini" button disappears with consent; the first consent box takes focus.
+    focusWhenRendered("assistant-adult");
   }
 
   async function unlock(e: FormEvent) {
@@ -138,6 +145,7 @@ export function AssistantPanel({ trial, onUpdate }: { trial: Trial; onUpdate: (t
         writeOwnerKey(key);
         setOwnerKey(key);
         setOwnerInput("");
+        focusWhenRendered("assistant-adult");
       } else {
         setOwnerError("That key isn't valid.");
       }
@@ -151,6 +159,7 @@ export function AssistantPanel({ trial, onUpdate }: { trial: Trial; onUpdate: (t
   function lock() {
     writeOwnerKey(null);
     setOwnerKey(null);
+    focusWhenRendered("assistant-owner-key");
   }
 
   async function ask(e: FormEvent) {
@@ -168,8 +177,6 @@ export function AssistantPanel({ trial, onUpdate }: { trial: Trial; onUpdate: (t
     if (ok) setMessage("");
   }
 
-  const latest = entries[entries.length - 1];
-
   return (
     <section aria-labelledby="assistant-title" className="mt-8 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
       <p className="eyebrow inline-flex items-center gap-2">
@@ -183,7 +190,7 @@ export function AssistantPanel({ trial, onUpdate }: { trial: Trial; onUpdate: (t
             key={intent}
             variant="secondary"
             size="sm"
-            disabled={pending}
+            softDisabled={pending}
             onClick={() => run(ASSISTANT_INTENTS[intent], () => api.assistantQuick(trial.id, intent))}
           >
             {ASSISTANT_INTENTS[intent]}
@@ -191,11 +198,6 @@ export function AssistantPanel({ trial, onUpdate }: { trial: Trial; onUpdate: (t
         ))}
       </div>
 
-      <div aria-live="polite" className="sr-only">
-        {pending
-          ? "Checking your plan…"
-          : latest && announcement(latest.answer)}
-      </div>
       {error && <p role="alert" className="mt-4 text-sm text-worse">{error}</p>}
 
       {entries.length > 0 && (
@@ -225,7 +227,7 @@ export function AssistantPanel({ trial, onUpdate }: { trial: Trial; onUpdate: (t
               aria-describedby={ownerError ? "assistant-owner-error" : undefined}
               className="h-12 min-w-0 flex-1 rounded-full bg-white px-5 text-ink ring-1 ring-line-strong"
             />
-            <Button type="submit" variant="secondary" disabled={!ownerInput.trim() || checkingOwner} loading={checkingOwner}>
+            <Button type="submit" variant="secondary" softDisabled={!ownerInput.trim()} loading={checkingOwner}>
               Unlock typed questions
             </Button>
           </div>
@@ -249,7 +251,7 @@ export function AssistantPanel({ trial, onUpdate }: { trial: Trial; onUpdate: (t
                 is not medical advice.
               </p>
               <label className="mt-3 flex items-center gap-2">
-                <input type="checkbox" checked={adult} onChange={(e) => confirm(e.target.checked, region)} className="size-4" />
+                <input id="assistant-adult" type="checkbox" checked={adult} onChange={(e) => confirm(e.target.checked, region)} className="size-4" />
                 I&apos;m 18 or older
               </label>
               <label className="mt-2 flex items-center gap-2">
@@ -271,7 +273,7 @@ export function AssistantPanel({ trial, onUpdate }: { trial: Trial; onUpdate: (t
               onChange={(e) => setMessage(e.target.value)}
               className="h-12 min-w-0 flex-1 rounded-full bg-white px-5 text-ink ring-1 ring-line-strong disabled:cursor-not-allowed disabled:opacity-60"
             />
-            <Button type="submit" disabled={!hasConsent || pending || !message.trim()} loading={pending}>
+            <Button type="submit" disabled={!hasConsent} softDisabled={!message.trim()} loading={pending}>
               Ask
             </Button>
           </div>
@@ -406,6 +408,7 @@ function ActionButton({ code, trial, onUpdate }: { code: Exclude<AssistantAction
           setBusy(true);
           try {
             onUpdate(await api.demoCheckin(trial.id));
+            focusWhenRendered("verdict");
           } finally {
             setBusy(false);
           }

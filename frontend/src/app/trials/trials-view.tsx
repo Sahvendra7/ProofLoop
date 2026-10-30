@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { ArrowRight, Trash2 } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { clearCaptures } from "@/lib/capture-store";
+import { focusIfFree } from "@/lib/focus";
 import { shortDate } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
 import { ProvenanceBadge } from "@/components/measure";
@@ -17,9 +19,22 @@ export function TrialsView() {
   const [deleting, setDeleting] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
+  const deletedHeading = useRef<HTMLHeadingElement>(null);
+
+  // The confirm buttons replace the button that was pressed, and vanish after deleting: focus follows each swap.
+  useEffect(() => {
+    if (deleted) focusIfFree(deletedHeading.current);
+  }, [deleted]);
+
+  function confirm(open: boolean) {
+    // Render the swap now and move focus in the same tick, so no key press lands on the page body in between.
+    flushSync(() => setConfirming(open));
+    document.getElementById(open ? "delete-confirm" : "delete-start")?.focus();
+  }
 
   async function deleteAll() {
     setDeleting(true);
+    setError(null);
     try {
       await api.deleteEverything();
       clearCaptures();
@@ -45,7 +60,11 @@ export function TrialsView() {
         Trials and scans in this browser&apos;s session. ProofLoop stores scores and capture metadata — never your photos.
       </PageIntro>
 
-      {deleted && <Notice className="mt-8" title="Everything was deleted.">Your session, scans, scores and trials are gone from the server, and photos were cleared from this tab.</Notice>}
+      {deleted && (
+        <Notice className="mt-8" title="Everything was deleted." headingRef={deletedHeading}>
+          Your session, scans, scores and trials are gone from the server, and photos were cleared from this tab.
+        </Notice>
+      )}
       {error && <Notice tone="error" className="mt-8" title={error.message}>{error.hint}</Notice>}
 
       <section aria-labelledby="trials-h" className="mt-10">
@@ -93,18 +112,18 @@ export function TrialsView() {
 
       <section aria-labelledby="delete-h" className="mt-16 rounded-[var(--radius-lg)] p-6 ring-1 ring-worse/25">
         <h2 id="delete-h" className="font-semibold text-ink">Delete all my data</h2>
-        <p className="mt-1 text-sm leading-relaxed text-ink-2">
+        <p id="delete-warning" className="mt-1 text-sm leading-relaxed text-ink-2">
           Removes this session and every scan, score and trial in it from the server, and clears photos held in this tab. This can&apos;t be undone.
         </p>
         {confirming ? (
           <div className="mt-4 flex flex-wrap gap-3">
-            <Button className="!bg-worse hover:!bg-worse/90" onClick={deleteAll} loading={deleting}>
+            <Button id="delete-confirm" aria-describedby="delete-warning" className="!bg-worse hover:!bg-worse/90" onClick={deleteAll} loading={deleting}>
               <Trash2 aria-hidden className="size-4" /> Yes, delete everything
             </Button>
-            <Button variant="secondary" onClick={() => setConfirming(false)}>Cancel</Button>
+            <Button variant="secondary" onClick={() => confirm(false)}>Cancel</Button>
           </div>
         ) : (
-          <Button variant="secondary" className="mt-4" onClick={() => setConfirming(true)}>
+          <Button id="delete-start" variant="secondary" className="mt-4" onClick={() => confirm(true)}>
             <Trash2 aria-hidden className="size-4" /> Delete all my data
           </Button>
         )}

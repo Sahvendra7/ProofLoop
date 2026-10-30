@@ -228,7 +228,7 @@ function TrialCard({ scan, goal, product }: { scan: Scan; goal: Goal; product: P
     }
   }
   return (
-    <div className="rounded-[var(--radius-xl)] bg-ink p-6 text-paper sm:p-7">
+    <div className="on-espresso rounded-[var(--radius-xl)] bg-ink p-6 text-paper sm:p-7">
       <CalendarCheck aria-hidden className="size-6 text-paper/70" />
       <h2 className="mt-4 font-display text-2xl">Start a trial with this product</h2>
       <p className="mt-2 leading-relaxed text-paper/75">

@@ -37,7 +37,8 @@ function Hero() {
             </p>
             <h1 id="hero-title" className="text-hero mt-6 text-espresso">
               Is it <span className="whitespace-nowrap">working?</span>
-              <span className="mt-2 block text-strawberry">Run a fair test.</span>
+              {/* berry-deep, not #fe3144: on berry-milk the brighter red is 2.8:1, under the 3:1 large-text minimum. */}
+              <span className="mt-2 block text-berry-deep">Run a fair test.</span>
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-ink-2 sm:text-xl">
               Choose one product, track one skin concern, and find out whether the change is bigger than the usual
@@ -81,7 +82,7 @@ function Hero() {
               />
             </div>
             <div className="relative ml-auto -mt-[38%] w-[min(64%,15rem)] sm:absolute sm:right-0 sm:top-[15%] sm:mt-0 sm:w-[44%]">
-              <PhoneFrame label="ProofLoop snapshot screen with sample data" className="rise [animation-delay:150ms]">
+              <PhoneFrame label="Preview of the snapshot screen: eight skin scores from sample data" className="rise [animation-delay:150ms]">
                 <SnapshotScreen />
               </PhoneFrame>
             </div>
@@ -237,7 +238,7 @@ function Showcase() {
                 laid over your photo — on your device only.
               </p>
             </div>
-            <PhoneFrame label="Snapshot screen, sample data" className="mx-auto w-[15rem]"><SnapshotScreen rows={6} /></PhoneFrame>
+            <PhoneFrame label="Preview of the snapshot screen with six scores from sample data" className="mx-auto w-[15rem]"><SnapshotScreen rows={6} /></PhoneFrame>
           </div>
         </Reveal>
         <Reveal delay={100} className="flex flex-col justify-between rounded-[2rem] bg-espresso p-6 text-white md:col-span-2 md:p-8">
@@ -253,12 +254,12 @@ function Showcase() {
         <Reveal className="rounded-[2rem] bg-white p-6 ring-1 ring-line md:col-span-3 md:p-8">
           <h3 className="font-display text-2xl font-bold leading-tight text-espresso">Matches with reasons, not percentages.</h3>
           <p className="mt-2 text-ink-2">Tiers from explicit rules; cautions drawn from your own scores.</p>
-          <PhoneFrame label="Matches screen, sample data" className="mx-auto mt-6 w-[15rem]"><MatchScreen /></PhoneFrame>
+          <PhoneFrame label="Preview of the matches screen: two products from the sample catalogue" className="mx-auto mt-6 w-[15rem]"><MatchScreen /></PhoneFrame>
         </Reveal>
         <Reveal delay={100} className="rounded-[2rem] bg-white p-6 ring-1 ring-line md:col-span-3 md:p-8">
           <h3 className="font-display text-2xl font-bold leading-tight text-espresso">A verdict that shows its working.</h3>
           <p className="mt-2 text-ink-2">Before and after, the normal-variation band, and every concern for context.</p>
-          <PhoneFrame label="Verdict screen, synthetic demo" className="mx-auto mt-6 w-[15rem]"><VerdictScreen /></PhoneFrame>
+          <PhoneFrame label="Preview of a verdict screen from a synthetic demo, not a measurement" className="mx-auto mt-6 w-[15rem]"><VerdictScreen /></PhoneFrame>
         </Reveal>
       </div>
     </section>
@@ -302,7 +303,7 @@ function Trust() {
 function FinalCta() {
   return (
     <section aria-labelledby="cta-title" className="px-3 pt-20 sm:px-5 sm:pt-28">
-      <Reveal className="strawberry-glow relative mx-auto grid max-w-6xl items-center gap-10 overflow-hidden rounded-[2.5rem] px-6 py-14 text-white sm:px-12 sm:py-20 lg:grid-cols-[1.3fr_1fr]">
+      <Reveal className="on-strawberry strawberry-glow relative mx-auto grid max-w-6xl items-center gap-10 overflow-hidden rounded-[2.5rem] px-6 py-14 text-white sm:px-12 sm:py-20 lg:grid-cols-[1.3fr_1fr]">
         <div>
           <h2 id="cta-title" className="text-section">Still wondering if it&apos;s working?</h2>
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-white">

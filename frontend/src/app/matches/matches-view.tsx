@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, CircleDollarSign, Plus, SlidersHorizontal, Target } from "lucide-react";
 import { api } from "@/lib/api";
 import { money, TIER_COPY } from "@/lib/format";
@@ -10,6 +10,7 @@ import { useResource } from "@/lib/hooks";
 import type { Match, RecommendationFilters, Reason } from "@/lib/types";
 import { ProvenanceBadge } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
+import { useAnnounce } from "@/components/announcer";
 import { ButtonLink, Card, Notice, Segmented, Skeleton, Toggle } from "@/components/ui";
 
 type Budget = "any" | "25" | "35" | "50";
@@ -30,6 +31,17 @@ export function MatchesView() {
   };
   const key = scanId && goal ? `recs:${scanId}:${goal}:${budget}:${finish}:${fragranceFree}` : null;
   const recs = useResource(key, () => api.recommendations(scanId!, goal!, filters));
+
+  // After a filter change, one short sentence; the first load is covered by the page heading taking focus.
+  const announce = useAnnounce();
+  const firstKey = useRef(key);
+  useEffect(() => {
+    const d = recs.data;
+    if (!d || key === firstKey.current || d.status === "no_measurement") return;
+    const n = d.matches.length;
+    const aside = d.excluded.length > 0 ? ` ${d.excluded.length} set aside by your filters.` : "";
+    announce(n === 0 ? `No products match these filters.${aside}` : `${n} ${n === 1 ? "product matches" : "products match"}.${aside}`);
+  }, [recs.data, key, announce]);
 
   if (!scanId || !goal) {
     return <Shell><Notice title="Choose a focus first." action={<Link className="font-semibold underline" href="/scan">Start a scan</Link>} /></Shell>;
@@ -69,7 +81,7 @@ export function MatchesView() {
         <div className="pb-1.5"><Toggle label="Fragrance-free only" checked={fragranceFree} onChange={setFragranceFree} /></div>
       </section>
 
-      <div className="mt-8" aria-live="polite" aria-busy={recs.loading}>
+      <div className="mt-8">
         {recs.error && <Notice tone="error" title={recs.error.message}>{recs.error.hint}</Notice>}
         {recs.loading && <div className="space-y-4"><Skeleton className="h-64" /><Skeleton className="h-64" /></div>}
         {data && data.status === "no_measurement" && <Notice tone="warn" title="This focus wasn't measured in your scan.">Choose another focus from your snapshot.</Notice>}

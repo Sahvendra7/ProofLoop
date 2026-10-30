@@ -147,7 +147,7 @@ function MaskViewer({ scan, capture }: { scan: Scan; capture: string | null }) {
             type="button"
             aria-pressed={active?.key === m.key}
             onClick={() => setActive(m)}
-            className={`rounded-full px-3 py-1.5 text-sm ring-1 transition ${active?.key === m.key ? "bg-ink text-paper ring-ink" : "text-ink-2 ring-line-strong hover:bg-sunken"}`}
+            className={`rounded-full border px-3 py-1.5 text-sm transition forced-colors:aria-pressed:[forced-color-adjust:none] forced-colors:aria-pressed:bg-[Highlight] forced-colors:aria-pressed:text-[HighlightText] ${active?.key === m.key ? "border-ink bg-ink text-paper" : "border-ink-3 text-ink-2 hover:bg-sunken"}`}
           >
             {m.label}
           </button>
@@ -188,13 +188,16 @@ function GoalPicker({ scan, goals }: { scan: Scan; goals: Goal[] | null }) {
             {ordered.map(({ goal, metric }, i) => (
               <label
                 key={goal.key}
-                className={`flex cursor-pointer items-center gap-4 rounded-[var(--radius-md)] p-3.5 ring-1 transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
-                  !metric ? "cursor-not-allowed opacity-50 ring-line" : selected === goal.key ? "bg-accent-soft ring-accent/40" : "ring-line hover:bg-sunken"
+                className={`flex cursor-pointer items-center gap-4 rounded-[var(--radius-md)] border-2 p-3 transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus-ring)] ${
+                  !metric ? "cursor-not-allowed border-line opacity-50" : selected === goal.key ? "border-strawberry-ink bg-accent-soft" : "border-line hover:bg-sunken"
                 }`}
               >
                 <input type="radio" name="goal" value={goal.key} className="sr-only" disabled={!metric} checked={selected === goal.key} onChange={() => setChoice(goal.key)} />
-                <span aria-hidden className={`grid size-5 shrink-0 place-items-center rounded-full ring-2 ${selected === goal.key ? "ring-accent" : "ring-line-strong"}`}>
-                  {selected === goal.key && <span className="size-2.5 rounded-full bg-accent" />}
+                <span aria-hidden className={`grid size-5 shrink-0 place-items-center rounded-full border-2 ${selected === goal.key ? "border-accent" : "border-ink-3"}`}>
+                  {/* Keeps its fill in forced-colours mode, where author backgrounds are removed. */}
+                  {selected === goal.key && (
+                    <span data-selected-mark className="size-2.5 rounded-full bg-accent forced-colors:bg-[CanvasText] forced-colors:[forced-color-adjust:none]" />
+                  )}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-medium text-ink">{goal.label}</span>

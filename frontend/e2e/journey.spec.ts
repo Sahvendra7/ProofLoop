@@ -1,16 +1,11 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import path from "node:path";
+import { expectNoSeriousA11yViolations } from "./helpers/a11y";
 
 const portrait = path.join(__dirname, "fixtures", "synthetic-portrait.png");
-// Next.js renders its own empty role="alert" route announcer; target ours.
-const appAlert = (page: Page) => page.locator('[role="alert"]:not(#__next-route-announcer__)');
+// A scan failure replaces the step: its heading takes focus (and is not also an alert, so it's read once).
+const stepFailure = (page: Page) => page.locator(":focus");
 
-async function expectNoSeriousA11yViolations(page: Page) {
-  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
-  const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
-  expect(serious.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
-}
 
 /** Returns text inside each variation dial that overlaps a tick, needle or hub (should be none). */
 async function dialTextCollisions(page: Page) {
@@ -97,7 +92,8 @@ test("live scan without a configured provider fails visibly and offers sample da
   await page.goto("/scan");
   await expect(page.getByRole("heading", { name: "Before you take a photo" })).toBeVisible();
   const continueButton = page.getByRole("button", { name: "Continue" });
-  await expect(continueButton).toBeDisabled();
+  await continueButton.click(); // without consent: the box takes focus and says why
+  await expect(page.getByRole("checkbox", { name: /18 or over/ })).toBeFocused();
   await page.getByText(/I'm 18 or over/).click();
   await continueButton.click();
 
@@ -105,7 +101,7 @@ test("live scan without a configured provider fails visibly and offers sample da
   await expect(page.getByRole("heading", { name: "Fill the oval with your face" })).toBeVisible();
   await page.getByRole("button", { name: "Analyse this photo" }).click();
 
-  await expect(appAlert(page)).toContainText("Live analysis isn't configured on this server.");
+  await expect(stepFailure(page)).toContainText("Live analysis isn't configured on this server.");
   await expect(page.getByRole("button", { name: "Adjust and retry" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Try with sample data" })).toBeVisible();
 });
@@ -119,7 +115,7 @@ test("client-side validation rejects a photo that is too small before any upload
     "base64",
   );
   await page.locator('input[type="file"]').setInputFiles({ name: "tiny.png", mimeType: "image/png", buffer: tiny });
-  await expect(appAlert(page)).toContainText("That photo is too small.");
+  await expect(stepFailure(page)).toContainText("That photo is too small.");
 });
 
 test("homepage: verdict tabs, step links and CTAs use real routes", async ({ page }) => {

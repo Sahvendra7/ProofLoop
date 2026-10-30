@@ -84,7 +84,7 @@ export function VerdictExplorer() {
             aria-controls="verdict-panel"
             tabIndex={i === index ? 0 : -1}
             onClick={() => setIndex(i)}
-            className="rounded-full px-4 py-2.5 text-sm font-semibold text-strawberry-ink transition-colors hover:bg-berry-soft aria-selected:bg-strawberry-ink aria-selected:text-white sm:px-5"
+            className="rounded-full px-4 py-2.5 text-sm font-semibold text-strawberry-ink transition-colors hover:bg-berry-soft aria-selected:bg-strawberry-ink aria-selected:text-white sm:px-5 forced-colors:aria-selected:[forced-color-adjust:none] forced-colors:aria-selected:bg-[Highlight] forced-colors:aria-selected:text-[HighlightText]"
           >
             {t.tab}
           </button>

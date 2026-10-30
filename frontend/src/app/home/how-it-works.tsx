@@ -7,7 +7,7 @@ import { BaselineScreen, CheckinScreen, FocusScreen, MatchScreen, PhoneFrame, Ve
 import { Reveal } from "@/components/reveal";
 import { SampleDataButton } from "../sample-data-button";
 
-type Step = { id: string; tab: string; tag: string; title: string; body: string; screen: ReactNode; cta: ReactNode };
+type Step = { id: string; tab: string; tag: string; title: string; body: string; preview: string; screen: ReactNode; cta: ReactNode };
 
 const linkCta = (href: string, label: string) => (
   <Link
@@ -28,6 +28,7 @@ const STEPS: Step[] = [
     tag: "YouCam Skin Analysis",
     title: "Take one clear photo.",
     body: "Consent first, then a framing oval so your face fills the frame the way YouCam needs. Eight concerns come back in about ten seconds, with progress straight from our server.",
+    preview: "Illustration of the capture screen: an oval to fill with your face",
     screen: <CheckinScreen title="Take your baseline" />,
     cta: linkCta("/scan", "Start a fair test"),
   },
@@ -37,6 +38,7 @@ const STEPS: Step[] = [
     tag: "Your lowest scores first",
     title: "Choose one concern to test.",
     body: "Each focus is tied to one measured score, so a later check-in can say whether it moved. One focus keeps the test fair.",
+    preview: "Preview of choosing one focus from sample scores",
     screen: <FocusScreen />,
     cta: <SampleDataButton label="Try it with sample data" size="md" />,
   },
@@ -46,6 +48,7 @@ const STEPS: Step[] = [
     tag: "Explainable matching",
     title: "Pick one product, see every reason.",
     body: "Matches come from the catalogue by explicit rules: a tier, the reasons, cautions drawn from your own scores, and anything your filters set aside.",
+    preview: "Preview of two matched products from the sample catalogue",
     screen: <MatchScreen />,
     cta: linkCta("/privacy#matching", "How matching works"),
   },
@@ -55,6 +58,7 @@ const STEPS: Step[] = [
     tag: "Day 0",
     title: "Save the baseline.",
     body: "Your scan becomes the reference point, together with the normal-variation band for your focus. Nothing else to set up.",
+    preview: "Preview of a saved baseline from sample data: hydration 69",
     screen: <BaselineScreen />,
     cta: linkCta("/scan", "Start a fair test"),
   },
@@ -64,6 +68,7 @@ const STEPS: Step[] = [
     tag: "Weeks later",
     title: "Check in under the same conditions.",
     body: "Same spot, similar light, same camera. ProofLoop compares the lighting of both photos and tells you when a comparison isn't fair.",
+    preview: "Illustration of the check-in screen",
     screen: <CheckinScreen title="Check in" />,
     cta: linkCta("/trials", "Open my trials"),
   },
@@ -73,6 +78,7 @@ const STEPS: Step[] = [
     tag: "Measured, not assumed",
     title: "Read an honest verdict.",
     body: "A measured change, no clear change, or inconclusive — with the band, the numbers and every concern for context. Never a claim about why.",
+    preview: "Preview of a verdict from a synthetic demo, not a measurement",
     screen: <VerdictScreen />,
     cta: linkCta("#verdicts", "What each verdict means"),
   },
@@ -105,7 +111,7 @@ export function HowItWorks() {
           <Reveal className="max-w-2xl">
             <p className="eyebrow">How it works</p>
             <h2 id="how-title" className="text-section mt-3 text-espresso">
-              Six steps from <span className="text-strawberry">hope to evidence.</span>
+              Six steps from <span className="text-berry-deep">hope to evidence.</span>
             </h2>
           </Reveal>
 
@@ -116,7 +122,7 @@ export function HowItWorks() {
                   <a
                     href={`#${s.id}`}
                     aria-current={active === s.id ? "step" : undefined}
-                    className="flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-strawberry-ink transition-colors hover:bg-berry-soft aria-[current=step]:bg-strawberry-ink aria-[current=step]:text-white"
+                    className="flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-strawberry-ink transition-colors hover:bg-berry-soft aria-[current=step]:bg-strawberry-ink aria-[current=step]:text-white forced-colors:aria-[current=step]:[forced-color-adjust:none] forced-colors:aria-[current=step]:bg-[Highlight] forced-colors:aria-[current=step]:text-[HighlightText]"
                   >
                     <span className="tabular opacity-70">{i + 1}</span> {s.tab}
                   </a>
@@ -130,7 +136,7 @@ export function HowItWorks() {
               <li key={s.id} id={s.id} className="scroll-mt-44">
                 <Reveal className={`grid gap-4 md:grid-cols-2 ${i % 2 ? "md:[&>*:first-child]:order-2" : ""}`}>
                   <div className="strawberry-glow flex items-center justify-center overflow-hidden rounded-[2rem] px-6 pt-10 md:min-h-[30rem]">
-                    <PhoneFrame label={`${s.tab} screen preview`} className="w-[15.5rem] translate-y-6">
+                    <PhoneFrame label={s.preview} className="w-[15.5rem] translate-y-6">
                       {s.screen}
                     </PhoneFrame>
                   </div>

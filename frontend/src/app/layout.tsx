@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
+import { AnnouncerProvider } from "@/components/announcer";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 import "./globals.css";
@@ -41,11 +42,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
-        <SiteNav />
-        <main id="main" className="flex-1">
-          {children}
-        </main>
-        <SiteFooter />
+        <AnnouncerProvider>
+          <SiteNav />
+          <main id="main" className="flex-1">
+            {children}
+          </main>
+          <SiteFooter />
+        </AnnouncerProvider>
       </body>
     </html>
   );

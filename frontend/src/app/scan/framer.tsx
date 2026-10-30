@@ -3,6 +3,7 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { Minus, Move, Plus } from "lucide-react";
 import { Button } from "@/components/ui";
+import { StepHeading } from "./step-heading";
 
 export type FramedImage = { blob: Blob; dataUrl: string; width: number; height: number; lowRes: boolean };
 
@@ -148,6 +149,7 @@ export function Framer({
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
             aria-label="Zoom"
+            aria-valuetext={`Zoom ${Math.round(zoom * 100)} percent`}
             className="flex-1 accent-[var(--color-accent)]"
           />
           <button type="button" aria-label="Zoom in" className="grid size-9 place-items-center rounded-full ring-1 ring-line-strong hover:bg-sunken" onClick={() => setZoom((z) => Math.min(4, z + 0.15))}>
@@ -158,7 +160,7 @@ export function Framer({
 
       <div className="space-y-6">
         <div>
-          <h2 className="font-display text-2xl text-ink">Fill the oval with your face</h2>
+          <StepHeading className="font-display text-2xl text-ink">Fill the oval with your face</StepHeading>
           <p className="mt-2 leading-relaxed text-ink-2">
             YouCam needs your face to cover most of the photo&apos;s width. Fit your face from hairline to chin inside the
             oval, eyes roughly level with its widest point.

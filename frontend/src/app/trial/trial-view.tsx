@@ -6,14 +6,17 @@ import { useState } from "react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Camera, ClipboardCheck, FlaskConical, Gauge, Minus } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { EVIDENCE_COPY, NEXT_STEP_COPY, OUTCOME_COPY, shortDate, VERDICT_COPY } from "@/lib/format";
-import { useResource } from "@/lib/hooks";
+import { focusWhenRendered } from "@/lib/focus";
+import { useDocumentTitle, useResource } from "@/lib/hooks";
 import type { Change, Comparison, InstrumentCheck as Check, Protocol, Trial } from "@/lib/types";
+import { useAnnounce } from "@/components/announcer";
 import { BandChart } from "@/components/band-chart";
 import { Dial } from "@/components/dial";
 import { ProvenanceNote } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
 import { Button, ButtonLink, Card, Notice, Skeleton } from "@/components/ui";
 import { AssistantPanel } from "./assistant-panel";
+import { ResultInWords } from "./result-in-words";
 
 export function TrialView() {
   const id = useSearchParams().get("id");
@@ -27,6 +30,9 @@ export function TrialView() {
 function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) => void }) {
   const focusBand = trial.focus_noise_band;
   const pendingCheckin = trial.checkins.find((c) => c.status === "processing");
+  useDocumentTitle(
+    `${trial.comparison ? OUTCOME_COPY[trial.comparison.focus_outcome].headline.replace(/\.$/, "") : "Waiting for check-in"} · ${trial.goal.label} · ProofLoop`,
+  );
   return (
     <Shell>
       <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-start">
@@ -51,7 +57,15 @@ function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) =
 
       <ProtocolCard trial={trial} protocol={trial.protocol} decided={trial.comparison !== null} />
 
-      {pendingCheckin && <Notice className="mt-6" title="A check-in is still being measured.">Refresh in a few seconds.</Notice>}
+      {pendingCheckin && (
+        <Notice
+          className="mt-6"
+          title="A check-in is still being measured."
+          action={<CheckAgain trial={trial} onUpdate={onUpdate} pending={(t) => t.checkins.some((c) => c.status === "processing")} then="verdict" />}
+        >
+          It usually takes 8–15 seconds.
+        </Notice>
+      )}
 
       {trial.history.length > 0 && (
         <Card className="mt-8 p-6 sm:p-8">
@@ -90,6 +104,8 @@ function Waiting({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) => vo
     setBusy(true);
     try {
       onUpdate(await api.demoCheckin(trial.id));
+      // The verdict replaces this card (and the button that was pressed): its heading takes focus.
+      focusWhenRendered("verdict");
     } catch (err) {
       setError(err instanceof ApiError ? err : new ApiError("unknown", "Couldn't create the demo follow-up.", 0));
     } finally {
@@ -151,7 +167,7 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
 
   return (
     <>
-      <section aria-labelledby="verdict" className={`mt-10 overflow-hidden rounded-[2.5rem] p-7 sm:p-12 ${panel}`}>
+      <section aria-labelledby="verdict" className={`mt-10 overflow-hidden rounded-[2.5rem] p-7 sm:p-12 ${changed ? "on-espresso" : ""} ${panel}`}>
         <div className="grid gap-10 md:grid-cols-[1.25fr_1fr] md:items-center">
           <div>
             {synthetic && (
@@ -167,7 +183,7 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
                 Early look: day {Math.round(comparison.comparability.days_apart)} of a planned {trial.protocol.planned_checkin_days}-day test.
               </p>
             )}
-            <h2 id="verdict" className="mt-4 font-display text-[clamp(2.2rem,4.5vw,3.75rem)] font-bold leading-[1]">
+            <h2 id="verdict" tabIndex={-1} className="mt-4 font-display text-[clamp(2.2rem,4.5vw,3.75rem)] font-bold leading-[1]">
               {outcome.headline}
             </h2>
             <p className={`mt-5 max-w-xl text-lg leading-relaxed ${sub}`}>{outcome.body}</p>
@@ -181,6 +197,8 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
                 span={Math.max(12, band * 2 + 4, Math.abs(focus.delta ?? 0) + 4)}
                 label={`${trial.goal.metric_label} verdict`}
                 tone={changed ? "dark" : "light"}
+                beyond={changed}
+                summary={`${trial.goal.metric_label} dial: baseline ${focus.baseline}${unclear ? "" : `, check-in ${focus.current}`}, normal variation plus or minus ${band} points. The result is described in words below.`}
                 caption={
                   <p className={`text-sm font-semibold ${sub}`}>
                     {focus.delta! > 0 ? "+" : ""}
@@ -197,6 +215,8 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
           )}
         </div>
       </section>
+
+      <ResultInWords trial={trial} comparison={comparison} synthetic={synthetic} />
 
       <NextStep trial={trial} comparison={comparison} synthetic={synthetic} />
 
@@ -269,6 +289,8 @@ function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Chec
     setError(null);
     try {
       onUpdate(await api.demoRepeat(trial.id));
+      // The result heading replaces the question it asked; focus moves there.
+      focusWhenRendered("instrument-title");
     } catch (err) {
       setError(err instanceof ApiError ? err : new ApiError("unknown", "Couldn't run the sample instrument check.", 0));
     } finally {
@@ -302,7 +324,7 @@ function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Chec
       <p className="eyebrow inline-flex items-center gap-2">
         <Gauge aria-hidden className="size-4" /> Instrument check{check.sealed ? " · part of the plan" : " · optional, before your first check-in"}
       </p>
-      <h2 id="instrument-title" className="mt-2 font-display text-2xl text-ink">
+      <h2 id="instrument-title" tabIndex={-1} className="mt-2 font-display text-2xl text-ink">
         {check.status === "complete" && check.spread !== null
           ? check.widened
             ? `Your two scans differed by ${check.spread} on ${metricLower}. Your band is now ±${check.personal_band}.`
@@ -323,7 +345,10 @@ function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Chec
         </Notice>
       )}
       {check.status === "processing" && (
-        <p className="mt-3 text-ink-2">Your second photo is being measured. Refresh in a few seconds. Check-ins wait until it&apos;s done.</p>
+        <div className="mt-3 space-y-3">
+          <p className="text-ink-2">Your second photo is being measured. Check-ins wait until it&apos;s done.</p>
+          <CheckAgain trial={trial} onUpdate={onUpdate} pending={(t) => t.protocol.instrument_check.status === "processing"} then="instrument-title" />
+        </div>
       )}
 
       {check.status === "complete" && (
@@ -412,7 +437,7 @@ function Comparability({ comparison }: { comparison: Comparison }) {
   const { level, issues } = comparison.comparability;
   const title = level === "good" ? "Comparable conditions" : level === "fair" ? "Comparable, with caveats" : "Not comparable";
   return (
-    <Notice tone={level === "good" ? "info" : level === "fair" ? "warn" : "error"} className="mt-6" title={`${title}: how fair is this comparison?`}>
+    <Notice tone={level === "good" ? "info" : level === "fair" ? "warn" : "error"} live={false} className="mt-6" title={`${title}: how fair is this comparison?`}>
       {issues.length === 0 ? (
         "Lighting and capture method were similar in both photos."
       ) : (
@@ -503,6 +528,30 @@ function ProtocolCard({ trial, protocol, decided }: { trial: Trial; protocol: Pr
         </div>
       </dl>
     </section>
+  );
+}
+
+/** Re-reads the trial in place of "refresh the page": says so if it's still measuring, else focuses the result. */
+function CheckAgain({ trial, onUpdate, pending, then }: { trial: Trial; onUpdate: (t: Trial) => void; pending: (t: Trial) => boolean; then: string }) {
+  const [busy, setBusy] = useState(false);
+  const announce = useAnnounce();
+  async function check() {
+    setBusy(true);
+    try {
+      const fresh = await api.trial(trial.id);
+      onUpdate(fresh);
+      if (pending(fresh)) announce("Still being measured. Try again in a few seconds.");
+      else focusWhenRendered(then);
+    } catch {
+      announce("Couldn't check just now. Try again in a few seconds.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Button variant="secondary" size="sm" onClick={check} loading={busy}>
+      Check again
+    </Button>
   );
 }
 

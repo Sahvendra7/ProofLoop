@@ -23,6 +23,8 @@ export function Dial({
   children,
   caption,
   className = "",
+  beyond,
+  summary: summaryOverride,
 }: {
   baseline: number;
   band: number;
@@ -36,6 +38,11 @@ export function Dial({
   /** secondary line, drawn under the gauge */
   caption?: React.ReactNode;
   className?: string;
+  /** Whether the check-in is beyond the band, as decided by the server. Without it the dial classifies its own
+   * illustration values (homepage examples only). */
+  beyond?: boolean;
+  /** Replaces the screen-reader sentence. Trial pages pass one without any classification of their own. */
+  summary?: string;
 }) {
   const { ref, visible } = useInView<HTMLDivElement>();
   const start = -120; // degrees, 0 = up
@@ -49,7 +56,7 @@ export function Dial({
     return [round(100 + r * Math.cos(rad)), round(100 + r * Math.sin(rad))] as const;
   };
   const inBand = (v: number) => Math.abs(v - baseline) <= band;
-  const outside = current !== undefined && !inBand(current);
+  const outside = current !== undefined && (beyond ?? !inBand(current));
   const muted = tone === "dark" ? "rgb(255 255 255 / 0.35)" : "var(--color-line-strong)";
   const bandColor = tone === "dark" ? "#fcd7f3" : "var(--color-band-moderate)";
   const ink = tone === "dark" ? "#ffffff" : "var(--color-espresso)";
@@ -57,9 +64,10 @@ export function Dial({
   const arcTo = polar(toAngle(baseline + band), 66);
 
   const summary =
-    current === undefined
+    summaryOverride ??
+    (current === undefined
       ? `${label}: baseline ${baseline}, normal variation plus or minus ${band} points.`
-      : `${label}: baseline ${baseline}, check-in ${current}, a change of ${current - baseline > 0 ? "+" : ""}${current - baseline}. Normal variation is plus or minus ${band}, so this is ${outside ? "beyond" : "within"} normal variation.`;
+      : `${label}: baseline ${baseline}, check-in ${current}, a change of ${current - baseline > 0 ? "+" : ""}${current - baseline}. Normal variation is plus or minus ${band}, so this is ${outside ? "beyond" : "within"} normal variation.`);
 
   return (
     <div ref={ref} data-visible={visible} className={`relative ${className}`}>

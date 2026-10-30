@@ -1,15 +1,11 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import path from "node:path";
+import { expectNoSeriousA11yViolations } from "./helpers/a11y";
 
 const portrait = path.join(__dirname, "fixtures", "synthetic-portrait.png");
-const appAlert = (page: Page) => page.locator('[role="alert"]:not(#__next-route-announcer__)');
+// A scan failure replaces the step: its heading takes focus (and is not also an alert, so it's read once).
+const stepFailure = (page: Page) => page.locator(":focus");
 
-async function expectNoSeriousA11yViolations(page: Page) {
-  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
-  const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
-  expect(serious.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
-}
 
 test("focus picker shows what would count as a change and flags ceiling focuses", async ({ page }) => {
   await page.goto("/");
@@ -54,7 +50,9 @@ test("trial shows its pre-registered plan, and the verdict is judged against it"
   await expectNoSeriousA11yViolations(page);
 
   await page.getByRole("button", { name: "Show synthetic 21-day follow-up" }).click();
-  await expect(page.getByText("Early look: day 21 of a planned 28-day test.")).toBeVisible();
+  // Said in the verdict panel and again in the Result in words summary.
+  await expect(page.getByRole("region", { name: /^Measured change/ }).getByText("Early look: day 21 of a planned 28-day test.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Result in words" })).toContainText("Early look: day 21 of a planned 28-day test.");
   await expect(plan).toContainText("The plan this verdict was judged against");
   // Unmeasured concerns carry the conservative band and say so.
   await expect(page.getByRole("row", { name: /Blemishes/ })).toContainText("±7, assumed");
@@ -111,7 +109,7 @@ test("check-in preflight warns before any units are spent, and retaking is free"
   await page.locator('input[type="file"]').setInputFiles(portrait);
   await page.getByRole("button", { name: "Analyse this photo" }).click();
   await page.getByRole("button", { name: "Analyse anyway (12 units)" }).click();
-  await expect(appAlert(page)).toContainText("Live analysis isn't configured on this server.");
+  await expect(stepFailure(page)).toContainText("Live analysis isn't configured on this server.");
   expect(scanCalls).toBe(1);
 });
 

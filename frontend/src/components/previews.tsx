@@ -8,10 +8,15 @@ import { NOISE_BANDS, SAMPLE_SCORES, SYNTHETIC_FOLLOWUP } from "@/lib/sample";
  * labelled synthetic demo — never by invented "results".
  */
 
+/**
+ * One image to assistive technology: `label` is its whole description and must say whether the screen holds sample
+ * data, a synthetic demo or an illustration. The mock screen inside is hidden, so its demo numbers are never read as
+ * if they were a result.
+ */
 export function PhoneFrame({ children, className = "", label }: { children: ReactNode; className?: string; label: string }) {
   return (
-    <figure className={`relative ${className}`} aria-label={label}>
-      <div className="rounded-[2.6rem] bg-espresso p-2.5 shadow-[0_40px_80px_-30px_rgb(44_26_26/0.55)]">
+    <figure className={`relative ${className}`} role="img" aria-label={label}>
+      <div aria-hidden className="rounded-[2.6rem] bg-espresso p-2.5 shadow-[0_40px_80px_-30px_rgb(44_26_26/0.55)]">
         <div className="relative overflow-hidden rounded-[2.1rem] bg-paper">
           <div aria-hidden className="absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-espresso" />
           <div className="h-full pt-9">{children}</div>
