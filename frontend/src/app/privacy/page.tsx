@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
+import { RouteTitle } from "@/components/route-title";
 import { PageIntro } from "@/components/ui";
+import { titled } from "@/lib/titles";
+
+const TITLE = "How it works & privacy";
 
 export const metadata: Metadata = {
-  title: "How it works & privacy",
+  title: TITLE,
   description: "What ProofLoop measures, where data goes, how matches are made and what it cannot conclude.",
 };
 
@@ -152,6 +156,7 @@ const sections: { id: string; title: string; body: React.ReactNode }[] = [
 export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+      <RouteTitle title={titled(TITLE)} />
       <PageIntro eyebrow="Trust" title="How ProofLoop works, and what it can't tell you">
         Plain answers about the measurement, your data and the matching logic.
       </PageIntro>

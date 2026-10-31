@@ -1,12 +1,14 @@
 "use client";
 
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
-import { Minus, Move, Plus } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, LocateFixed, Minus, Move, Plus } from "lucide-react";
 import { Button } from "@/components/ui";
+import { StepHeading } from "./step-heading";
 
 export type FramedImage = { blob: Blob; dataUrl: string; width: number; height: number; lowRes: boolean };
 
 const ASPECT = 4 / 3; // frame height / width (portrait 3:4)
+const STEP = 0.02; // one arrow key or button press, in frame widths
 
 /**
  * Lets the user position and zoom their photo so the face fills the oval.
@@ -59,17 +61,19 @@ export function Framer({
     const w = frameRef.current.getBoundingClientRect().width;
     setOffset({ x: drag.current.ox + (e.clientX - drag.current.x) / w, y: drag.current.oy + (e.clientY - drag.current.y) / w });
   }
+  // Dragging, the arrow keys and the move buttons all go through the same clamped offset, so each gives the same
+  // framing. The buttons are the single-pointer alternative to dragging (WCAG 2.5.7).
+  const nudge = (dx: number, dy: number) => setOffset({ x: pos.x + dx, y: pos.y + dy });
   function onKey(e: KeyboardEvent<HTMLDivElement>) {
-    const step = 0.02;
     const moves: Record<string, [number, number]> = {
-      ArrowLeft: [-step, 0],
-      ArrowRight: [step, 0],
-      ArrowUp: [0, -step],
-      ArrowDown: [0, step],
+      ArrowLeft: [-STEP, 0],
+      ArrowRight: [STEP, 0],
+      ArrowUp: [0, -STEP],
+      ArrowDown: [0, STEP],
     };
     if (moves[e.key]) {
       e.preventDefault();
-      setOffset({ x: pos.x + moves[e.key][0], y: pos.y + moves[e.key][1] });
+      nudge(...moves[e.key]);
     } else if (e.key === "+" || e.key === "=") setZoom((z) => Math.min(4, z + 0.1));
     else if (e.key === "-") setZoom((z) => Math.max(1, z - 0.1));
   }
@@ -103,7 +107,7 @@ export function Framer({
         <div
           ref={frameRef}
           role="application"
-          aria-label="Photo framing. Drag or use arrow keys to move, plus and minus to zoom."
+          aria-label="Photo framing. Drag, use the arrow keys or the move buttons to position, plus and minus to zoom."
           tabIndex={0}
           onKeyDown={onKey}
           onPointerDown={onPointerDown}
@@ -132,9 +136,19 @@ export function Framer({
           </svg>
           <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-black/55 px-3 py-1 text-xs text-white">
-              <Move aria-hidden className="size-3.5" /> Drag to position
+              <Move aria-hidden className="size-3.5" /> Drag, or use the arrows below
             </span>
           </div>
+        </div>
+        <div role="group" aria-label="Move photo" className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          {MOVES.map(({ label, Icon, dx, dy }) => (
+            <button key={label} type="button" aria-label={label} className={MOVE_BUTTON} onClick={() => nudge(dx, dy)}>
+              <Icon aria-hidden className="size-4" />
+            </button>
+          ))}
+          <button type="button" className={`${RING_BUTTON} gap-1.5 px-3 text-sm text-ink-2`} onClick={() => setOffset({ x: 0, y: 0 })}>
+            <LocateFixed aria-hidden className="size-4" /> Centre photo
+          </button>
         </div>
         <div className="mt-4 flex items-center gap-3">
           <button type="button" aria-label="Zoom out" className="grid size-9 place-items-center rounded-full ring-1 ring-line-strong hover:bg-sunken" onClick={() => setZoom((z) => Math.max(1, z - 0.15))}>
@@ -148,6 +162,7 @@ export function Framer({
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
             aria-label="Zoom"
+            aria-valuetext={`Zoom ${Math.round(zoom * 100)} percent`}
             className="flex-1 accent-[var(--color-accent)]"
           />
           <button type="button" aria-label="Zoom in" className="grid size-9 place-items-center rounded-full ring-1 ring-line-strong hover:bg-sunken" onClick={() => setZoom((z) => Math.min(4, z + 0.15))}>
@@ -158,7 +173,7 @@ export function Framer({
 
       <div className="space-y-6">
         <div>
-          <h2 className="font-display text-2xl text-ink">Fill the oval with your face</h2>
+          <StepHeading className="font-display text-2xl text-ink">Fill the oval with your face</StepHeading>
           <p className="mt-2 leading-relaxed text-ink-2">
             YouCam needs your face to cover most of the photo&apos;s width. Fit your face from hairline to chin inside the
             oval, eyes roughly level with its widest point.
@@ -191,3 +206,12 @@ export function Framer({
     </div>
   );
 }
+
+const RING_BUTTON = "inline-flex h-10 items-center justify-center rounded-full ring-1 ring-line-strong hover:bg-sunken";
+const MOVE_BUTTON = `${RING_BUTTON} w-10`;
+const MOVES = [
+  { label: "Move photo left", Icon: ArrowLeft, dx: -STEP, dy: 0 },
+  { label: "Move photo up", Icon: ArrowUp, dx: 0, dy: -STEP },
+  { label: "Move photo down", Icon: ArrowDown, dx: 0, dy: STEP },
+  { label: "Move photo right", Icon: ArrowRight, dx: STEP, dy: 0 },
+];

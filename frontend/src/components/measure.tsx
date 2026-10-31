@@ -43,9 +43,10 @@ export function MetricBar({ metric, compact = false }: { metric: Metric; compact
           {!compact && <p className="text-xs text-ink-3">Higher = {metric.plain}</p>}
         </div>
         <p className="shrink-0 text-right">
-          <span className="tabular font-display text-2xl text-ink">{metric.ui_score}</span>
-          <span className="sr-only"> out of 100, </span>
-          <span className="ml-2 text-xs font-medium" style={{ color: BAND_TEXT[metric.band] }}>
+          {/* One phrase in reading order for screen readers; the visual number and label ran together ("69Room to improve"). */}
+          <span className="sr-only">{`${metric.ui_score} out of 100, ${metric.band_label.toLowerCase()}`}</span>
+          <span aria-hidden className="tabular font-display text-2xl text-ink">{metric.ui_score}</span>
+          <span aria-hidden className="ml-2 text-xs font-medium" style={{ color: BAND_TEXT[metric.band] }}>
             {metric.band_label}
           </span>
         </p>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, CircleDollarSign, Plus, SlidersHorizontal, Target } from "lucide-react";
 import { api } from "@/lib/api";
 import { money, TIER_COPY } from "@/lib/format";
@@ -11,7 +11,8 @@ import { loadDraft } from "@/lib/profile-store";
 import type { Match, RecommendationFilters, Reason } from "@/lib/types";
 import { ProvenanceBadge } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
-import { ButtonLink, Card, Notice, Segmented, Skeleton, Toggle } from "@/components/ui";
+import { useAnnounce } from "@/components/announcer";
+import { ButtonLink, CapsText, Card, Notice, Segmented, Skeleton, Toggle } from "@/components/ui";
 
 type Budget = "any" | "25" | "35" | "50";
 type Finish = "any" | "light" | "rich";
@@ -32,10 +33,29 @@ export function MatchesView() {
   const key = scanId && goal ? `recs:${scanId}:${goal}:${budget}:${finish}:${fragranceFree}` : null;
   const recs = useResource(key, () => api.recommendations(scanId!, goal!, filters));
 
+  // After a filter change, one short sentence; the first load is covered by the page heading taking focus.
+  const announce = useAnnounce();
+  const firstKey = useRef(key);
+  useEffect(() => {
+    const d = recs.data;
+    if (!d || key === firstKey.current || d.status === "no_measurement") return;
+    const n = d.matches.length;
+    const aside = d.excluded.length > 0 ? ` ${d.excluded.length} set aside by your filters.` : "";
+    announce(n === 0 ? `No products match these filters.${aside}` : `${n} ${n === 1 ? "product matches" : "products match"}.${aside}`);
+  }, [recs.data, key, announce]);
+
+  // The heading is the goal's name. Keep it while a filter change reloads the list, and render no h1 at all until it
+  // is known, so focus (which waits for the h1) never lands on placeholder text (docs/innovation/31 §6.5).
+  const [known, setKnown] = useState<{ goal: string; label: string } | null>(null);
+  if (recs.data && goal && (known?.goal !== goal || known.label !== recs.data.goal.label)) {
+    setKnown({ goal, label: recs.data.goal.label });
+  }
+
   if (!scanId || !goal) {
     return <Shell><Notice title="Choose a focus first." action={<Link className="font-semibold underline" href="/scan">Start a scan</Link>} /></Shell>;
   }
   const data = recs.data;
+  const heading = data?.goal.label ?? (known?.goal === goal ? known.label : recs.error ? "Matches" : null);
 
   return (
     <Shell>
@@ -45,7 +65,11 @@ export function MatchesView() {
       <header className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-end">
         <div>
           <p className="mb-4 inline-flex rounded-full bg-berry-milk px-3 py-1 text-xs font-semibold text-berry-deep">Step 3 of 4 · Choose a product</p>
-          <h1 className="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold leading-[0.98] text-espresso">{data ? data.goal.label : "Matching products"}</h1>
+          {heading ? (
+            <h1 className="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold leading-[0.98] text-espresso">{heading}</h1>
+          ) : (
+            <Skeleton className="h-[clamp(2.4rem,6vw,4.5rem)] w-3/4" />
+          )}
           {data && (
             <p className="mt-3 flex flex-wrap items-center gap-3 text-ink-2">
               <ProvenanceBadge provenance={data.provenance} size="sm" />
@@ -70,7 +94,7 @@ export function MatchesView() {
         <div className="pb-1.5"><Toggle label="Fragrance-free only" checked={fragranceFree} onChange={setFragranceFree} /></div>
       </section>
 
-      <div className="mt-8" aria-live="polite" aria-busy={recs.loading}>
+      <div className="mt-8">
         {recs.error && <Notice tone="error" title={recs.error.message}>{recs.error.hint}</Notice>}
         {recs.loading && <div className="space-y-4"><Skeleton className="h-64" /><Skeleton className="h-64" /></div>}
         {data && data.status === "no_measurement" && <Notice tone="warn" title="This focus wasn't measured in your scan.">Choose another focus from your snapshot.</Notice>}
@@ -137,7 +161,7 @@ function MatchCard({ match, scanId, goal }: { match: Match; scanId: string; goal
         <div className="min-w-0">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="eyebrow">{p.brand} · {p.category}</p>
+              <p className="eyebrow"><CapsText>{p.brand} · {p.category}</CapsText></p>
               <h2 className="mt-1 text-xl font-semibold text-ink">{p.name}</h2>
               <p className="mt-1 text-sm text-ink-3">{p.texture} · {p.size_ml} ml · {p.fragrance_free ? "fragrance-free" : "contains fragrance"}</p>
             </div>
@@ -149,7 +173,7 @@ function MatchCard({ match, scanId, goal }: { match: Match; scanId: string; goal
             </div>
           </div>
           <div className="mt-4 rounded-[var(--radius-md)] bg-paper p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-3">Why it&apos;s here</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink-3"><CapsText>Why it&apos;s here</CapsText></p>
             <ul className="mt-2.5 space-y-2">{match.reasons.map((r) => <ReasonItem key={r.text} reason={r} />)}</ul>
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

@@ -1,14 +1,8 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { expectNoSeriousA11yViolations } from "./helpers/a11y";
 
 // The checked skin profile, on sample data (no YouCam calls). Skipped when the suite runs with the flag off.
 test.skip(process.env.E2E_SKIN_PROFILE === "false", "skin profile switched off for this run");
-
-async function expectNoSeriousA11yViolations(page: Page) {
-  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
-  const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
-  expect(serious.map((v) => `${v.id}: ${v.nodes.length} nodes`)).toEqual([]);
-}
 
 async function sampleSnapshot(page: Page) {
   await page.goto("/");

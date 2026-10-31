@@ -13,7 +13,7 @@ import { clearDraft, loadDraft } from "@/lib/profile-store";
 import type { Goal, Match, Product, Scan, Simulation } from "@/lib/types";
 import { ProvenanceBadge } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
-import { Button, Card, Notice, Segmented, Skeleton } from "@/components/ui";
+import { Button, CapsText, Card, Notice, Segmented, Skeleton } from "@/components/ui";
 
 const SIM_PHRASE: Record<string, string> = {
   calm_redness: "less visible redness",
@@ -58,7 +58,7 @@ export function ProductView() {
         </div>
         <div className="space-y-6">
           <header>
-            <p className="eyebrow">{p.brand} · {p.category}</p>
+            <p className="eyebrow"><CapsText>{p.brand} · {p.category}</CapsText></p>
             <h1 className="mt-2 font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold leading-[0.98] text-espresso">{p.name}</h1>
             <p className="mt-3 flex items-baseline gap-3">
               <span className="tabular font-display text-3xl text-ink">{money(p.price)}</span>
@@ -79,7 +79,7 @@ export function ProductView() {
 function Facts({ product: p }: { product: Product }) {
   return (
     <section aria-labelledby="facts" className="mt-8">
-      <h2 id="facts" className="eyebrow">Product facts · from the catalogue</h2>
+      <h2 id="facts" className="eyebrow"><CapsText>Product facts · from the catalogue</CapsText></h2>
       <dl className="mt-4 divide-y divide-line rounded-[var(--radius-lg)] ring-1 ring-line">
         {[
           ["Texture", `${p.texture} · ${p.finish} finish`],
@@ -113,7 +113,7 @@ function MatchLogic({ match, loading, goalLabel, scan }: { match: Match | null; 
   return (
     <Card className="p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="eyebrow">Match logic · from your scan</h2>
+        <h2 className="eyebrow"><CapsText>Match logic · from your scan</CapsText></h2>
         {scan && <ProvenanceBadge provenance={scan.provenance} size="sm" />}
       </div>
       {!match ? (
@@ -242,7 +242,7 @@ function TrialCard({ scan, goal, product }: { scan: Scan; goal: Goal; product: P
     }
   }
   return (
-    <div className="rounded-[var(--radius-xl)] bg-ink p-6 text-paper sm:p-7">
+    <div className="on-espresso rounded-[var(--radius-xl)] bg-ink p-6 text-paper sm:p-7">
       <CalendarCheck aria-hidden className="size-6 text-paper/70" />
       <h2 className="mt-4 font-display text-2xl">Start a trial with this product</h2>
       <p className="mt-2 leading-relaxed text-paper/75">

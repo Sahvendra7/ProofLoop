@@ -6,15 +6,18 @@ import { useState } from "react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Camera, ClipboardCheck, FlaskConical, Gauge, Minus } from "lucide-react";
 import { api, ApiError } from "@/lib/api";
 import { EVIDENCE_COPY, NEXT_STEP_COPY, OUTCOME_COPY, shortDate, VERDICT_COPY } from "@/lib/format";
-import { useResource } from "@/lib/hooks";
+import { focusWhenRendered } from "@/lib/focus";
+import { useDocumentTitle, useResource } from "@/lib/hooks";
 import type { Change, Comparison, InstrumentCheck as Check, Protocol, Trial } from "@/lib/types";
+import { useAnnounce } from "@/components/announcer";
 import { BandChart } from "@/components/band-chart";
 import { Dial } from "@/components/dial";
 import { ProvenanceNote } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
-import { Button, ButtonLink, Card, Notice, Skeleton } from "@/components/ui";
+import { Button, ButtonLink, CapsText, Card, Notice, Skeleton } from "@/components/ui";
 import { AssistantPanel } from "./assistant-panel";
 import { ProfileBlock } from "./profile-block";
+import { ResultInWords } from "./result-in-words";
 
 export function TrialView() {
   const id = useSearchParams().get("id");
@@ -28,6 +31,9 @@ export function TrialView() {
 function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) => void }) {
   const focusBand = trial.focus_noise_band;
   const pendingCheckin = trial.checkins.find((c) => c.status === "processing");
+  useDocumentTitle(
+    `${trial.comparison ? OUTCOME_COPY[trial.comparison.focus_outcome].headline.replace(/\.$/, "") : "Waiting for check-in"} · ${trial.goal.label} · ProofLoop`,
+  );
   return (
     <Shell>
       <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-start">
@@ -54,7 +60,15 @@ function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) =
 
       <ProfileBlock trial={trial} onUpdate={onUpdate} />
 
-      {pendingCheckin && <Notice className="mt-6" title="A check-in is still being measured.">Refresh in a few seconds.</Notice>}
+      {pendingCheckin && (
+        <Notice
+          className="mt-6"
+          title="A check-in is still being measured."
+          action={<CheckAgain trial={trial} onUpdate={onUpdate} pending={(t) => t.checkins.some((c) => c.status === "processing")} then="verdict" />}
+        >
+          It usually takes 8–15 seconds.
+        </Notice>
+      )}
 
       {trial.history.length > 0 && (
         <Card className="mt-8 p-6 sm:p-8">
@@ -93,6 +107,8 @@ function Waiting({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) => vo
     setBusy(true);
     try {
       onUpdate(await api.demoCheckin(trial.id));
+      // The verdict replaces this card (and the button that was pressed): its heading takes focus.
+      focusWhenRendered("verdict");
     } catch (err) {
       setError(err instanceof ApiError ? err : new ApiError("unknown", "Couldn't create the demo follow-up.", 0));
     } finally {
@@ -103,7 +119,7 @@ function Waiting({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) => vo
   return (
     <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
       <Card className="p-6 sm:p-8">
-        <p className="eyebrow">Baseline saved</p>
+        <p className="eyebrow"><CapsText>Baseline saved</CapsText></p>
         <p className="mt-3 font-display text-6xl text-ink tabular">{base?.ui_score ?? "—"}</p>
         <p className="mt-1 text-ink-2">{trial.goal.metric_label} score on {shortDate(trial.baseline.observed_at)}</p>
         <h2 className="mt-8 text-lg font-semibold text-ink">Check in on or after {shortDate(trial.protocol.planned_checkin_at)}</h2>
@@ -154,7 +170,8 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
 
   return (
     <>
-      <section aria-labelledby="verdict" className={`mt-10 overflow-hidden rounded-[2.5rem] p-7 sm:p-12 ${panel}`}>
+      {/* Not a named region: VoiceOver read the headline twice ("…heading, …region") when focus moved to it. */}
+      <section className={`mt-10 overflow-hidden rounded-[2.5rem] p-7 sm:p-12 ${changed ? "on-espresso" : ""} ${panel}`}>
         <div className="grid gap-10 md:grid-cols-[1.25fr_1fr] md:items-center">
           <div>
             {synthetic && (
@@ -163,14 +180,14 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
               </p>
             )}
             <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${sub}`}>
-              {synthetic ? "Demo verdict" : "Verdict"} · {trial.goal.metric_label} · {comparison.comparability.days_apart} days apart
+              <CapsText>{synthetic ? "Demo verdict" : "Verdict"} · {trial.goal.metric_label} · {comparison.comparability.days_apart} days apart</CapsText>
             </p>
             {comparison.early && (
               <p className={`mt-2 text-sm font-semibold ${sub}`}>
                 Early look: day {Math.round(comparison.comparability.days_apart)} of a planned {trial.protocol.planned_checkin_days}-day test.
               </p>
             )}
-            <h2 id="verdict" className="mt-4 font-display text-[clamp(2.2rem,4.5vw,3.75rem)] font-bold leading-[1]">
+            <h2 id="verdict" tabIndex={-1} className="mt-4 font-display text-[clamp(2.2rem,4.5vw,3.75rem)] font-bold leading-[1]">
               {outcome.headline}
             </h2>
             <p className={`mt-5 max-w-xl text-lg leading-relaxed ${sub}`}>{outcome.body}</p>
@@ -184,10 +201,12 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
                 span={Math.max(12, band * 2 + 4, Math.abs(focus.delta ?? 0) + 4)}
                 label={`${trial.goal.metric_label} verdict`}
                 tone={changed ? "dark" : "light"}
+                beyond={changed}
+                summary={`${trial.goal.metric_label} dial: baseline ${focus.baseline}${unclear ? "" : `, check-in ${focus.current}`}, normal variation plus or minus ${band} points. The result is described in words below.`}
                 caption={
                   <p className={`text-sm font-semibold ${sub}`}>
                     {focus.delta! > 0 ? "+" : ""}
-                    {focus.delta} points · normal variation ±{band}
+                    {focus.delta} {Math.abs(focus.delta ?? 0) === 1 ? "point" : "points"} · normal variation ±{band}
                     {focus.band_evidence === "assumed" ? " (assumed)" : ""}
                   </p>
                 }
@@ -200,6 +219,8 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
           )}
         </div>
       </section>
+
+      <ResultInWords trial={trial} comparison={comparison} synthetic={synthetic} />
 
       <NextStep trial={trial} comparison={comparison} synthetic={synthetic} />
 
@@ -218,11 +239,11 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
           <table className="w-full min-w-[520px] text-left text-sm">
             <thead className="text-xs uppercase tracking-wider text-ink-3">
               <tr>
-                <th scope="col" className="px-6 py-3 font-semibold sm:px-8">Concern</th>
-                <th scope="col" className="px-3 py-3 text-right font-semibold">Baseline</th>
-                <th scope="col" className="px-3 py-3 text-right font-semibold">Now</th>
-                <th scope="col" className="px-3 py-3 text-right font-semibold">Change</th>
-                <th scope="col" className="px-6 py-3 font-semibold sm:px-8">Reading</th>
+                <th scope="col" className="px-6 py-3 font-semibold sm:px-8"><CapsText>Concern</CapsText></th>
+                <th scope="col" className="px-3 py-3 text-right font-semibold"><CapsText>Baseline</CapsText></th>
+                <th scope="col" className="px-3 py-3 text-right font-semibold"><CapsText>Now</CapsText></th>
+                <th scope="col" className="px-3 py-3 text-right font-semibold"><CapsText>Change</CapsText></th>
+                <th scope="col" className="px-6 py-3 font-semibold sm:px-8"><CapsText>Reading</CapsText></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -242,7 +263,7 @@ function NextStep({ trial, comparison, synthetic }: { trial: Trial; comparison: 
   return (
     <section aria-labelledby="next-step" className="mt-6 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
       <p className="eyebrow inline-flex items-center gap-2">
-        <ArrowRight aria-hidden className="size-4" /> {synthetic ? "Next step (demo)" : "Next step"} · follows from your plan
+        <ArrowRight aria-hidden className="size-4" /> <CapsText>{synthetic ? "Next step (demo)" : "Next step"} · follows from your plan</CapsText>
       </p>
       <h2 id="next-step" className="mt-2 font-display text-2xl text-ink">{copy.title}</h2>
       <p className="mt-2 max-w-3xl leading-relaxed text-ink-2">{copy.body}</p>
@@ -272,6 +293,8 @@ function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Chec
     setError(null);
     try {
       onUpdate(await api.demoRepeat(trial.id));
+      // The result heading replaces the question it asked; focus moves there.
+      focusWhenRendered("instrument-title");
     } catch (err) {
       setError(err instanceof ApiError ? err : new ApiError("unknown", "Couldn't run the sample instrument check.", 0));
     } finally {
@@ -301,11 +324,12 @@ function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Chec
     ) : null;
 
   return (
-    <section aria-labelledby="instrument-title" className="mt-8 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
+    // Not a named region, like the verdict: its heading takes focus, and naming the section after it reads it twice.
+    <section className="mt-8 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
       <p className="eyebrow inline-flex items-center gap-2">
-        <Gauge aria-hidden className="size-4" /> Instrument check{check.sealed ? " · part of the plan" : " · optional, before your first check-in"}
+        <Gauge aria-hidden className="size-4" /> <CapsText>Instrument check{check.sealed ? " · part of the plan" : " · optional, before your first check-in"}</CapsText>
       </p>
-      <h2 id="instrument-title" className="mt-2 font-display text-2xl text-ink">
+      <h2 id="instrument-title" tabIndex={-1} className="mt-2 font-display text-2xl text-ink">
         {check.status === "complete" && check.spread !== null
           ? check.widened
             ? `Your two scans differed by ${check.spread} on ${metricLower}. Your band is now ±${check.personal_band}.`
@@ -326,7 +350,10 @@ function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Chec
         </Notice>
       )}
       {check.status === "processing" && (
-        <p className="mt-3 text-ink-2">Your second photo is being measured. Refresh in a few seconds. Check-ins wait until it&apos;s done.</p>
+        <div className="mt-3 space-y-3">
+          <p className="text-ink-2">Your second photo is being measured. Check-ins wait until it&apos;s done.</p>
+          <CheckAgain trial={trial} onUpdate={onUpdate} pending={(t) => t.protocol.instrument_check.status === "processing"} then="instrument-title" />
+        </div>
       )}
 
       {check.status === "complete" && (
@@ -344,11 +371,11 @@ function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Chec
                 <caption className="sr-only">Baseline scan and second scan of unchanged skin, by concern</caption>
                 <thead className="text-xs uppercase tracking-wider text-ink-3">
                   <tr>
-                    <th scope="col" className="py-2 pr-3 font-semibold">Concern</th>
-                    <th scope="col" className="px-3 py-2 text-right font-semibold">Baseline</th>
-                    <th scope="col" className="px-3 py-2 text-right font-semibold">Second scan</th>
-                    <th scope="col" className="px-3 py-2 text-right font-semibold">Difference</th>
-                    <th scope="col" className="py-2 pl-3 font-semibold">Standard band</th>
+                    <th scope="col" className="py-2 pr-3 font-semibold"><CapsText>Concern</CapsText></th>
+                    <th scope="col" className="px-3 py-2 text-right font-semibold"><CapsText>Baseline</CapsText></th>
+                    <th scope="col" className="px-3 py-2 text-right font-semibold"><CapsText>Second scan</CapsText></th>
+                    <th scope="col" className="px-3 py-2 text-right font-semibold"><CapsText>Difference</CapsText></th>
+                    <th scope="col" className="py-2 pl-3 font-semibold"><CapsText>Standard band</CapsText></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -415,7 +442,7 @@ function Comparability({ comparison }: { comparison: Comparison }) {
   const { level, issues } = comparison.comparability;
   const title = level === "good" ? "Comparable conditions" : level === "fair" ? "Comparable, with caveats" : "Not comparable";
   return (
-    <Notice tone={level === "good" ? "info" : level === "fair" ? "warn" : "error"} className="mt-6" title={`${title}: how fair is this comparison?`}>
+    <Notice tone={level === "good" ? "info" : level === "fair" ? "warn" : "error"} live={false} className="mt-6" title={`${title}: how fair is this comparison?`}>
       {issues.length === 0 ? (
         "Lighting and capture method were similar in both photos."
       ) : (
@@ -454,7 +481,7 @@ function ProtocolCard({ trial, protocol, decided }: { trial: Trial; protocol: Pr
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="eyebrow inline-flex items-center gap-2">
-            <ClipboardCheck aria-hidden className="size-4" /> {decided ? "The plan this verdict was judged against" : "Your fair-test plan"}
+            <ClipboardCheck aria-hidden className="size-4" /> <CapsText>{decided ? "The plan this verdict was judged against" : "Your fair-test plan"}</CapsText>
           </p>
           <h2 id="protocol-title" className="mt-2 font-display text-2xl text-ink">
             Decided before the check-in, not after
@@ -471,7 +498,7 @@ function ProtocolCard({ trial, protocol, decided }: { trial: Trial; protocol: Pr
       <ol className="mt-5 grid gap-2 sm:grid-cols-3" aria-label="What the check-in score would mean">
         {zones.map((z) => (
           <li key={z.key} className={`rounded-[var(--radius-md)] p-4 ring-1 ${z.key === "none" ? "bg-berry-milk/60 ring-line" : "bg-paper ring-line"}`}>
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-3">{z.label}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink-3"><CapsText>{z.label}</CapsText></p>
             <p className="tabular mt-1 font-display text-2xl font-bold text-ink">{z.value}</p>
           </li>
         ))}
@@ -506,6 +533,30 @@ function ProtocolCard({ trial, protocol, decided }: { trial: Trial; protocol: Pr
         </div>
       </dl>
     </section>
+  );
+}
+
+/** Re-reads the trial in place of "refresh the page": says so if it's still measuring, else focuses the result. */
+function CheckAgain({ trial, onUpdate, pending, then }: { trial: Trial; onUpdate: (t: Trial) => void; pending: (t: Trial) => boolean; then: string }) {
+  const [busy, setBusy] = useState(false);
+  const announce = useAnnounce();
+  async function check() {
+    setBusy(true);
+    try {
+      const fresh = await api.trial(trial.id);
+      onUpdate(fresh);
+      if (pending(fresh)) announce("Still being measured. Try again in a few seconds.");
+      else focusWhenRendered(then);
+    } catch {
+      announce("Couldn't check just now. Try again in a few seconds.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Button variant="secondary" size="sm" onClick={check} loading={busy}>
+      Check again
+    </Button>
   );
 }
 

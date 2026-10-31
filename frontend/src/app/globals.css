@@ -87,8 +87,21 @@
     border-color: var(--color-line);
   }
 
+  /*
+   * Focus ring per surface (docs/innovation/29 §2): strawberry-ink on light surfaces (≥3.99:1), white on
+   * strawberry and espresso surfaces, where a red ring would be invisible (1.00:1). Outlines survive forced colours.
+   */
+  :root {
+    --focus-ring: var(--color-strawberry-ink);
+  }
+
+  .on-strawberry,
+  .on-espresso {
+    --focus-ring: #ffffff;
+  }
+
   :focus-visible {
-    outline: 3px solid var(--color-strawberry-ink);
+    outline: 3px solid var(--focus-ring);
     outline-offset: 3px;
     border-radius: 6px;
   }
@@ -160,11 +173,14 @@
       var(--color-berry-milk);
   }
 
-  /* Glows sit away from where text usually goes and stay subtle, so white text keeps AA contrast. */
+  /*
+   * Subtle enough that white text keeps 4.5:1 even at a glow's centre (≈4.56:1): on phones the final CTA's body text
+   * sits on the upper glow, which measured 3.8:1 at the earlier 0.32 / 0.28 strengths.
+   */
   .strawberry-glow {
     background:
-      radial-gradient(40% 55% at 88% 18%, rgb(255 205 232 / 0.32), transparent 70%),
-      radial-gradient(45% 55% at 75% 100%, rgb(255 190 225 / 0.28), transparent 70%),
+      radial-gradient(40% 55% at 88% 18%, rgb(255 205 232 / 0.14), transparent 70%),
+      radial-gradient(45% 55% at 75% 100%, rgb(255 190 225 / 0.12), transparent 70%),
       var(--color-strawberry-ink);
   }
 
@@ -196,7 +212,9 @@
   .marquee {
     animation: marquee 38s linear infinite;
   }
-  .marquee:hover {
+  .marquee:hover,
+  :root[data-motion="paused"] .marquee,
+  :root[data-motion="paused"] .float {
     animation-play-state: paused;
   }
 
@@ -251,6 +269,10 @@
   }
   .marquee {
     animation: none;
+  }
+  /* Nothing on the page moves, so there is nothing to pause. */
+  .motion-toggle {
+    display: none;
   }
   .js .reveal {
     opacity: 1;

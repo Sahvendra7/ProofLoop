@@ -7,12 +7,14 @@ import { Camera, Check, ImageUp, Loader2, RefreshCcw, Scale, ShieldCheck, X } fr
 import { api, ApiError, newIdempotencyKey } from "@/lib/api";
 import { saveCapture } from "@/lib/capture-store";
 import { shortDate } from "@/lib/format";
-import { useResource } from "@/lib/hooks";
+import { useDocumentTitle, useResource } from "@/lib/hooks";
 import type { Capture, Preflight, Scan } from "@/lib/types";
-import { Button, Notice } from "@/components/ui";
+import { useAnnounce } from "@/components/announcer";
+import { Button, CapsText, Notice } from "@/components/ui";
 import { CheckinScreen, PhoneFrame } from "@/components/previews";
 import { SampleDataButton } from "../sample-data-button";
 import { Framer, type FramedImage } from "./framer";
+import { StepFocusContext, StepHeading, useStepFocusRef } from "./step-heading";
 
 type Step =
   | { kind: "consent" }
@@ -25,6 +27,16 @@ type Step =
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const CONSENT_KEY = "pl:consent";
+
+const STEP_TITLES: Record<Step["kind"], string> = {
+  consent: "Before your photo",
+  choose: "Add a photo",
+  camera: "Camera",
+  frame: "Framing",
+  preflight: "Comparison check",
+  analyzing: "Measuring",
+  failed: "Couldn't analyse",
+};
 
 const STAGES = [
   { id: "queued", label: "Preparing your photo" },
@@ -40,19 +52,27 @@ export function ScanFlow() {
   const trialId = params.get("trial") ?? undefined;
   // Instrument check: a second baseline photo of unchanged skin, taken before the first check-in.
   const repeat = Boolean(trialId) && params.get("repeat") === "1";
-  const [step, setStep] = useState<Step>(() => {
+  const [step, setStepState] = useState<Step>(() => {
     try {
       return sessionStorage.getItem(CONSENT_KEY) ? { kind: "choose" } : { kind: "consent" };
     } catch {
       return { kind: "consent" };
     }
   });
+  // Once the user moves to another step, each new step's heading takes focus (the pressed button is gone).
+  const [moved, setMoved] = useState(false);
+  const setStep = (next: Step | ((s: Step) => Step)) => {
+    if (typeof next !== "function") setMoved(true);
+    setStepState(next);
+  };
 
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [step.kind]);
+  useDocumentTitle(`${STEP_TITLES[step.kind]} · ${repeat ? "Instrument check" : trialId ? "Check-in" : "Scan"} · ProofLoop`);
 
   return (
+    <StepFocusContext.Provider value={moved}>
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <header className="mb-10 max-w-2xl">
         <p className="mb-4 inline-flex rounded-full bg-berry-milk px-3 py-1 text-xs font-semibold text-berry-deep">{repeat ? "Instrument check" : trialId ? "Trial check-in" : "Step 1 of 4 · Measure"}</p>
@@ -136,9 +156,7 @@ export function ScanFlow() {
       )}
       {step.kind === "failed" && (
         <div className="max-w-xl space-y-6">
-          <Notice tone="error" title={step.title}>
-            {step.hint}
-          </Notice>
+          <FailedNotice title={step.title} hint={step.hint} />
           <div className="flex flex-wrap gap-3">
             {step.retry && (
               <Button onClick={() => setStep(step.retry!)}>
@@ -158,6 +176,17 @@ export function ScanFlow() {
         </div>
       )}
     </div>
+    </StepFocusContext.Provider>
+  );
+}
+
+/** The failure replaces the step (and the button that was pressed): its heading takes focus and is read once. */
+function FailedNotice({ title, hint }: { title: string; hint: string | null }) {
+  const ref = useStepFocusRef();
+  return (
+    <Notice tone="error" title={title} headingRef={ref}>
+      {hint}
+    </Notice>
   );
 }
 
@@ -166,7 +195,7 @@ function FairPhotoGuide() {
   return (
     <aside aria-label="What makes a fair photo" className="strawberry-glow hidden overflow-hidden rounded-[2rem] p-8 text-white lg:block">
       <p className="font-display text-2xl font-bold leading-tight">A fair test starts with a fair photo.</p>
-      <PhoneFrame label="Framing guide" className="mx-auto mt-6 w-[13.5rem]">
+      <PhoneFrame label="Illustration of the framing oval" className="mx-auto mt-6 w-[13.5rem]">
         <CheckinScreen title="Fill the oval" />
       </PhoneFrame>
       <ul className="mt-6 space-y-2.5 text-sm">
@@ -183,6 +212,8 @@ function FairPhotoGuide() {
 
 function Consent({ onAccept }: { onAccept: () => void }) {
   const [agreed, setAgreed] = useState(false);
+  const [missing, setMissing] = useState(false);
+  const box = useRef<HTMLInputElement>(null);
   const status = useResource("status", api.status);
   return (
     <section aria-labelledby="consent-title" className="max-w-2xl rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
@@ -198,10 +229,34 @@ function Consent({ onAccept }: { onAccept: () => void }) {
         <li><strong className="text-ink">Your control:</strong> delete everything at any time from My trials.</li>
       </ul>
       <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-[var(--radius-md)] bg-sunken p-4">
-        <input type="checkbox" className="mt-1 size-4 accent-[var(--color-accent)]" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+        <input
+          ref={box}
+          type="checkbox"
+          className="mt-1 size-4 accent-[var(--color-accent)]"
+          checked={agreed}
+          aria-invalid={missing || undefined}
+          aria-describedby={missing ? "consent-missing" : undefined}
+          onChange={(e) => {
+            setAgreed(e.target.checked);
+            if (e.target.checked) setMissing(false);
+          }}
+        />
         <span className="text-sm leading-relaxed text-ink">I&apos;m 18 or over, this is my own face, and I agree to it being analysed as described above.</span>
       </label>
-      <Button className="mt-6" disabled={!agreed} onClick={onAccept}>
+      {missing && (
+        <p id="consent-missing" className="mt-3 text-sm font-semibold text-worse">
+          Tick the box to confirm before continuing.
+        </p>
+      )}
+      {/* Always operable: a disabled button is skipped by Tab and can't say why. */}
+      <Button
+        className="mt-6"
+        onClick={() => {
+          if (agreed) return onAccept();
+          setMissing(true);
+          box.current?.focus();
+        }}
+      >
         Continue
       </Button>
     </section>
@@ -245,17 +300,19 @@ function Choose({
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <button type="button" onClick={onCamera} className="group rounded-[var(--radius-xl)] bg-card p-7 text-left shadow-[var(--shadow-card)] ring-1 ring-line transition hover:ring-ink/30">
+      <StepHeading className="text-lg font-semibold text-ink sm:col-span-2">Add your photo</StepHeading>
+      <button type="button" onClick={onCamera} className="group rounded-[var(--radius-xl)] bg-card p-7 text-left shadow-[var(--shadow-card)] ring-1 ring-line transition hover:ring-ink/30 forced-colors:border forced-colors:border-[CanvasText]">
         <Camera aria-hidden className="size-7 text-accent" />
         <p className="mt-5 text-lg font-semibold text-ink">Take a photo</p>
         <p className="mt-1 text-ink-2">Uses your camera. We&apos;ll ask for permission only now.</p>
       </button>
-      <button type="button" onClick={() => inputRef.current?.click()} className="group rounded-[var(--radius-xl)] bg-card p-7 text-left shadow-[var(--shadow-card)] ring-1 ring-line transition hover:ring-ink/30">
+      <button type="button" onClick={() => inputRef.current?.click()} className="group rounded-[var(--radius-xl)] bg-card p-7 text-left shadow-[var(--shadow-card)] ring-1 ring-line transition hover:ring-ink/30 forced-colors:border forced-colors:border-[CanvasText]">
         <ImageUp aria-hidden className="size-7 text-accent" />
         <p className="mt-5 text-lg font-semibold text-ink">Upload a photo</p>
         <p className="mt-1 text-ink-2">JPEG, PNG or WebP, up to 10 MB.</p>
       </button>
-      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label="Upload a photo" onChange={(e) => onFile(e.target.files?.[0])} />
+      {/* Opened by the "Upload a photo" button; not a second, invisible tab stop. */}
+      <input ref={inputRef} type="file" tabIndex={-1} accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label="Upload a photo" onChange={(e) => onFile(e.target.files?.[0])} />
       <div className="rounded-[var(--radius-lg)] bg-sunken p-5 text-sm leading-relaxed text-ink-2 sm:col-span-2">
         <p className="font-semibold text-ink">For a measurement you can compare later</p>
         <p className="mt-1">Face a window or soft light, no makeup, hair off your forehead, glasses off. Use the same spot each time.</p>
@@ -276,6 +333,7 @@ function CameraCapture({
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [ready, setReady] = useState(false);
+  const announce = useAnnounce();
 
   useEffect(() => {
     let cancelled = false;
@@ -325,8 +383,17 @@ function CameraCapture({
 
   return (
     <div className="mx-auto max-w-sm">
+      <StepHeading className="mb-4 text-lg font-semibold text-ink">Take your photo</StepHeading>
       <div className="relative aspect-[3/4] overflow-hidden rounded-[var(--radius-xl)] bg-ink">
-        <video ref={videoRef} autoPlay playsInline muted onLoadedData={() => setReady(true)} className="h-full w-full -scale-x-100 object-cover" aria-label="Camera preview" />
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          onLoadedData={() => {
+            setReady(true);
+            announce("Camera ready. The Capture button is below the preview.");
+          }} className="h-full w-full -scale-x-100 object-cover" aria-label="Camera preview" />
         <svg viewBox="0 0 300 400" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
           <ellipse cx="150" cy="185" rx="105" ry="140" fill="none" stroke="#fe3144" strokeWidth="3.5" strokeDasharray="9 8" opacity="0.9" />
         </svg>
@@ -389,6 +456,7 @@ function CaptureMatch({
 }) {
   const [result, setResult] = useState<Preflight | null>(null);
   const [unchecked, setUnchecked] = useState(false);
+  const announce = useAnnounce();
   const latest = useRef(onFailed);
   useEffect(() => {
     latest.current = onFailed;
@@ -398,18 +466,27 @@ function CaptureMatch({
     let stopped = false;
     api
       .preflight(trialId, step.framed.blob, step.source, repeat ? "repeat_baseline" : "checkin")
-      .then((r) => !stopped && setResult(r))
+      .then((r) => {
+        if (stopped) return;
+        setResult(r);
+        announce(`${MATCH_COPY[r.level].title} Details and your options follow.`);
+      })
       .catch((err: unknown) => {
         if (stopped) return;
         const e = err instanceof ApiError ? err : null;
         // A photo the server can't use fails here, for free. Anything else
         // (network, server) shouldn't block the user: say it wasn't checked.
         if (e && e.status >= 400 && e.status < 500 && e.code !== "session_required") latest.current(e.message, e.hint, e.code);
-        else setUnchecked(true);
+        else {
+          setUnchecked(true);
+          announce("We couldn't run the free check. You can still analyse.");
+        }
       });
     return () => {
       stopped = true;
     };
+    // announce is stable; the check runs once per photo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trialId, step.framed.blob, step.source, repeat]);
 
   const copy = result ? MATCH_COPY[result.level] : null;
@@ -422,9 +499,10 @@ function CaptureMatch({
         {/* eslint-disable-next-line @next/next/no-img-element -- local data URL preview */}
         <img src={step.framed.dataUrl} alt={repeat ? "Your second baseline photo" : "Your check-in photo"} className="h-full w-full object-cover" />
       </div>
-      <div aria-live="polite">
-        <p className="eyebrow inline-flex items-center gap-2"><Scale aria-hidden className="size-4" /> Capture match · free</p>
-        <h2 className="mt-2 font-display text-2xl text-ink">Is this a fair comparison?</h2>
+      {/* The result is announced once through the app announcer; this block is not a live region. */}
+      <div>
+        <p className="eyebrow inline-flex items-center gap-2"><Scale aria-hidden className="size-4" /> <CapsText>Capture match · free</CapsText></p>
+        <StepHeading className="mt-2 font-display text-2xl text-ink">Is this a fair comparison?</StepHeading>
         <p className="mt-2 text-sm leading-relaxed text-ink-2">
           Before spending YouCam units, ProofLoop compares this photo with your baseline&apos;s conditions. The photo is checked and
           discarded; nothing is sent to YouCam yet.
@@ -433,20 +511,20 @@ function CaptureMatch({
           <p className="mt-6 inline-flex items-center gap-2 text-ink-2"><Loader2 aria-hidden className="size-4 animate-spin" /> Checking against your baseline…</p>
         )}
         {unchecked && (
-          <Notice tone="warn" className="mt-6" title="We couldn't run the free check.">
+          <Notice tone="warn" live={false} className="mt-6" title="We couldn't run the free check.">
             You can still analyse; the verdict will still check lighting and capture method afterwards.
           </Notice>
         )}
         {result && copy && base && now && (
           <>
-            <Notice tone={copy.tone} className="mt-6" title={copy.title}>
+            <Notice tone={copy.tone} live={false} className="mt-6" title={copy.title}>
               <p>{copy.body}</p>
               {result.issues.length > 0 && <ul className="mt-2 list-disc space-y-1 pl-4">{result.issues.map((i) => <li key={i}>{i}</li>)}</ul>}
             </Notice>
             <table className="mt-5 w-full max-w-md text-left text-sm">
               <caption className="sr-only">Baseline and check-in capture conditions</caption>
               <thead className="text-xs uppercase tracking-wider text-ink-3">
-                <tr><th scope="col" className="py-2 font-semibold"></th><th scope="col" className="py-2 font-semibold">Baseline</th><th scope="col" className="py-2 font-semibold">This photo</th></tr>
+                <tr><th scope="col" className="py-2 font-semibold"></th><th scope="col" className="py-2 font-semibold"><CapsText>Baseline</CapsText></th><th scope="col" className="py-2 font-semibold"><CapsText>This photo</CapsText></th></tr>
               </thead>
               <tbody className="divide-y divide-line">
                 <tr><th scope="row" className="py-2 font-medium text-ink">Brightness</th><td className="tabular py-2 text-ink-2">{base.light}</td><td className="tabular py-2 text-ink">{now.light}</td></tr>
@@ -499,6 +577,7 @@ function Analyzing({
 }) {
   const [elapsed, setElapsed] = useState(0);
   const latest = useRef({ onUpdate, onDone, onFailed });
+  const announce = useAnnounce();
   useEffect(() => {
     latest.current = { onUpdate, onDone, onFailed };
   });
@@ -548,6 +627,10 @@ function Analyzing({
 
   const stage = step.scan?.stage ?? "queued";
   const activeIndex = Math.max(0, STAGES.findIndex((s) => s.id === stage));
+  // One short sentence per stage the server reports; the first is covered by the focused heading.
+  useEffect(() => {
+    if (activeIndex > 0) announce(STAGES[activeIndex].label);
+  }, [activeIndex, announce]);
   return (
     <div className="grid gap-10 md:grid-cols-[minmax(0,320px)_1fr] md:items-center">
       <div className="relative aspect-[3/4] overflow-hidden rounded-[var(--radius-xl)] bg-ink">
@@ -556,11 +639,11 @@ function Analyzing({
         <div aria-hidden className="absolute inset-x-0 top-0 h-1/3 animate-pulse bg-gradient-to-b from-white/15 to-transparent motion-reduce:hidden" />
       </div>
       <div>
-        <h2 className="font-display text-2xl text-ink">Measuring…</h2>
+        <StepHeading className="font-display text-2xl text-ink">Measuring…</StepHeading>
         <p className="mt-1 text-sm text-ink-3" aria-live="off">
           {elapsed}s elapsed · usually 8–15 seconds. Keep this tab open.
         </p>
-        <ol className="mt-6 space-y-3" aria-live="polite">
+        <ol className="mt-6 space-y-3">
           {STAGES.map((s, i) => {
             const done = i < activeIndex;
             const active = i === activeIndex;

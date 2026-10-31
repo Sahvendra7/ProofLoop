@@ -10,7 +10,8 @@ test.use({
   launchOptions: { args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"] },
 });
 
-const appAlert = (page: Page) => page.locator('[role="alert"]:not(#__next-route-announcer__)');
+// A scan failure replaces the step: its heading takes focus (and is not also an alert, so it's read once).
+const stepFailure = (page: Page) => page.locator(":focus");
 
 /** Records every stream the page opens so tests can check the camera was actually released. */
 async function trackStreams(page: Page) {
@@ -60,7 +61,7 @@ test("camera: preview, capture, retake, then upload reaches the API", async ({ p
   expect(await liveTracks(page)).toBe(0);
   await page.getByRole("button", { name: "Analyse this photo" }).click();
   // The E2E backend has no YouCam key: reaching this message means the captured JPEG was uploaded and handled.
-  await expect(appAlert(page)).toContainText("Live analysis isn't configured on this server.", { timeout: 15_000 });
+  await expect(stepFailure(page)).toContainText("Live analysis isn't configured on this server.", { timeout: 15_000 });
 });
 
 test("camera: cancel releases the camera and returns to the chooser", async ({ page }) => {
@@ -84,7 +85,7 @@ for (const [name, title] of [
     }, name);
     await openChooser(page);
     await page.getByRole("button", { name: /Take a photo/ }).click();
-    await expect(appAlert(page)).toContainText(title);
+    await expect(stepFailure(page)).toContainText(title);
     await expect(page.getByRole("button", { name: "Choose another photo" })).toBeVisible();
   });
 }
@@ -96,5 +97,5 @@ test("camera: plain-http pages explain that https is required", async ({ page })
   });
   await openChooser(page);
   await page.getByRole("button", { name: /Take a photo/ }).click();
-  await expect(appAlert(page)).toContainText("The camera needs a secure (https) connection.");
+  await expect(stepFailure(page)).toContainText("The camera needs a secure (https) connection.");
 });

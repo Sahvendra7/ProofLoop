@@ -46,6 +46,16 @@ export function useResource<T>(key: string | null, fetcher: () => Promise<T>) {
   };
 }
 
+/**
+ * Keeps the tab title in step with in-page state (a scan step, a waiting trial or its verdict), so the title can
+ * orient someone mid-flow. Route changes still set their own title through Next.js metadata.
+ */
+export function useDocumentTitle(title: string | null) {
+  useEffect(() => {
+    if (title) document.title = title;
+  }, [title]);
+}
+
 /** True after hydration; lets client-only values (search params, storage) render safely. */
 export function useMounted() {
   const [mounted, setMounted] = useState(false);

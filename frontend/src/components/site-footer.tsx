@@ -25,7 +25,7 @@ const groups = [
 export function SiteFooter() {
   return (
     <footer className="mt-16 px-3 pb-3 sm:px-5 sm:pb-5">
-      <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-strawberry-ink text-white">
+      <div className="on-strawberry relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-strawberry-ink text-white">
         {/* Decorative oversized wordmark, drawn as SVG so it isn't announced or treated as body text. */}
         <svg aria-hidden viewBox="0 0 1000 190" className="pointer-events-none block w-full select-none px-4 pt-6">
           <text x="500" y="160" textAnchor="middle" fontFamily="var(--font-display)" fontWeight="700" fontSize="230" letterSpacing="-10" fill="rgb(255 255 255 / 0.12)">

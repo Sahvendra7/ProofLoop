@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page, type Route } from "@playwright/test";
+import { WCAG_TAGS } from "./helpers/a11y";
 
 // The isolated E2E backend has no Gemini key, so quick answers run for real and free text is
 // unavailable. Free-text behaviour is exercised with mocked assistant responses, clearly scoped below.
@@ -73,14 +74,14 @@ test("quick answers work by keyboard on a sample trial", async ({ page }) => {
   const button = panel.getByRole("button", { name: "Should I switch?" });
   await button.focus();
   await page.keyboard.press("Enter");
-  const live = panel.locator('[aria-live="polite"]');
+  const live = page.locator("#pl-announcer");
   await expect(live).toContainText("From your plan · no AI");
   await expect(live).toContainText("no measured reason to switch");
   await panel.getByText(/What I checked/).click();
   await expect(panel.getByText("Read your trial plan")).toBeVisible();
   await expect(panel.getByRole("button", { name: /Show synthetic check-in/ })).toBeVisible();
 
-  const results = await new AxeBuilder({ page }).include('[aria-labelledby="assistant-title"]').withTags(["wcag2a", "wcag2aa"]).analyze();
+  const results = await new AxeBuilder({ page }).include('[aria-labelledby="assistant-title"]').withTags(WCAG_TAGS).analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
 });
 
@@ -120,7 +121,7 @@ test("gemini replies and fallbacks are labelled", async ({ page }) => {
   const box = panel.getByRole("textbox", { name: /Ask in your own words/ });
   await box.fill("Is it working?");
   await panel.getByRole("button", { name: "Ask", exact: true }).click();
-  const live = panel.locator('[aria-live="polite"]');
+  const live = page.locator("#pl-announcer");
   await expect(live).toContainText("From your plan · no AI");
   await expect(live).toContainText("Approved explanations · topics picked by Gemini, text from ProofLoop");
   await box.fill("And now?");
@@ -146,7 +147,7 @@ test("approved explanations are shown apart from the plan's answer", async ({ pa
   await expect(figure).not.toContainText("There's no check-in yet");
   await expect(answer.getByText("topics picked by Gemini, text from ProofLoop")).toBeVisible();
 
-  const results = await new AxeBuilder({ page }).include('[aria-labelledby="assistant-title"]').withTags(["wcag2a", "wcag2aa"]).analyze();
+  const results = await new AxeBuilder({ page }).include('[aria-labelledby="assistant-title"]').withTags(WCAG_TAGS).analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
 });
 
@@ -179,8 +180,8 @@ test("ask button is single-flight", async ({ page }) => {
   await panel.getByRole("textbox", { name: /Ask in your own words/ }).fill("Is it working?");
   const ask = panel.getByRole("button", { name: "Ask", exact: true });
   await ask.dblclick();
-  await expect(ask).toBeDisabled();
-  await expect(panel.locator('[aria-live="polite"]')).toContainText("Approved explanations");
+  await expect(ask).toHaveAttribute("aria-disabled", "true"); // stays focusable while the answer loads
+  await expect(page.locator("#pl-announcer")).toContainText("Approved explanations");
   expect(calls).toBe(1);
 });
 
@@ -268,7 +269,7 @@ test("typed questions need the owner key, and a wrong key keeps the session", as
   await expect(page.getByRole("region", { name: "Ask about this trial" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Is it working?" })).toBeVisible();
 
-  const results = await new AxeBuilder({ page }).include('[aria-labelledby="assistant-title"]').withTags(["wcag2a", "wcag2aa"]).analyze();
+  const results = await new AxeBuilder({ page }).include('[aria-labelledby="assistant-title"]').withTags(WCAG_TAGS).analyze();
   expect(results.violations.map((v) => `${v.id}: ${v.nodes.length}`)).toEqual([]);
 });
 

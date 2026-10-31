@@ -3,16 +3,21 @@ import Link from "next/link";
 import { ArrowDown, ArrowRight, ArrowUpRight, CalendarClock, Check, Eye, Lock, Scale, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
 import { Dial } from "@/components/dial";
 import { FloatChip, MatchScreen, PhoneFrame, SnapshotScreen, SourceTag, VerdictScreen } from "@/components/previews";
+import { MotionToggle } from "@/components/motion-toggle";
 import { Reveal } from "@/components/reveal";
+import { RouteTitle } from "@/components/route-title";
 import { CONCERNS } from "@/lib/sample";
+import { SITE_TITLE } from "@/lib/titles";
 import { HowItWorks } from "./home/how-it-works";
 import { ProblemRail } from "./home/problem-rail";
 import { VerdictExplorer } from "./home/verdict-explorer";
 import { SampleDataButton } from "./sample-data-button";
+import { CapsText } from "@/components/ui";
 
 export default function Home() {
   return (
     <>
+      <RouteTitle title={SITE_TITLE} />
       <Hero />
       <ConcernMarquee />
       <Problem />
@@ -37,7 +42,8 @@ function Hero() {
             </p>
             <h1 id="hero-title" className="text-hero mt-6 text-espresso">
               Is it <span className="whitespace-nowrap">working?</span>
-              <span className="mt-2 block text-strawberry">Run a fair test.</span>
+              {/* berry-deep, not #fe3144: on berry-milk the brighter red is 2.8:1, under the 3:1 large-text minimum. */}
+              <span className="mt-2 block text-berry-deep">Run a fair test.</span>
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-ink-2 sm:text-xl">
               Choose one product, track one skin concern, and find out whether the change is bigger than the usual
@@ -64,6 +70,7 @@ function Hero() {
               <span>No photo to hand?</span>
               <SampleDataButton variant="quiet" label="Explore with sample data" />
             </div>
+            <MotionToggle className="-ml-2 mt-3" />
           </div>
 
           {/* Mobile: phone overlaps the photo's lower right. sm+: side by side in a 5:6 box. */}
@@ -81,7 +88,7 @@ function Hero() {
               />
             </div>
             <div className="relative ml-auto -mt-[38%] w-[min(64%,15rem)] sm:absolute sm:right-0 sm:top-[15%] sm:mt-0 sm:w-[44%]">
-              <PhoneFrame label="ProofLoop snapshot screen with sample data" className="rise [animation-delay:150ms]">
+              <PhoneFrame label="Preview of the snapshot screen: eight skin scores from sample data" className="rise [animation-delay:150ms]">
                 <SnapshotScreen />
               </PhoneFrame>
             </div>
@@ -131,7 +138,7 @@ function Problem() {
     <section aria-labelledby="problem-title" className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
       <div className="grid gap-6 md:grid-cols-[1.2fr_1fr] md:items-end">
         <Reveal>
-          <p className="eyebrow">The problem</p>
+          <p className="eyebrow"><CapsText>The problem</CapsText></p>
           <h2 id="problem-title" className="text-section mt-3 text-espresso">
             The mirror is a <span className="text-strawberry">bad instrument.</span>
           </h2>
@@ -154,7 +161,7 @@ function Insight() {
     <section id="fair-test" aria-labelledby="insight-title" className="bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <Reveal className="mx-auto max-w-3xl text-center">
-          <p className="eyebrow">Why a fair test</p>
+          <p className="eyebrow"><CapsText>Why a fair test</CapsText></p>
           <h2 id="insight-title" className="text-section mt-3 text-espresso">
             A change only counts if it&apos;s <span className="text-strawberry">bigger than the noise.</span>
           </h2>
@@ -221,7 +228,7 @@ function Showcase() {
   return (
     <section aria-labelledby="showcase-title" className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
       <Reveal className="max-w-2xl">
-        <p className="eyebrow">Inside the app</p>
+        <p className="eyebrow"><CapsText>Inside the app</CapsText></p>
         <h2 id="showcase-title" className="text-section mt-3 text-espresso">
           Every screen is built around <span className="text-strawberry">the evidence.</span>
         </h2>
@@ -237,7 +244,7 @@ function Showcase() {
                 laid over your photo — on your device only.
               </p>
             </div>
-            <PhoneFrame label="Snapshot screen, sample data" className="mx-auto w-[15rem]"><SnapshotScreen rows={6} /></PhoneFrame>
+            <PhoneFrame label="Preview of the snapshot screen with six scores from sample data" className="mx-auto w-[15rem]"><SnapshotScreen rows={6} /></PhoneFrame>
           </div>
         </Reveal>
         <Reveal delay={100} className="flex flex-col justify-between rounded-[2rem] bg-espresso p-6 text-white md:col-span-2 md:p-8">
@@ -253,12 +260,12 @@ function Showcase() {
         <Reveal className="rounded-[2rem] bg-white p-6 ring-1 ring-line md:col-span-3 md:p-8">
           <h3 className="font-display text-2xl font-bold leading-tight text-espresso">Matches with reasons, not percentages.</h3>
           <p className="mt-2 text-ink-2">Tiers from explicit rules; cautions drawn from your own scores.</p>
-          <PhoneFrame label="Matches screen, sample data" className="mx-auto mt-6 w-[15rem]"><MatchScreen /></PhoneFrame>
+          <PhoneFrame label="Preview of the matches screen: two products from the sample catalogue" className="mx-auto mt-6 w-[15rem]"><MatchScreen /></PhoneFrame>
         </Reveal>
         <Reveal delay={100} className="rounded-[2rem] bg-white p-6 ring-1 ring-line md:col-span-3 md:p-8">
           <h3 className="font-display text-2xl font-bold leading-tight text-espresso">A verdict that shows its working.</h3>
           <p className="mt-2 text-ink-2">Before and after, the normal-variation band, and every concern for context.</p>
-          <PhoneFrame label="Verdict screen, synthetic demo" className="mx-auto mt-6 w-[15rem]"><VerdictScreen /></PhoneFrame>
+          <PhoneFrame label="Preview of a verdict screen from a synthetic demo, not a measurement" className="mx-auto mt-6 w-[15rem]"><VerdictScreen /></PhoneFrame>
         </Reveal>
       </div>
     </section>
@@ -278,7 +285,7 @@ function Trust() {
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="grid gap-10 lg:grid-cols-[1fr_1.5fr]">
           <Reveal>
-            <p className="eyebrow">Trust</p>
+            <p className="eyebrow"><CapsText>Trust</CapsText></p>
             <h2 id="trust-title" className="text-section mt-3 text-espresso">What we promise — <span className="text-strawberry">and what we don&apos;t.</span></h2>
             <Link href="/privacy" className="mt-8 inline-flex items-center gap-2 rounded-full bg-berry-soft px-5 py-3 font-semibold text-berry-deep hover:bg-berry-milk">
               How it works &amp; privacy <ArrowUpRight aria-hidden className="size-4" />
@@ -302,7 +309,7 @@ function Trust() {
 function FinalCta() {
   return (
     <section aria-labelledby="cta-title" className="px-3 pt-20 sm:px-5 sm:pt-28">
-      <Reveal className="strawberry-glow relative mx-auto grid max-w-6xl items-center gap-10 overflow-hidden rounded-[2.5rem] px-6 py-14 text-white sm:px-12 sm:py-20 lg:grid-cols-[1.3fr_1fr]">
+      <Reveal className="on-strawberry strawberry-glow relative mx-auto grid max-w-6xl items-center gap-10 overflow-hidden rounded-[2.5rem] px-6 py-14 text-white sm:px-12 sm:py-20 lg:grid-cols-[1.3fr_1fr]">
         <div>
           <h2 id="cta-title" className="text-section">Still wondering if it&apos;s working?</h2>
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-white">

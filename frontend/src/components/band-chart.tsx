@@ -54,20 +54,15 @@ export function BandChart({
         <table>
           <caption>{metricLabel} scores</caption>
           <thead>
-            <tr><th>When</th><th>Score</th><th>Compared with baseline</th></tr>
+            <tr><th>When</th><th>Score</th><th>Difference from baseline</th></tr>
           </thead>
           <tbody>
             {points.map((p, i) => (
               <tr key={i}>
                 <td>{p.label}{p.synthetic ? " (synthetic demo)" : ""}</td>
                 <td>{p.score}</td>
-                <td>
-                  {p.baseline
-                    ? "Baseline"
-                    : Math.abs(p.score - base.score) > band
-                      ? `${p.score - base.score > 0 ? "+" : ""}${p.score - base.score}, beyond normal variation`
-                      : `${p.score - base.score > 0 ? "+" : ""}${p.score - base.score}, within normal variation`}
-                </td>
+                {/* Numbers only: whether a change counts is the server's verdict, given in words above the chart. */}
+                <td>{p.baseline ? "Baseline" : `${p.score - base.score > 0 ? "+" : ""}${p.score - base.score} points`}</td>
               </tr>
             ))}
           </tbody>

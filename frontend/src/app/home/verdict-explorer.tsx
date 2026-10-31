@@ -5,6 +5,7 @@ import { ArrowDownRight, ArrowUpRight, CircleDashed, Minus } from "lucide-react"
 import { Dial } from "@/components/dial";
 import { SourceTag } from "@/components/previews";
 import { Reveal } from "@/components/reveal";
+import { CapsText } from "@/components/ui";
 
 /**
  * The three kinds of answer ProofLoop gives, mirroring the backend's focus
@@ -65,7 +66,7 @@ export function VerdictExplorer() {
   return (
     <section id="verdicts" aria-labelledby="verdicts-title" className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
       <Reveal className="mx-auto max-w-3xl text-center">
-        <p className="eyebrow">The verdict</p>
+        <p className="eyebrow"><CapsText>The verdict</CapsText></p>
         <h2 id="verdicts-title" className="text-section mt-3 text-espresso">
           Three honest answers. <span className="text-strawberry">None of them guaranteed.</span>
         </h2>
@@ -84,7 +85,7 @@ export function VerdictExplorer() {
             aria-controls="verdict-panel"
             tabIndex={i === index ? 0 : -1}
             onClick={() => setIndex(i)}
-            className="rounded-full px-4 py-2.5 text-sm font-semibold text-strawberry-ink transition-colors hover:bg-berry-soft aria-selected:bg-strawberry-ink aria-selected:text-white sm:px-5"
+            className="rounded-full px-4 py-2.5 text-sm font-semibold text-strawberry-ink transition-colors hover:bg-berry-soft aria-selected:bg-strawberry-ink aria-selected:text-white sm:px-5 forced-colors:aria-selected:[forced-color-adjust:none] forced-colors:aria-selected:bg-[Highlight] forced-colors:aria-selected:text-[HighlightText]"
           >
             {t.tab}
           </button>
