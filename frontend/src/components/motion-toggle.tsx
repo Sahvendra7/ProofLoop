@@ -16,7 +16,7 @@ function subscribe(onChange: () => void) {
   return () => window.removeEventListener(EVENT, onChange);
 }
 
-export function MotionToggle({ className = "" }: { className?: string }) {
+export function MotionToggle({ className = "", tone = "light" }: { className?: string; tone?: "light" | "dark" }) {
   const paused = useSyncExternalStore(subscribe, isPaused, () => false);
   function toggle() {
     const next = !isPaused();
@@ -35,11 +35,13 @@ export function MotionToggle({ className = "" }: { className?: string }) {
       type="button"
       aria-pressed={paused}
       onClick={toggle}
-      className={`motion-toggle inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-semibold text-ink-2 underline decoration-ink-3/40 underline-offset-4 hover:text-ink ${className}`}
+      className={`motion-toggle inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-semibold underline underline-offset-4 ${
+        tone === "dark" ? "text-white/85 decoration-white/40 hover:text-white" : "text-ink-2 decoration-ink-3/40 hover:text-ink"
+      } ${className}`}
     >
       <Pause aria-hidden className="size-4" />
       Pause animations
-      <span aria-hidden className="text-ink-3 no-underline">{paused ? "· paused" : ""}</span>
+      <span aria-hidden className={`no-underline ${tone === "dark" ? "text-white/70" : "text-ink-3"}`}>{paused ? "· paused" : ""}</span>
     </button>
   );
 }

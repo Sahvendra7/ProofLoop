@@ -16,20 +16,35 @@ import { NOISE_BANDS, SAMPLE_SCORES, SYNTHETIC_FOLLOWUP } from "@/lib/sample";
 export function PhoneFrame({ children, className = "", label }: { children: ReactNode; className?: string; label: string }) {
   return (
     <figure className={`relative ${className}`} role="img" aria-label={label}>
-      <div aria-hidden className="rounded-[2.6rem] bg-espresso p-2.5 shadow-[0_40px_80px_-30px_rgb(44_26_26/0.55)]">
-        <div className="relative overflow-hidden rounded-[2.1rem] bg-paper">
-          <div aria-hidden className="absolute left-1/2 top-2 z-10 h-5 w-24 -translate-x-1/2 rounded-full bg-espresso" />
-          <div className="h-full pt-9">{children}</div>
-        </div>
-      </div>
+      <Device>{children}</Device>
     </figure>
+  );
+}
+
+/**
+ * The device body alone, hidden from assistive technology. The homepage story stacks several labelled screens
+ * (each its own figure) inside one device.
+ */
+export function Device({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <div aria-hidden className={`relative rounded-[2.7rem] bg-[linear-gradient(145deg,#4a3734,#1f1514_40%,#2b1e1d)] p-[9px] shadow-[var(--shadow-device)] ${className}`}>
+      {/* side buttons */}
+      <span className="absolute -left-[3px] top-24 h-10 w-[3px] rounded-l bg-[#3a2a28]" />
+      <span className="absolute -right-[3px] top-32 h-16 w-[3px] rounded-r bg-[#3a2a28]" />
+      <div className="relative h-full overflow-hidden rounded-[2.2rem] bg-paper ring-1 ring-black/40">
+        <div className="absolute left-1/2 top-2.5 z-10 h-[1.35rem] w-[5.5rem] -translate-x-1/2 rounded-full bg-[#120c0b]" />
+        <div className="h-full pt-10">{children}</div>
+        {/* glass highlight */}
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgb(255_255_255/0.22),transparent_32%)]" />
+      </div>
+    </div>
   );
 }
 
 export function SourceTag({ kind }: { kind: "sample" | "synthetic" | "illustration" }) {
   const text = kind === "sample" ? "Sample data" : kind === "synthetic" ? "Synthetic demo" : "Illustration";
   return (
-    <span className="hatch inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-demo-soft px-2 py-0.5 text-[0.65rem] font-semibold text-demo ring-1 ring-demo/25">
+    <span className="hatch inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-demo-soft px-2 py-0.5 text-[0.68rem] font-semibold text-demo ring-1 ring-demo/25">
       <FlaskConical aria-hidden className="size-3" /> {text}
     </span>
   );
@@ -41,7 +56,7 @@ export function SnapshotScreen({ rows = 8 }: { rows?: number }) {
   return (
     <div className="px-4 pb-5">
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        <p className="font-display text-base font-bold leading-tight text-espresso">Your snapshot</p>
+        <p className="font-condensed text-[1.15rem] font-bold leading-tight text-espresso">Your snapshot</p>
         <SourceTag kind="sample" />
       </div>
       <p className="mt-1 text-[0.7rem] leading-snug text-ink-3">Scores 1–100 · higher looks better</p>
@@ -67,7 +82,7 @@ export function FocusScreen() {
   return (
     <div className="px-4 pb-5">
       <div className="flex items-center justify-between gap-2">
-        <p className="font-display text-base font-bold leading-tight text-espresso">Pick one focus</p>
+        <p className="font-condensed text-[1.15rem] font-bold leading-tight text-espresso">Pick one focus</p>
         <SourceTag kind="sample" />
       </div>
       <ul className="mt-3 space-y-2">
@@ -93,7 +108,7 @@ export function MatchScreen() {
   return (
     <div className="px-4 pb-5">
       <div className="flex items-center justify-between gap-2">
-        <p className="font-display text-base font-bold leading-tight text-espresso">Matches</p>
+        <p className="font-condensed text-[1.15rem] font-bold leading-tight text-espresso">Matches</p>
         <SourceTag kind="sample" />
       </div>
       <p className="mt-1 text-[0.7rem] text-ink-3">Look more hydrated · hydration 69</p>
@@ -104,7 +119,7 @@ export function MatchScreen() {
               <span className="h-8 w-5 rounded-md" style={{ background: p.palette[1] }} />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-[0.62rem] uppercase tracking-wider text-ink-3">{p.brand}</span>
+              <span className="block text-[0.64rem] text-ink-3">{p.brand}</span>
               <span className="block text-[0.78rem] font-semibold leading-tight text-espresso">{p.name}</span>
               <span className="mt-1 inline-block rounded-full bg-berry-soft px-1.5 py-0.5 text-[0.6rem] font-semibold text-berry-deep">
                 #{i + 1} · Strong match
@@ -125,12 +140,12 @@ export function BaselineScreen() {
   return (
     <div className="px-4 pb-5">
       <div className="flex items-center justify-between gap-2">
-        <p className="font-display text-base font-bold leading-tight text-espresso">Trial started</p>
+        <p className="font-condensed text-[1.15rem] font-bold leading-tight text-espresso">Trial started</p>
         <SourceTag kind="sample" />
       </div>
       <div className="mt-3 rounded-2xl bg-white p-4 ring-1 ring-line">
-        <p className="text-[0.62rem] font-semibold uppercase tracking-wider text-ink-3">Baseline saved</p>
-        <p className="tabular font-display text-5xl font-bold text-espresso">69</p>
+        <p className="text-[0.66rem] font-semibold text-ink-3">Baseline saved</p>
+        <p className="tabular font-condensed text-6xl font-bold leading-none text-espresso">69</p>
         <p className="text-[0.7rem] text-ink-3">Hydration · normal variation ±{NOISE_BANDS.moisture}</p>
       </div>
       <ul className="mt-3 space-y-1.5 text-[0.7rem] text-ink-2">
@@ -144,8 +159,8 @@ export function BaselineScreen() {
 export function CheckinScreen({ title = "Check in" }: { title?: string }) {
   return (
     <div className="px-4 pb-5">
-      <p className="font-display text-base font-bold leading-tight text-espresso">{title}</p>
-      <div className="relative mx-auto mt-3 aspect-[3/4] w-[78%] overflow-hidden rounded-2xl bg-gradient-to-b from-berry-soft to-berry-milk">
+      <p className="font-condensed text-[1.15rem] font-bold leading-tight text-espresso">{title}</p>
+      <div className="relative mx-auto mt-3 aspect-[3/4] w-[78%] overflow-hidden rounded-2xl bg-[radial-gradient(70%_60%_at_50%_40%,#fff,var(--color-berry-soft))] ring-1 ring-line">
         <svg viewBox="0 0 300 400" className="absolute inset-0 h-full w-full" aria-hidden>
           <ellipse cx="150" cy="185" rx="105" ry="140" fill="none" stroke="var(--color-strawberry)" strokeWidth="4" strokeDasharray="10 9" />
         </svg>
@@ -161,13 +176,13 @@ export function VerdictScreen() {
   return (
     <div className="px-4 pb-5">
       <div className="flex items-center justify-between gap-2">
-        <p className="font-display text-base font-bold leading-tight text-espresso">Verdict</p>
+        <p className="font-condensed text-[1.15rem] font-bold leading-tight text-espresso">Verdict</p>
         <SourceTag kind="synthetic" />
       </div>
       <div className="mt-3 rounded-2xl bg-espresso p-4 text-white">
-        <p className="text-[0.62rem] font-semibold uppercase tracking-wider text-white/70">Hydration · 21 days</p>
+        <p className="text-[0.66rem] font-semibold text-white/70">Hydration, day 21</p>
         <p className="mt-1 font-display text-lg font-bold leading-tight">A measured change.</p>
-        <p className="tabular mt-2 font-display text-3xl font-bold">
+        <p className="tabular mt-2 font-condensed text-4xl font-bold leading-none">
           69 <span className="text-white/60">→</span> {SYNTHETIC_FOLLOWUP.moisture}
         </p>
         <p className="mt-1 text-[0.68rem] text-berry-milk">
@@ -188,7 +203,7 @@ export function FloatChip({ children, className = "", delay = 0 }: { children: R
   return (
     <div
       aria-hidden
-      className={`float absolute flex items-center gap-2 rounded-2xl bg-white/90 px-3.5 py-2.5 text-xs font-semibold text-espresso shadow-[var(--shadow-float)] ring-1 ring-white backdrop-blur ${className}`}
+      className={`float absolute flex items-center gap-2 rounded-full bg-white px-3.5 py-2 text-xs font-semibold text-espresso shadow-[var(--shadow-float)] ring-1 ring-espresso/5 ${className}`}
       style={{ animationDelay: `${delay}ms` }}
     >
       {children}

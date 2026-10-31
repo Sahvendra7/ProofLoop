@@ -12,7 +12,7 @@ import type { Match, RecommendationFilters, Reason } from "@/lib/types";
 import { ProvenanceBadge } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
 import { useAnnounce } from "@/components/announcer";
-import { ButtonLink, CapsText, Card, Notice, Segmented, Skeleton, Toggle } from "@/components/ui";
+import { ButtonLink, CapsText, Card, FlowProgress, Notice, Segmented, Skeleton, Toggle, pageTitleClass } from "@/components/ui";
 
 type Budget = "any" | "25" | "35" | "50";
 type Finish = "any" | "light" | "rich";
@@ -64,9 +64,9 @@ export function MatchesView() {
       </Link>
       <header className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-end">
         <div>
-          <p className="mb-4 inline-flex rounded-full bg-berry-milk px-3 py-1 text-xs font-semibold text-berry-deep">Step 3 of 4 · Choose a product</p>
+          <FlowProgress step={3} label="Choose a product" />
           {heading ? (
-            <h1 className="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold leading-[0.98] text-espresso">{heading}</h1>
+            <h1 className={pageTitleClass}>{heading}</h1>
           ) : (
             <Skeleton className="h-[clamp(2.4rem,6vw,4.5rem)] w-3/4" />
           )}
@@ -173,7 +173,7 @@ function MatchCard({ match, scanId, goal }: { match: Match; scanId: string; goal
             </div>
           </div>
           <div className="mt-4 rounded-[var(--radius-md)] bg-paper p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-3"><CapsText>Why it&apos;s here</CapsText></p>
+            <p className="text-xs font-semibold text-ink-3"><CapsText>Why it&apos;s here</CapsText></p>
             <ul className="mt-2.5 space-y-2">{match.reasons.map((r) => <ReasonItem key={r.text} reason={r} />)}</ul>
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

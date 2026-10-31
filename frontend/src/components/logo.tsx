@@ -24,7 +24,7 @@ export function Logo({ light = false }: { light?: boolean }) {
   return (
     <Link href="/" className="inline-flex items-center gap-2" aria-label="ProofLoop home">
       <LoopMark light={light} />
-      <span className={`font-display text-[1.3rem] font-bold tracking-tight ${light ? "text-white" : "text-espresso"}`}>
+      <span className={`font-display text-[1.35rem] font-bold tracking-[-0.03em] [font-variation-settings:'wdth'_85] ${light ? "text-white" : "text-espresso"}`}>
         ProofLoop
       </span>
     </Link>

@@ -13,7 +13,7 @@ import { clearDraft, loadDraft, saveDraft, type ProfileDraft } from "@/lib/profi
 import type { FocusPlan, Goal, Metric, Scan } from "@/lib/types";
 import { InYourWords, NoReadingNote, PriorityNote, SkinTypeCard } from "./skin-profile";
 import { BandLegend, MetricBar, ProvenanceNote } from "@/components/measure";
-import { Button, ButtonLink, CapsText, Card, Notice, Skeleton } from "@/components/ui";
+import { Button, ButtonLink, CapsText, Card, FlowProgress, Notice, Skeleton, pageTitleClass } from "@/components/ui";
 
 export function ResultsView() {
   const params = useSearchParams();
@@ -71,9 +71,9 @@ function Snapshot({ scan, goals }: { scan: Scan; goals: Goal[] | null }) {
   return (
     <Shell>
       <header className="max-w-3xl">
-        <p className="mb-4 inline-flex rounded-full bg-berry-milk px-3 py-1 text-xs font-semibold text-berry-deep">Step 2 of 4 · Understand · {shortDate(scan.observed_at)}</p>
-        <h1 className="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold leading-[0.98] text-espresso">Your skin snapshot</h1>
-        <p className="mt-4 text-lg leading-relaxed text-ink-2">{summarise(scan.metrics)}</p>
+        <FlowProgress step={2} note={shortDate(scan.observed_at)} />
+        <h1 className={pageTitleClass}>Your skin snapshot</h1>
+        <p className="mt-5 text-lg leading-relaxed text-ink-2">{summarise(scan.metrics)}</p>
       </header>
       <div className="mt-6 max-w-3xl">
         <ProvenanceNote provenance={scan.provenance} />
@@ -287,7 +287,7 @@ function GoalPicker({ scan, goals, plan }: { scan: Scan; goals: Goal[] | null; p
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">{children}</div>;
+  return <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12">{children}</div>;
 }
 
 function Loading() {

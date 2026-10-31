@@ -14,7 +14,7 @@ import { BandChart } from "@/components/band-chart";
 import { Dial } from "@/components/dial";
 import { ProvenanceNote } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
-import { Button, ButtonLink, CapsText, Card, Notice, Skeleton } from "@/components/ui";
+import { Button, ButtonLink, CapsText, Card, FlowProgress, Notice, Skeleton, pageTitleClass } from "@/components/ui";
 import { AssistantPanel } from "./assistant-panel";
 import { ProfileBlock } from "./profile-block";
 import { ResultInWords } from "./result-in-words";
@@ -38,8 +38,8 @@ function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) =
     <Shell>
       <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-start">
         <header className="max-w-3xl">
-          <p className="mb-4 inline-flex rounded-full bg-berry-milk px-3 py-1 text-xs font-semibold text-berry-deep">Step 4 of 4 · Trial · started {shortDate(trial.baseline.observed_at)}</p>
-          <h1 className="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold leading-[0.98] text-espresso">{trial.goal.label}</h1>
+          <FlowProgress step={4} note={`started ${shortDate(trial.baseline.observed_at)}`} />
+          <h1 className={pageTitleClass}>{trial.goal.label}</h1>
           <p className="mt-3 text-lg text-ink-2">with {trial.product.name} <span className="text-ink-3">by {trial.product.brand}</span></p>
         </header>
         <ProductArt product={trial.product} className="hidden aspect-[5/6] w-32 lg:block" />
@@ -120,7 +120,7 @@ function Waiting({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) => vo
     <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
       <Card className="p-6 sm:p-8">
         <p className="eyebrow"><CapsText>Baseline saved</CapsText></p>
-        <p className="mt-3 font-display text-6xl text-ink tabular">{base?.ui_score ?? "—"}</p>
+        <p className="tabular mt-3 font-condensed text-7xl font-bold leading-none text-ink">{base?.ui_score ?? "—"}</p>
         <p className="mt-1 text-ink-2">{trial.goal.metric_label} score on {shortDate(trial.baseline.observed_at)}</p>
         <h2 className="mt-8 text-lg font-semibold text-ink">Check in on or after {shortDate(trial.protocol.planned_checkin_at)}</h2>
         <ul className="mt-3 space-y-2 text-ink-2">
@@ -161,7 +161,7 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
   const changed = comparison.focus_outcome === "measured_improvement" || comparison.focus_outcome === "measured_decline";
   const unclear = comparison.focus_outcome === "inconclusive" || comparison.focus_outcome === "insufficient_data";
   const panel = changed
-    ? "bg-espresso text-white"
+    ? "night-stage grain text-white"
     : unclear
       ? "border-2 border-dashed border-line-strong bg-white text-espresso"
       : "bg-berry-milk text-espresso";
@@ -171,7 +171,7 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
   return (
     <>
       {/* Not a named region: VoiceOver read the headline twice ("…heading, …region") when focus moved to it. */}
-      <section className={`mt-10 overflow-hidden rounded-[2.5rem] p-7 sm:p-12 ${changed ? "on-espresso" : ""} ${panel}`}>
+      <section className={`mt-10 overflow-hidden rounded-[var(--radius-stage)] p-7 sm:p-12 ${changed ? "on-night" : ""} ${panel}`}>
         <div className="grid gap-10 md:grid-cols-[1.25fr_1fr] md:items-center">
           <div>
             {synthetic && (
@@ -179,7 +179,7 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
                 <FlaskConical aria-hidden className="size-3.5" /> Synthetic follow-up — not a measurement
               </p>
             )}
-            <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${sub}`}>
+            <p className={`text-xs font-semibold ${sub}`}>
               <CapsText>{synthetic ? "Demo verdict" : "Verdict"} · {trial.goal.metric_label} · {comparison.comparability.days_apart} days apart</CapsText>
             </p>
             {comparison.early && (
@@ -187,7 +187,7 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
                 Early look: day {Math.round(comparison.comparability.days_apart)} of a planned {trial.protocol.planned_checkin_days}-day test.
               </p>
             )}
-            <h2 id="verdict" tabIndex={-1} className="mt-4 font-display text-[clamp(2.2rem,4.5vw,3.75rem)] font-bold leading-[1]">
+            <h2 id="verdict" tabIndex={-1} className="mt-4 font-display text-[clamp(2.2rem,4.6vw,3.9rem)] font-bold leading-[0.95] tracking-[-0.03em] [font-variation-settings:'wdth'_80]">
               {outcome.headline}
             </h2>
             <p className={`mt-5 max-w-xl text-lg leading-relaxed ${sub}`}>{outcome.body}</p>
@@ -211,7 +211,7 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
                   </p>
                 }
               >
-                <p className="tabular whitespace-nowrap font-display text-[clamp(1.75rem,9vw,2.25rem)] font-bold">
+                <p className="tabular whitespace-nowrap font-condensed text-[clamp(2rem,10vw,2.6rem)] font-bold leading-none">
                   {focus.baseline} <span className="opacity-50">→</span> {focus.current}
                 </p>
               </Dial>
@@ -237,7 +237,7 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
         {/* Focusable so keyboard users can scroll the table horizontally on small screens. */}
         <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Every measured concern, scrollable table">
           <table className="w-full min-w-[520px] text-left text-sm">
-            <thead className="text-xs uppercase tracking-wider text-ink-3">
+            <thead className="text-xs text-ink-3">
               <tr>
                 <th scope="col" className="px-6 py-3 font-semibold sm:px-8"><CapsText>Concern</CapsText></th>
                 <th scope="col" className="px-3 py-3 text-right font-semibold"><CapsText>Baseline</CapsText></th>
@@ -369,7 +369,7 @@ function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Chec
             <div className="mt-5 overflow-x-auto" tabIndex={0} role="region" aria-label="Instrument check, scrollable table">
               <table className="w-full min-w-[460px] text-left text-sm">
                 <caption className="sr-only">Baseline scan and second scan of unchanged skin, by concern</caption>
-                <thead className="text-xs uppercase tracking-wider text-ink-3">
+                <thead className="text-xs text-ink-3">
                   <tr>
                     <th scope="col" className="py-2 pr-3 font-semibold"><CapsText>Concern</CapsText></th>
                     <th scope="col" className="px-3 py-2 text-right font-semibold"><CapsText>Baseline</CapsText></th>
@@ -498,8 +498,8 @@ function ProtocolCard({ trial, protocol, decided }: { trial: Trial; protocol: Pr
       <ol className="mt-5 grid gap-2 sm:grid-cols-3" aria-label="What the check-in score would mean">
         {zones.map((z) => (
           <li key={z.key} className={`rounded-[var(--radius-md)] p-4 ring-1 ${z.key === "none" ? "bg-berry-milk/60 ring-line" : "bg-paper ring-line"}`}>
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-3"><CapsText>{z.label}</CapsText></p>
-            <p className="tabular mt-1 font-display text-2xl font-bold text-ink">{z.value}</p>
+            <p className="text-xs font-semibold text-ink-3"><CapsText>{z.label}</CapsText></p>
+            <p className="tabular mt-1 font-condensed text-3xl font-bold text-ink">{z.value}</p>
           </li>
         ))}
       </ol>
@@ -565,5 +565,5 @@ function daysBetween(a: string, b: string) {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">{children}</div>;
+  return <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12">{children}</div>;
 }

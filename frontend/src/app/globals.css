@@ -1,19 +1,25 @@
 @import "tailwindcss";
 
 /*
- * ProofLoop design tokens — see docs/design-direction.md.
- * Berry-milk storytelling, white app surfaces, espresso type, strawberry action.
- * #fe3144 (strawberry) is for large display type and decoration only;
- * buttons use strawberry-ink (#d61a2f, 5.19:1 with white).
+ * ProofLoop design tokens — "Calibration". See docs/design-direction.md.
+ *
+ * ProofLoop is a measuring instrument, so its three brand colours each carry one meaning everywhere:
+ *   espresso   — the baseline, and ink
+ *   berry-milk — the normal-variation band (tolerance, noise)
+ *   strawberry — the check-in signal, and actions
+ * Surfaces are a cool lightbox white for app screens and a deep "night" panel for instrument moments.
+ * #fe3144 (strawberry) is for large type, needles and decoration only; buttons use strawberry-ink (#d61a2f,
+ * 5.19:1 with white). On night, #fe3144 is 4.6:1 and may carry small text.
  */
 @theme {
-  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  /* Type — Bricolage Grotesque (display, condensed via wdth) + IBM Plex Sans (UI, numerals). */
+  --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Brand */
   --color-berry-milk: #fcd7f3;
-  --color-berry-soft: #fde9f6;
+  --color-berry-soft: #fdecf7;
   --color-strawberry: #fe3144;
   --color-strawberry-ink: #d61a2f;
   --color-berry-deep: #b8001f;
@@ -21,47 +27,68 @@
   --color-cocoa: #6b4a4a;
   --color-fresh: #67e844;
 
-  /* Semantic (used by the app screens) */
-  --color-paper: #fff6fb;
-  --color-sunken: #fbe9f4;
+  /* Night: the instrument panel. White text 17:1, berry-milk 13:1, strawberry 4.6:1. */
+  --color-night: #1f1514;
+  --color-night-2: #2b1e1d;
+  --color-night-3: #3a2a28;
+
+  /* Semantic (app screens) */
+  --color-paper: #faf7f8;
+  --color-sunken: #f2ecee;
   --color-card: #ffffff;
   --color-ink: #2c1a1a;
   --color-ink-2: #4a3232;
   --color-ink-3: #6b4a4a;
-  --color-line: #f3dbe8;
-  --color-line-strong: #e6bfd4;
+  --color-line: #ebe2e6;
+  --color-line-strong: #d4c4cb;
+  --color-tick: #b9a9b0;
 
   --color-accent: #d61a2f;
   --color-accent-hover: #b8001f;
-  --color-accent-soft: #fde4ef;
+  --color-accent-soft: #fde8ee;
 
   /* Beyond-band changes share one treatment whatever their direction. */
   --color-better: #b8001f;
-  --color-better-soft: #fde4ef;
+  --color-better-soft: #fde8ee;
   --color-worse: #b8001f;
-  --color-worse-soft: #fde4ef;
+  --color-worse-soft: #fde8ee;
   --color-within: #6b4a4a;
-  --color-within-soft: #f7eef3;
+  --color-within-soft: #fbe6f4;
 
   --color-band-attention: #fe3144;
   --color-band-moderate: #f49ac1;
-  --color-band-strength: #2c1a1a;
+  --color-band-strength: #4a3232;
 
   --color-live: #2c1a1a;
   --color-live-soft: #ffffff;
   --color-demo: #7a4f00;
   --color-demo-soft: #fbefd3;
 
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 22px;
+  /* Radii by hierarchy: controls < cards < panels < stages. */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
   --radius-xl: 32px;
+  --radius-stage: 40px;
 
-  --shadow-card: 0 1px 0 rgb(44 26 26 / 0.04), 0 10px 30px -18px rgb(184 0 31 / 0.25);
-  --shadow-lift: 0 2px 0 rgb(44 26 26 / 0.04), 0 30px 60px -30px rgb(184 0 31 / 0.35);
-  --shadow-float: 0 12px 30px -12px rgb(44 26 26 / 0.28);
+  /* Warm, layered shadows: a contact line plus a long soft fall-off. */
+  --shadow-card: 0 1px 0 rgb(44 26 26 / 0.04), 0 1px 3px rgb(44 26 26 / 0.04), 0 22px 44px -30px rgb(44 26 26 / 0.3);
+  --shadow-lift: 0 1px 0 rgb(44 26 26 / 0.05), 0 8px 18px -10px rgb(44 26 26 / 0.18), 0 40px 70px -40px rgb(44 26 26 / 0.45);
+  --shadow-float: 0 1px 0 rgb(44 26 26 / 0.05), 0 14px 34px -14px rgb(44 26 26 / 0.3);
+  --shadow-device: 0 2px 0 rgb(255 255 255 / 0.06) inset, 0 50px 90px -40px rgb(31 21 20 / 0.7), 0 18px 30px -18px rgb(31 21 20 / 0.5);
 
+  /* Motion. Durations and curves mirrored for JS in src/lib/motion.ts. */
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-instrument: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 160ms;
+  --duration-base: 320ms;
+  --duration-slow: 640ms;
+  --duration-scene: 1100ms;
+
+  /* Breakpoints: Tailwind defaults (sm 640, md 768, lg 1024, xl 1280, 2xl 1536) plus the nav switch and very wide. */
+  --breakpoint-nav: 900px;
+  --breakpoint-3xl: 1920px;
 }
 
 @layer base {
@@ -89,14 +116,15 @@
 
   /*
    * Focus ring per surface (docs/innovation/29 §2): strawberry-ink on light surfaces (≥3.99:1), white on
-   * strawberry and espresso surfaces, where a red ring would be invisible (1.00:1). Outlines survive forced colours.
+   * strawberry and night/espresso surfaces, where a red ring would be invisible or weak. Outlines survive forced colours.
    */
   :root {
     --focus-ring: var(--color-strawberry-ink);
   }
 
   .on-strawberry,
-  .on-espresso {
+  .on-espresso,
+  .on-night {
     --focus-ring: #ffffff;
   }
 
@@ -123,65 +151,150 @@
 }
 
 @layer utilities {
+  /* Display face. Bricolage's optical size follows the font size; width is set per role. */
   .font-display {
     font-family: var(--font-display);
     font-optical-sizing: auto;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
     font-weight: 650;
+  }
+
+  /* Instrument-faceplate condensed cut, for big readouts and the hero. */
+  .font-condensed {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    font-stretch: 75%;
+    font-variation-settings: "wdth" 75;
   }
 
   .text-hero {
     font-family: var(--font-display);
-    font-size: clamp(3.1rem, 7.6vw, 6.75rem);
-    line-height: 0.92;
-    letter-spacing: -0.045em;
-    font-weight: 700;
+    font-optical-sizing: auto;
+    font-size: clamp(3.4rem, 9.2vw, 8.4rem);
+    line-height: 0.86;
+    letter-spacing: -0.035em;
+    font-weight: 750;
+    font-variation-settings: "wdth" 75;
   }
 
   .text-section {
     font-family: var(--font-display);
-    font-size: clamp(2.25rem, 5vw, 4.5rem);
-    line-height: 0.98;
-    letter-spacing: -0.035em;
+    font-optical-sizing: auto;
+    font-size: clamp(2.3rem, 5.2vw, 4.6rem);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
     font-weight: 700;
+    font-variation-settings: "wdth" 82;
+  }
+
+  .text-lede {
+    font-size: clamp(1.08rem, 1.4vw, 1.3rem);
+    line-height: 1.6;
   }
 
   .tabular {
     font-variant-numeric: tabular-nums;
   }
 
+  /*
+   * Small section label: sentence case, no tracking. A short band swatch marks it, so labels read as part of
+   * the measuring system rather than template chrome.
+   */
   .eyebrow {
-    font-size: 0.72rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--color-ink-3);
   }
+  .eyebrow::before {
+    content: "";
+    width: 1.1rem;
+    height: 0.4rem;
+    border-radius: 999px;
+    background: var(--color-berry-milk);
+    box-shadow: inset 0 0 0 1px rgb(184 0 31 / 0.18);
+    flex-shrink: 0;
+  }
+  .on-night .eyebrow,
+  .eyebrow.on-dark {
+    color: rgb(255 255 255 / 0.78);
+  }
 
   .rise {
-    animation: rise 560ms var(--ease-out-soft) both;
+    animation: rise var(--duration-slow) var(--ease-out-soft) both;
   }
 
   .hatch {
     background-image: repeating-linear-gradient(-45deg, rgb(122 79 0 / 0.1) 0 6px, transparent 6px 12px);
   }
 
-  .berry-glow {
+  /* Night stage: a warm black with a low glow where the instrument sits, and a fine grain. */
+  .night-stage {
     background:
-      radial-gradient(60% 70% at 15% 20%, rgb(255 255 255 / 0.55), transparent 60%),
-      radial-gradient(55% 60% at 90% 85%, rgb(254 49 68 / 0.28), transparent 65%),
-      var(--color-berry-milk);
+      radial-gradient(60% 55% at 72% 42%, rgb(254 49 68 / 0.16), transparent 70%),
+      radial-gradient(40% 40% at 10% 100%, rgb(252 215 243 / 0.08), transparent 70%),
+      var(--color-night);
+  }
+
+  .grain {
+    position: relative;
+    isolation: isolate;
+  }
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.35;
+    mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+    border-radius: inherit;
+  }
+
+  /* Calibration grid: a faint measuring grid for instrument panels and the hero. */
+  .calibration-grid {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+  .calibration-grid-light {
+    background-image:
+      linear-gradient(to right, rgb(44 26 26 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(44 26 26 / 0.05) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+
+  /* A ruler edge: minor ticks every 8px, a major every 40px. Decorative dividers between chapters. */
+  .ruler {
+    height: 14px;
+    background-image:
+      linear-gradient(to right, var(--color-tick) 1px, transparent 1px),
+      linear-gradient(to right, var(--color-ink-3) 1px, transparent 1px);
+    background-size: 8px 7px, 40px 14px;
+    background-repeat: repeat-x;
+    background-position: 0 0, 0 0;
   }
 
   /*
-   * Subtle enough that white text keeps 4.5:1 even at a glow's centre (≈4.56:1): on phones the final CTA's body text
-   * sits on the upper glow, which measured 3.8:1 at the earlier 0.32 / 0.28 strengths.
+   * Subtle enough that white text keeps 4.5:1 even at a glow's centre: on phones the final CTA's body text
+   * sits on the upper glow.
    */
   .strawberry-glow {
     background:
       radial-gradient(40% 55% at 88% 18%, rgb(255 205 232 / 0.14), transparent 70%),
       radial-gradient(45% 55% at 75% 100%, rgb(255 190 225 / 0.12), transparent 70%),
       var(--color-strawberry-ink);
+  }
+
+  /* Kept for app screens that used the old story wash: now a quiet band-tinted panel. */
+  .berry-glow {
+    background:
+      radial-gradient(70% 80% at 0% 0%, rgb(255 255 255 / 0.7), transparent 60%),
+      var(--color-berry-soft);
   }
 
   .no-scrollbar {
@@ -191,10 +304,10 @@
     display: none;
   }
 
-  /* Reveal: content is visible by default; hidden only once JS has opted in. */
+  /* Reveal: content is visible by default; hidden only once JS has opted in. Used sparingly — one per chapter. */
   .js .reveal {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(14px);
     transition:
       opacity 700ms var(--ease-out-soft),
       transform 700ms var(--ease-out-soft);
@@ -206,15 +319,21 @@
   }
 
   .float {
-    animation: float 6s ease-in-out infinite;
+    animation: float 7s ease-in-out infinite;
+  }
+
+  /* Short entrance for things that appear in answer to an action (menu items, the hero reading). */
+  .menu-in {
+    animation: menu-in var(--duration-base) var(--ease-out-soft) both;
   }
 
   .marquee {
-    animation: marquee 38s linear infinite;
+    animation: marquee 46s linear infinite;
   }
   .marquee:hover,
   :root[data-motion="paused"] .marquee,
-  :root[data-motion="paused"] .float {
+  :root[data-motion="paused"] .float,
+  :root[data-motion="paused"] .scan-sweep {
     animation-play-state: paused;
   }
 
@@ -225,6 +344,85 @@
   }
   .js [data-visible="true"] .dial-draw {
     opacity: 1;
+  }
+
+  /* Dial needles turn about the hub (100, 100 in the dial's viewBox). Interruptible: a transition, not a keyframe. */
+  .dial-needle {
+    transform-box: view-box;
+    transform-origin: 100px 100px;
+    transition: transform 900ms var(--ease-instrument);
+  }
+
+  /* Dial ticks light up in sequence on first view. */
+  .js .dial-tick {
+    opacity: 0;
+    transition: opacity 420ms var(--ease-out-soft);
+    transition-delay: calc(var(--i, 0) * 14ms);
+  }
+  .js [data-visible="true"] .dial-tick {
+    opacity: 1;
+  }
+
+  /* The hero's check-in slider: a scale whose berry segment is the normal-variation band. */
+  .instrument-range {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 2.75rem;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 999px;
+  }
+  .instrument-range::-webkit-slider-runnable-track {
+    height: 0.6rem;
+    border-radius: 999px;
+    background: linear-gradient(
+      to right,
+      rgb(255 255 255 / 0.18) var(--band-from),
+      #fcd7f3 var(--band-from) var(--band-to),
+      rgb(255 255 255 / 0.18) var(--band-to)
+    );
+  }
+  .instrument-range::-moz-range-track {
+    height: 0.6rem;
+    border-radius: 999px;
+    background: linear-gradient(
+      to right,
+      rgb(255 255 255 / 0.18) var(--band-from),
+      #fcd7f3 var(--band-from) var(--band-to),
+      rgb(255 255 255 / 0.18) var(--band-to)
+    );
+  }
+  .instrument-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-top: -0.575rem;
+    border-radius: 999px;
+    background: var(--color-strawberry);
+    border: 4px solid #fff;
+    box-shadow: 0 6px 16px -4px rgb(0 0 0 / 0.6);
+    transition: transform var(--duration-fast) var(--ease-out-soft);
+  }
+  .instrument-range::-moz-range-thumb {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    background: var(--color-strawberry);
+    border: 4px solid #fff;
+    box-shadow: 0 6px 16px -4px rgb(0 0 0 / 0.6);
+  }
+  .instrument-range:active::-webkit-slider-thumb {
+    transform: scale(1.12);
+  }
+  @media (forced-colors: active) {
+    .instrument-range::-webkit-slider-runnable-track {
+      background: CanvasText;
+    }
+  }
+
+  /* Soft light that sweeps once across a device screen on view. */
+  .scan-sweep {
+    animation: sweep 5.5s var(--ease-in-out-soft) infinite;
   }
 }
 
@@ -239,13 +437,24 @@
   }
 }
 
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @keyframes float {
   0%,
   100% {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-8px);
+    transform: translateY(-7px);
   }
 }
 
@@ -258,6 +467,16 @@
   }
 }
 
+@keyframes sweep {
+  0%,
+  55% {
+    transform: translateY(-120%);
+  }
+  100% {
+    transform: translateY(220%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -267,14 +486,16 @@
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
   }
-  .marquee {
+  .marquee,
+  .scan-sweep {
     animation: none;
   }
   /* Nothing on the page moves, so there is nothing to pause. */
   .motion-toggle {
     display: none;
   }
-  .js .reveal {
+  .js .reveal,
+  .js .dial-tick {
     opacity: 1;
     transform: none;
   }
