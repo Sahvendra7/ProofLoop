@@ -300,7 +300,7 @@ and were **not run**.
 | "-1 points" / "+1 points" in Result in words and the dial caption | Low (wording) | Release 1 / pre-existing caption | **Fixed**: "1 point"; E2E scenario added |
 | Previous page's heading spoken before the new one | Medium (misleading) | Next.js's route announcer: if `document.title` is empty when it runs, it reads the first `h1` in the document, and the previous page stays mounted but hidden. Reproduced in Chromium during final review (8 runs): Product → Trial spoke the product's heading 8/8; Home → Snapshot spoke the old home heading 1/8 | Not fixed. Not caused by Release 1 code, but heard right before Release 1's focus move. Fixing it means controlling the title during navigation: needs its own design and approval |
 | Matches heading focused while still saying "Matching products" | Low | Release 1 timing: the loading heading takes focus. Reproduced 8/8 in Chromium; the route announcer also spoke "Matching products" in 4/8 | Not fixed; follow-up: give the heading its final text before it can take focus (without adding another announcement) |
-| Instrument-check heading focused inside a section named by itself | Likely Medium (same structure as the verdict double reading) | Release 1 (`trial-view.tsx`, `aria-labelledby="instrument-title"`) | Not fixed and not heard with VoiceOver (not in V1–V12). Structural reproduction 8/8 in Chromium; same one-line fix as the verdict |
+| Instrument-check heading focused inside a section named by itself | Medium (same structure as the verdict double reading) | Release 1 (`trial-view.tsx`, `aria-labelledby="instrument-title"`) | **Fixed** (§6.6) the same way as the verdict: the section is no longer named after its heading. Regression test added. Not heard with VoiceOver (not part of V1–V12) |
 | Score read as "69Room to improve", then "out of 100," as a separate phrase | Medium | Pre-existing (`MetricBar`) | Not fixed (outside Release 1); candidate Stage 2 item |
 | Filter options read twice in linear reading ("≤ $25 radio button", then "≤ $25"); group labels read in capitals ("BUDGET group") | Low | Pre-existing `Segmented` markup / CSS uppercase | Not fixed; candidate Stage 2 item |
 | Section names repeated after a focused control (e.g. "…button Delete all my data region") | Low | VoiceOver landmark context | Accept, or drop names from non-landmark sections later |
@@ -317,6 +317,44 @@ also remain outstanding. Nothing here substitutes for testing with blind and low
 | Homepage marquee and floating chips loop with no pause control (hover-only pause; reduced motion stops them) | 2.2.2 Pause, Stop, Hide (A) — **fail** | `globals.css` `.marquee`/`.float`, `page.tsx`, `previews.tsx` | Stage 2, not approved |
 | Two sticky layers (nav + homepage step bar) versus 6 rem scroll padding may hide focused items; untested | 2.4.11 Focus Not Obscured (Minimum) (AA) — **unknown** | `globals.css`, `home/how-it-works.tsx` | Stage 2 reverse-Tab test, not approved |
 | Profile removal and profile form focus/announcements | 2.4.3, 4.1.3 | `profile-block.tsx`, `skin-profile.tsx` (PR #4 only) | Waits for PR #4 to merge; fix described in `30` §7.3 |
+
+### 6.6 Instrument-check heading fix (2026-10-31)
+
+**Change.** `frontend/src/app/trial/trial-view.tsx`: the instrument-check `<section>` no longer has
+`aria-labelledby="instrument-title"`, matching the verdict fix. Its `h2` (`id="instrument-title"`, `tabIndex={-1}`)
+still takes focus after the sample check and keeps its text as its accessible name. No new focus or announcement
+logic.
+
+**Regression test.** `e2e/a11y.spec.ts` › "the sample instrument check moves focus to its result" now also asserts
+that no region has an accessible name equal to the focused heading's text (`getByRole("region", { name })` count
+0). Before the fix it failed on both projects ("Expected: 0, Received: 1"); after it passes. `e2e/protocol.spec.ts`
+now locates the instrument section by `section:has(#instrument-title)` and asserts its `h2` text, since the
+section is no longer a named region.
+
+**Verification** (from `frontend/`, E2E backend on a virtualenv built from the merged requirements):
+
+| Command | Result |
+|---|---|
+| `npx playwright test e2e/a11y.spec.ts -g "sample instrument check"` | 2 passed (desktop + mobile) |
+| `npx playwright test e2e/protocol.spec.ts` | 8 passed |
+| `npx tsc --noEmit -p .` | Exit 0 |
+| `npx eslint src e2e playwright.config.ts` | Exit 0 |
+| `npx playwright test` (all specs, desktop + mobile, incl. axe 2.0–2.2 A/AA) | 97 passed, 1 skipped (mobile reflow duplicate, by design), 0 failed; 0 axe findings at any impact |
+| `npx next build` | Compiled successfully |
+
+**Not verified:** this change hasn't been heard with VoiceOver or any other screen reader. The evidence is
+structural (accessibility tree) plus the earlier VoiceOver observation of the identical verdict pattern.
+
+**Evidence limits and known issues, unchanged:**
+- VoiceOver V1–V12 were run with its real cursor and the speech was recorded, but nobody listened to it.
+- Tab-key navigation was not tested. V13–V14 were not run.
+- TalkBack, NVDA, iOS VoiceOver and testing with blind and low-vision users remain outstanding.
+- WCAG 2.5.7 still fails (drag-only photo positioning) and 2.2.2 still fails (no animation pause control).
+  2.4.11 remains untested.
+- Profile-removal focus depends on PR #4.
+- Stale route announcements (Next.js announcer) and the Matches heading timing remain known and unfixed.
+- Legacy score announcements, duplicate filter-option announcements and uppercase group labels are outside this
+  release.
 
 ## 7. Screen-reader test scripts for Release 1
 

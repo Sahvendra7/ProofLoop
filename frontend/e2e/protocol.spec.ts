@@ -122,13 +122,14 @@ test("instrument check replays a recorded repeat, and the verdict ends in one ne
   await page.getByRole("button", { name: "Save baseline & start trial" }).click();
   await expect(page).toHaveURL(/\/trial\?id=/);
 
-  const check = page.getByRole("region", { name: /How much does your own score move/ });
+  const check = page.locator("section:has(#instrument-title)");
+  await expect(check.getByRole("heading", { level: 2 })).toHaveText(/How much does your own score move/);
   await expect(check).toContainText("optional, before your first check-in");
   await check.getByRole("button", { name: "Run the sample instrument check (recorded, free)" }).click();
 
   // Recorded truth: hydration +3 on a re-analysis of the same portrait, inside ±5, so the plan doesn't move.
-  const done = page.getByRole("region", { name: "Your two scans differed by 3 on hydration: your band stays ±5." });
-  await expect(done).toBeVisible();
+  const done = page.locator("section:has(#instrument-title)");
+  await expect(done.getByRole("heading", { level: 2, name: "Your two scans differed by 3 on hydration: your band stays ±5." })).toBeVisible();
   await expect(done).toContainText("Recorded, not simulated");
   await expect(done.getByRole("row", { name: /Pores/ })).toContainText("+5");
   await expect(done.getByRole("row", { name: /Pores/ })).toContainText("Within ±7");

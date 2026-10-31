@@ -321,7 +321,8 @@ function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Chec
     ) : null;
 
   return (
-    <section aria-labelledby="instrument-title" className="mt-8 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
+    // Not a named region, like the verdict: its heading takes focus, and naming the section after it reads it twice.
+    <section className="mt-8 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
       <p className="eyebrow inline-flex items-center gap-2">
         <Gauge aria-hidden className="size-4" /> Instrument check{check.sealed ? " · part of the plan" : " · optional, before your first check-in"}
       </p>

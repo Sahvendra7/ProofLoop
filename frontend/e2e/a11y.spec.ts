@@ -311,6 +311,9 @@ test.describe("trial", () => {
     await startSampleTrial(page);
     await page.getByRole("button", { name: /Run the sample instrument check/ }).click();
     await expect(focused(page)).toHaveText(/Your two scans differed by/);
+    // Same structure that made VoiceOver read the verdict twice: the focused heading must not also name its section.
+    const heading = (await focused(page).textContent())!.trim();
+    await expect(page.getByRole("region", { name: heading })).toHaveCount(0);
   });
 
   test("a check still being measured offers Check again and announces the outcome", async ({ page }) => {
