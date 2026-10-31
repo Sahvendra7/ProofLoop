@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useGo } from "@/lib/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Eye } from "lucide-react";
 import { api } from "@/lib/api";
 import { loadCapture } from "@/lib/capture-store";
-import { BADGE_COPY, countsAsChange, shortDate, summarise } from "@/lib/format";
+import { BADGE_COPY, countsAsChange, describeAnswers, shortDate, summarise } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
 import { clearDraft, loadDraft, saveDraft, type ProfileDraft } from "@/lib/profile-store";
 import type { FocusPlan, Goal, Metric, Scan } from "@/lib/types";
 import { InYourWords, NoReadingNote, PriorityNote, SkinTypeCard } from "./skin-profile";
+import { useAnnounce } from "@/components/announcer";
 import { BandLegend, MetricBar, ProvenanceNote } from "@/components/measure";
 import { Button, ButtonLink, CapsText, Card, FlowProgress, Notice, Skeleton, pageTitleClass } from "@/components/ui";
 
@@ -68,6 +69,27 @@ function Snapshot({ scan, goals }: { scan: Scan; goals: Goal[] | null }) {
   const [planSeen, setPlanSeen] = useState(false);
   if (!planSeen && (plan.data !== null || plan.error !== null)) setPlanSeen(true);
   const pickerReady = !profileOn || planSeen;
+  // "Answers applied" is said once, when the server has ordered the focuses for the new answers, and never when it
+  // couldn't (WCAG 4.1.3). Focus is on "Edit answers" by then, which doesn't describe the outcome.
+  const announce = useAnnounce();
+  const shownOrder = useRef<string | null>(null);
+  const pendingApply = useRef<{ before: string | null } | null>(null);
+  const order = plan.data ? plan.data.order.map((o) => o.goal).join(",") : null;
+  useEffect(() => {
+    const pending = pendingApply.current;
+    if (pending && !plan.loading) {
+      pendingApply.current = null;
+      if (plan.error || order === null) announce("Your answers are kept, but the focus list couldn't be updated. It is in its default order.");
+      else
+        announce(
+          `Answers applied: ${describeAnswers(applied.self_report)}. ${order === pending.before ? "The order of the focus list is unchanged." : "The focus list has been re-ordered."}`,
+        );
+    }
+    if (order !== null) shownOrder.current = order;
+  });
+  const expectPlan = () => {
+    pendingApply.current = { before: shownOrder.current };
+  };
   return (
     <Shell>
       <header className="max-w-3xl">
@@ -79,7 +101,7 @@ function Snapshot({ scan, goals }: { scan: Scan; goals: Goal[] | null }) {
         <ProvenanceNote provenance={scan.provenance} />
       </div>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[1.15fr_1fr]">
+      <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[1.15fr_1fr]">
         <Card className="p-6 sm:p-8">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-lg font-semibold text-ink">Eight measured concerns</h2>
@@ -128,8 +150,14 @@ function Snapshot({ scan, goals }: { scan: Scan; goals: Goal[] | null }) {
               hasReading={scan.skin_type?.status === "complete" || scan.skin_type?.status === "partial"}
               draft={draft}
               plan={plan.data}
+              planFailed={plan.error !== null}
+              onRetry={() => {
+                expectPlan();
+                plan.reload();
+              }}
               onApply={(d) => {
                 saveDraft(scan.id, d);
+                expectPlan();
                 setDraft(d);
               }}
               onSkip={() => {
@@ -236,7 +264,7 @@ function GoalPicker({ scan, goals, plan }: { scan: Scan; goals: Goal[] | null; p
             {ordered.map(({ goal, metric, plan: item }, i) => (
               <label
                 key={goal.key}
-                className={`flex cursor-pointer items-center gap-4 rounded-[var(--radius-md)] border-2 p-3 transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus-ring)] ${
+                className={`flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 rounded-[var(--radius-md)] border-2 p-3 transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus-ring)] ${
                   !metric ? "cursor-not-allowed border-line opacity-50" : selected === goal.key ? "border-strawberry-ink bg-accent-soft" : "border-line hover:bg-sunken"
                 }`}
               >
@@ -247,7 +275,8 @@ function GoalPicker({ scan, goals, plan }: { scan: Scan; goals: Goal[] | null; p
                     <span data-selected-mark className="size-2.5 rounded-full bg-accent forced-colors:bg-[CanvasText] forced-colors:[forced-color-adjust:none]" />
                   )}
                 </span>
-                <span className="min-w-0 flex-1">
+                {/* Badges drop below the text when large text leaves too little room beside them. */}
+                <span className="min-w-24 flex-1">
                   <span className="block font-medium text-ink">{goal.label}</span>
                   <span className="block text-xs text-ink-3">
                     {metric ? `${goal.metric_label} ${metric.ui_score} · ${metric.band_label.toLowerCase()}` : "Not measured in this scan"}
@@ -263,9 +292,9 @@ function GoalPicker({ scan, goals, plan }: { scan: Scan; goals: Goal[] | null; p
                   ))}
                 </span>
                 <span className="flex shrink-0 flex-col items-end gap-1">
-                  {item?.badges.includes("picked") && <span className="rounded-full bg-berry-milk px-2 py-0.5 text-[0.7rem] font-semibold text-berry-deep">{BADGE_COPY.picked}</span>}
-                  {i === 0 && metric && metric.improve_at !== null && <span className="rounded-full bg-card px-2 py-0.5 text-[0.7rem] font-semibold text-accent ring-1 ring-accent/30">{BADGE_COPY.most_room}</span>}
-                  {metric && metric.improve_at === null && <span className="rounded-full bg-sunken px-2 py-0.5 text-[0.7rem] font-semibold text-ink-2">{BADGE_COPY.cant_show_gains}</span>}
+                  {item?.badges.includes("picked") && <span className="rounded-full bg-berry-milk px-2 py-0.5 text-xs font-semibold text-berry-deep">{BADGE_COPY.picked}</span>}
+                  {i === 0 && metric && metric.improve_at !== null && <span className="rounded-full bg-card px-2 py-0.5 text-xs font-semibold text-accent ring-1 ring-accent/30">{BADGE_COPY.most_room}</span>}
+                  {metric && metric.improve_at === null && <span className="rounded-full bg-sunken px-2 py-0.5 text-xs font-semibold text-ink-2">{BADGE_COPY.cant_show_gains}</span>}
                 </span>
               </label>
             ))}

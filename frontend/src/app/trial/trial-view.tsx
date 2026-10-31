@@ -36,7 +36,7 @@ function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) =
   );
   return (
     <Shell>
-      <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-start">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_auto] lg:items-start">
         <header className="max-w-3xl">
           <FlowProgress step={4} note={`started ${shortDate(trial.baseline.observed_at)}`} />
           <h1 className={pageTitleClass}>{trial.goal.label}</h1>
@@ -88,6 +88,7 @@ function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) =
                   score: h.focus_score!,
                   baseline: h.is_baseline,
                   synthetic: h.synthetic,
+                  compared: !h.is_baseline && h.scan_id === trial.comparison?.current_scan_id,
                 }))}
             />
           </div>
@@ -117,7 +118,7 @@ function Waiting({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) => vo
   }
 
   return (
-    <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+    <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-[1.2fr_1fr]">
       <Card className="p-6 sm:p-8">
         <p className="eyebrow"><CapsText>Baseline saved</CapsText></p>
         <p className="tabular mt-3 font-condensed text-7xl font-bold leading-none text-ink">{base?.ui_score ?? "—"}</p>
@@ -172,7 +173,7 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
     <>
       {/* Not a named region: VoiceOver read the headline twice ("…heading, …region") when focus moved to it. */}
       <section className={`mt-10 overflow-hidden rounded-[var(--radius-stage)] p-7 sm:p-12 ${changed ? "on-night" : ""} ${panel}`}>
-        <div className="grid gap-10 md:grid-cols-[1.25fr_1fr] md:items-center">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-[1.25fr_1fr] md:items-center">
           <div>
             {synthetic && (
               <p className="hatch mb-5 inline-flex items-center gap-2 rounded-full bg-demo-soft px-3 py-1 text-xs font-semibold text-demo ring-1 ring-demo/25">
@@ -383,7 +384,7 @@ function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Chec
                     <tr key={c.metric} className={c.metric === trial.goal.metric ? "bg-accent-soft/50" : undefined}>
                       <th scope="row" className="py-2 pr-3 font-medium text-ink">
                         {c.label}
-                        {c.metric === trial.goal.metric && <span className="ml-1 rounded-full bg-accent px-2 py-0.5 text-[0.65rem] font-semibold text-white">Focus</span>}
+                        {c.metric === trial.goal.metric && <span className="ml-1 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">Focus</span>}
                       </th>
                       <td className="tabular px-3 py-2 text-right text-ink-2">{c.baseline ?? "—"}</td>
                       <td className="tabular px-3 py-2 text-right text-ink">{c.current ?? "—"}</td>
@@ -420,7 +421,7 @@ function ChangeRow({ change, focus }: { change: Change; focus: boolean }) {
   return (
     <tr className={focus ? "bg-accent-soft/50" : undefined}>
       <th scope="row" className="px-6 py-3 font-medium text-ink sm:px-8">
-        {change.label} {focus && <span className="ml-1 rounded-full bg-accent px-2 py-0.5 text-[0.65rem] font-semibold text-white">Focus</span>}
+        {change.label} {focus && <span className="ml-1 rounded-full bg-accent px-2 py-0.5 text-xs font-semibold text-white">Focus</span>}
       </th>
       <td className="tabular px-3 py-3 text-right text-ink-2">{change.baseline ?? "—"}</td>
       <td className="tabular px-3 py-3 text-right text-ink">{change.current ?? "—"}</td>

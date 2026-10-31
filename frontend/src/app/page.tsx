@@ -35,11 +35,11 @@ function Hero() {
     <section aria-labelledby="hero-title" className="-mt-[4.5rem] px-3 sm:-mt-20 sm:px-5">
       <div className="on-night night-stage grain relative mx-auto max-w-[90rem] overflow-hidden rounded-b-[var(--radius-stage)] rounded-t-[1.6rem] text-white">
         <div aria-hidden className="calibration-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(70%_70%_at_70%_40%,#000,transparent)]" />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-5 pb-10 pt-28 sm:px-8 sm:pt-36 lg:grid-cols-[1.08fr_1fr] lg:gap-14 lg:pb-16">
+        <div className="relative mx-auto grid grid-cols-1 max-w-6xl items-center gap-12 px-5 pb-10 pt-28 sm:px-8 sm:pt-36 lg:grid-cols-[1.08fr_1fr] lg:gap-14 lg:pb-16">
           <div className="rise">
             <p className="text-lede max-w-md font-medium text-white/85">Is your skincare routine actually working?</p>
             <h1 id="hero-title" className="text-hero mt-5 text-white">
-              Is it <span className="whitespace-nowrap">working?</span>
+              Is it working?
               <span className="mt-3 block text-[0.5em] font-[350] leading-[1] tracking-[-0.02em] text-berry-milk [font-variation-settings:'wdth'_100]">
                 Run a fair test.
               </span>
@@ -51,13 +51,13 @@ function Hero() {
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 href="/scan"
-                className="inline-flex h-14 items-center justify-center gap-3 rounded-full bg-strawberry-ink px-8 text-base font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.2),0_18px_36px_-16px_rgb(254_49_68/0.75)] transition-[background,transform] duration-[var(--duration-fast)] hover:bg-strawberry active:translate-y-px"
+                className="inline-flex min-h-14 py-2 text-center items-center justify-center gap-3 rounded-full bg-strawberry-ink px-8 text-base font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.2),0_18px_36px_-16px_rgb(254_49_68/0.75)] transition-[background,transform] duration-[var(--duration-fast)] hover:bg-strawberry active:translate-y-px"
               >
                 Start a fair test
               </Link>
               <Link
                 href="#how-it-works"
-                className="inline-flex h-14 items-center justify-center gap-2 rounded-full px-7 font-semibold text-white ring-1 ring-white/30 transition-colors duration-[var(--duration-fast)] hover:bg-white/10"
+                className="inline-flex min-h-14 py-2 text-center items-center justify-center gap-2 rounded-full px-7 font-semibold text-white ring-1 ring-white/30 transition-colors duration-[var(--duration-fast)] hover:bg-white/10"
               >
                 See how it works <ArrowDown aria-hidden className="size-4" />
               </Link>
@@ -127,7 +127,7 @@ function ConcernTape() {
 function Problem() {
   return (
     <section aria-labelledby="problem-title" className="mx-auto max-w-6xl px-5 pt-20 sm:px-8 sm:pt-28">
-      <div className="grid gap-10 lg:grid-cols-[1fr_0.85fr] lg:items-center lg:gap-16">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_0.85fr] lg:items-center lg:gap-16">
         <div>
           <p className="eyebrow">The problem</p>
           <h2 id="problem-title" className="text-section mt-4 text-espresso">
@@ -187,7 +187,7 @@ function FairTest() {
     <section id="fair-test" aria-labelledby="insight-title" className="mt-24 px-3 sm:mt-32 sm:px-5">
       <div className="mx-auto max-w-[90rem] rounded-[var(--radius-stage)] bg-white py-20 ring-1 ring-line sm:py-28">
         <div className="mx-auto max-w-6xl px-5 sm:px-8">
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-end">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-end">
             <div>
               <p className="eyebrow">Why a fair test</p>
               <h2 id="insight-title" className="text-section mt-4 text-espresso">
@@ -200,12 +200,12 @@ function FairTest() {
             </p>
           </div>
 
-          <div className="mt-14 grid gap-12 lg:grid-cols-2 lg:gap-16">
+          <div className="mt-14 grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
             <div>
               <h3 className="text-lg font-semibold text-ink">How much scores moved when the skin didn&apos;t</h3>
               <ol className="mt-6 space-y-6">
                 {FINDINGS.map((f) => (
-                  <li key={f.title} className="grid grid-cols-[4.5rem_1fr] items-start gap-4">
+                  <li key={f.title} className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-4">
                     <p className="tabular font-condensed text-5xl font-bold leading-none text-espresso">{f.value}</p>
                     <div>
                       <p className="font-semibold text-ink">{f.title}</p>
@@ -276,7 +276,7 @@ function Scale8({ from, to, tone }: { from: number; to: number; tone: "evidence"
 function InsideTheApp() {
   return (
     <section aria-labelledby="showcase-title" className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-end">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-end">
         <div>
           <p className="eyebrow">Inside the app</p>
           <h2 id="showcase-title" className="text-section mt-4 text-espresso">
@@ -319,7 +319,7 @@ function Trust() {
   ];
   return (
     <section aria-labelledby="trust-title" className="mx-auto max-w-6xl px-5 pb-8 pt-8 sm:px-8 sm:pt-16">
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-end">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-end">
         <div>
           <p className="eyebrow">Trust</p>
           <h2 id="trust-title" className="text-section mt-4 text-espresso">
@@ -360,7 +360,7 @@ function Trust() {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-center">
+      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_auto] md:items-center">
         {privacy.map((p) => (
           <p key={p.text} className="flex gap-3 text-sm leading-relaxed text-ink-2">
             <p.icon aria-hidden className="mt-0.5 size-4 shrink-0 text-ink" />
@@ -369,7 +369,7 @@ function Trust() {
         ))}
         <Link
           href="/privacy"
-          className="inline-flex h-12 items-center justify-center rounded-full bg-white px-6 font-semibold text-ink ring-1 ring-line-strong transition-colors hover:bg-paper hover:ring-ink/40"
+          className="inline-flex min-h-12 py-2 text-center items-center justify-center rounded-full bg-white px-6 font-semibold text-ink ring-1 ring-line-strong transition-colors hover:bg-paper hover:ring-ink/40"
         >
           How it works &amp; privacy
         </Link>
@@ -381,7 +381,7 @@ function Trust() {
 function FinalCta() {
   return (
     <section aria-labelledby="cta-title" className="px-3 pt-20 sm:px-5 sm:pt-24">
-      <div className="on-night night-stage grain relative mx-auto grid max-w-6xl items-center gap-10 overflow-hidden rounded-[var(--radius-stage)] px-6 py-14 text-white sm:px-12 sm:py-20 lg:grid-cols-[1.3fr_1fr]">
+      <div className="on-night night-stage grain relative mx-auto grid grid-cols-1 max-w-6xl items-center gap-10 overflow-hidden rounded-[var(--radius-stage)] px-6 py-14 text-white sm:px-12 sm:py-20 lg:grid-cols-[1.3fr_1fr]">
         <div aria-hidden className="calibration-grid pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_left,#000,transparent_70%)]" />
         <div className="relative">
           <h2 id="cta-title" className="text-section">Still wondering if it&apos;s working?</h2>
@@ -391,11 +391,11 @@ function FinalCta() {
           <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               href="/scan"
-              className="inline-flex h-14 items-center justify-center rounded-full bg-white px-8 font-semibold text-espresso transition-colors duration-[var(--duration-fast)] hover:bg-berry-milk"
+              className="inline-flex min-h-14 py-2 text-center items-center justify-center rounded-full bg-white px-8 font-semibold text-espresso transition-colors duration-[var(--duration-fast)] hover:bg-berry-milk"
             >
               Start a fair test
             </Link>
-            <Link href="/trials" className="inline-flex h-14 items-center justify-center rounded-full px-6 font-semibold text-white ring-1 ring-white/30 hover:bg-white/10">
+            <Link href="/trials" className="inline-flex min-h-14 py-2 text-center items-center justify-center rounded-full px-6 font-semibold text-white ring-1 ring-white/30 hover:bg-white/10">
               Open my trials
             </Link>
           </div>

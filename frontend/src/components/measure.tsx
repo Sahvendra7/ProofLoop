@@ -5,7 +5,7 @@ import { BAND_COLOR, BAND_TEXT } from "@/lib/format";
 /** Always-visible label saying where a number came from. */
 export function ProvenanceBadge({ provenance, size = "md" }: { provenance: Provenance; size?: "sm" | "md" }) {
   const live = provenance.kind === "youcam";
-  const pad = size === "sm" ? "px-2 py-0.5 text-[0.7rem]" : "px-2.5 py-1 text-xs";
+  const pad = size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-xs";
   return (
     <span
       title={provenance.detail}
@@ -28,7 +28,8 @@ export function ProvenanceNote({ provenance }: { provenance: Provenance }) {
       }`}
     >
       <ProvenanceBadge provenance={provenance} size="sm" />
-      <p className="min-w-0 flex-1 leading-relaxed">{provenance.detail}</p>
+      {/* Moves under the badge, rather than shrinking to a few characters, when large text leaves no room beside it. */}
+      <p className="min-w-32 flex-1 leading-relaxed">{provenance.detail}</p>
     </div>
   );
 }

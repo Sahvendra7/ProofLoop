@@ -67,7 +67,7 @@ export function VerdictExplorer() {
 
   return (
     <section id="verdicts" aria-labelledby="verdicts-title" className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-end">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-end">
         <div>
           <p className="eyebrow">The verdict</p>
           <h2 id="verdicts-title" className="text-section mt-4 text-espresso">
@@ -109,7 +109,7 @@ export function VerdictExplorer() {
         id="verdict-panel"
         role="tabpanel"
         aria-labelledby={`verdict-tab-${o.id}`}
-        className={`grain mt-6 grid items-center gap-10 overflow-hidden rounded-[var(--radius-stage)] p-7 transition-[background-color,color] duration-[var(--duration-slow)] sm:p-12 md:grid-cols-[1.15fr_1fr] ${o.panel} ${dark ? "on-night" : ""}`}
+        className={`grain mt-6 grid grid-cols-1 items-center gap-10 overflow-hidden rounded-[var(--radius-stage)] p-7 transition-[background-color,color] duration-[var(--duration-slow)] sm:p-12 md:grid-cols-[1.15fr_1fr] ${o.panel} ${dark ? "on-night" : ""}`}
       >
         <LazyMotion features={domAnimation} strict>
           <AnimatePresence mode="wait" initial={false}>
@@ -161,7 +161,7 @@ export function VerdictExplorer() {
             </Dial>
           </div>
           {/* How to read the dial: by shape as well as colour. */}
-          <ul className={`mx-auto mt-6 grid max-w-sm gap-2 text-sm ${o.sub}`}>
+          <ul className={`mx-auto mt-6 grid max-w-sm grid-cols-1 gap-2 text-sm ${o.sub}`}>
             <li className="flex items-center gap-3">
               <span aria-hidden className={`h-4 w-[3px] shrink-0 rounded-full ${dark ? "bg-white" : "bg-espresso"}`} />
               Upright needle: your baseline

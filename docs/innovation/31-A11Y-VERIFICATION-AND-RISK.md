@@ -409,6 +409,57 @@ These are unchanged from `30` §7.3.
 
 **Not applicable:** none of the nine items.
 
+### 6.8 Follow-up after Release 1: chart table, text resizing, profile announcements, focus at zoom (2026-11-01)
+
+PR #9, branch `feat/a11y-followup`, built on `17eeb44` and brought up to date with `main` `648f577` (PR #10, the
+"Calibration" redesign) by a merge commit. Regression tests: `frontend/e2e/a11y-followups-2.spec.ts`. Manual
+checks and participant materials: `33`.
+
+**Evidence types in this pass:** Playwright in Chromium (desktop and Pixel 7 emulation), axe WCAG 2.0–2.2 A/AA,
+accessibility-tree inspection, scripted keyboard runs and layout-geometry probes. Screen-reader and participant
+checks are tracked in `33`.
+
+**Conditions used.** 200 % and 400 % zoom = CSS viewports of 640 × 400 and 320 × 256. "200 % text" = root font
+size doubled (what a browser text-size setting does to rem-based layouts; media queries don't scale under this
+simulation, which is stricter than a real setting on desktop and the same on a phone). Text spacing = the 1.4.12
+values. Long text = every word pseudo-localised to ~140 % length.
+
+| # | Area | WCAG | Before | Change | Result |
+|---|---|---|---|---|---|
+| 1 | Chart numbers (A11Y-15) | 1.4.1, 1.3.1 | Table was `sr-only`; sighted users had only point colours 1.13:1 apart | "Show the numbers" disclosure (native `details`) under the chart: column headers (`th scope="col"`), row headers, caption "{metric} scores, oldest first", "Used for the result above" on the check-in in `comparison.current_scan_id`, and the band sentence. Values come from the trial history; the difference column is arithmetic only. The hidden copy is removed | Values checked against the API response; headers, keyboard open, axe and 320 px reflow tested |
+| 2 | Pill buttons (A11Y-25) | 1.4.4, 1.4.12 | Fixed heights; labels spilled at 200 % text | `min-h-*` with vertical padding and centred text in `Button` and the hand-built CTAs (including the redesign's) | Tested |
+| 3 | Large text and long words | 1.4.4, 1.4.10 | At 200 % text on a phone: sideways scrolling and clipped hero/verdict/CTA headings | Single-column grids use `grid-cols-1` (a `minmax(0,1fr)` track); `overflow-wrap: break-word` on `body` (only when a word can't fit); the nav wraps only when its row is under 18 rem (container query, never at the default size); badge rows and the provenance note wrap below their text when space runs out; two-column cards let text shrink | 8 routes clean at 200 % text (desktop and phone), 200 %/400 % zoom, text spacing at 390 px and pseudo-localised text |
+| 4 | Small labels (A11Y-24) | — | Badges 0.65–0.7 rem | Badges ("Focus", tier, "Most room", "Can't show gains", provenance) 0.75 rem. Eyebrows are already 0.85 rem sentence case in the redesign | Visual check below |
+| 5 | Profile answers (A11Y-02b) | 4.1.3, 2.4.3 | Snapshot: focus fell to the page after "Use my answers" and nothing was said. Trial: no confirmation after saving | Snapshot: focus goes to the first question when the form opens and to "Edit answers" after applying; once the server has ordered the focuses, one announcement: "Answers applied: {answers}. The focus list has been re-ordered." (or "…is unchanged"). A failed request announces "Your answers are kept, but the focus list couldn't be updated…", shows a notice with "Try again", and never says "applied". Trial: "Answers saved: {answers from the server}. This trial keeps the profile it started with."; a failed save shows the alert, announces nothing and keeps focus on "Save answers" | Success, unchanged order, failure + retry, trial save and failed save; each announced exactly once; frozen profile and plan unchanged |
+| 6 | Focus at zoom | 2.4.11 | Untested at these sizes | None needed | Tab and Shift+Tab across `/`, `/privacy`, snapshot, matches, a decided trial and `/trials` at 640 × 400 and 320 × 256, plus programmatic moves at 320 × 256: no focused control entirely hidden. Probe runs at 320 × 568 and 200 % text agree. Partial overlap (2.4.12, AAA) only where the focused element is a scroll region taller than the screen ("Four app screens", "Every measured concern") or, at 320 × 256, a link 20 % under the nav |
+
+**Recorded limits.** With text spacing at 320 px the redesigned nav's right-hand group overflows by ~4 px (33 px
+before the redesign); 1.4.12 doesn't require 320 px at the same time, and it passes at 390 px. Chart point
+colours are unchanged in the drawing. The announcer treats an identical sentence within 2 s as one event, so
+applying the same answers twice within 2 s is announced once.
+
+**Design check** (full-page screenshots of home, snapshot, matches and trial at 320, 390 and 1280 px, `648f577`
+against the branch, default text size): home and matches unchanged; the differences are the "Show the numbers"
+row, 0.75 rem badges, and focus-option badges that move under their text on 320 px phones, where `main` squeezed
+labels such as "Calm visible redness" to one word per line.
+
+**Commands** (2026-11-01, merged tree; backend virtualenv from the merged pins; no YouCam or Gemini key):
+
+| Command | Result |
+|---|---|
+| `npx playwright test` (profile flag on, desktop + mobile) | 157 passed, 9 skipped, 0 failed |
+| `E2E_SKIN_PROFILE=false npx playwright test` | 135 passed, 31 skipped, 0 failed |
+| `npx playwright test e2e/a11y-followups-2.spec.ts --repeat-each 3` | 51 passed, 21 skipped, 0 failed |
+| `E2E_SKIN_PROFILE=false npx playwright test e2e/a11y-followups.spec.ts -g "each score is read" --repeat-each 10` (one failure on 2026-10-31 under full-suite load) | 20 passed |
+| New spec against `main` `648f577` (without this PR) | 13 failed, 4 passed (focus at 200 %/400 % zoom and text spacing at 390 px, which `main` already meets) |
+| Axe WCAG 2.0–2.2 A/AA (every spec using the shared helper) | 0 serious or critical; 0 moderate or minor logged |
+| `npx tsc --noEmit -p .`, `npx eslint src e2e playwright.config.ts`, `npx next build` | Clean; build 11/11 pages |
+| Backend `pytest`: SQLite / PostgreSQL 17.11 (throwaway container) | 1370 passed, 2 skipped / 1370 passed, 2 skipped |
+
+Skips are by design: tests that set their own viewport run on the desktop project only; the mobile-menu test runs
+on mobile only; with the flag off the 22 skin-profile tests skip themselves. The 2 backend skips are the opt-in
+live YouCam tests.
+
 ## 7. Screen-reader test scripts for Release 1
 
 **Who runs them:** the owner (or anyone), on the two available setups. Record the actual speech; mark each step
@@ -501,5 +552,6 @@ Record task success and where they hesitated. None of this has been done yet.
   by automation and an agent-driven keyboard walkthrough only.
 - **iOS VoiceOver and NVDA: unverified.** No device or machine is available.
 - **Real blind and low-vision participants (§4): not started.**
+- **Follow-up (§6.8):** screen-reader checks V21–V24, T14–T16, N1–N10 and I1–I10 and the participant kit are in `33`.
 - The questions to settle from these sessions: the title + `h1` double reading on route changes; TalkBack
   cut-offs; whether the Result in words list is too long; whether step headings should be more specific.

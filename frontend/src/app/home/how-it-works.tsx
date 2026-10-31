@@ -13,7 +13,7 @@ const linkCta = (href: string, label: string, primary = false) => (
     href={href}
     className={
       primary
-        ? "inline-flex h-12 items-center rounded-full bg-strawberry-ink px-6 font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] transition-colors hover:bg-berry-deep"
+        ? "inline-flex min-h-12 max-w-full items-center rounded-full bg-strawberry-ink px-6 py-2 text-center font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] transition-colors hover:bg-berry-deep"
         : "inline-flex items-center gap-1.5 font-semibold text-strawberry-ink underline decoration-strawberry-ink/30 underline-offset-4 hover:decoration-strawberry-ink"
     }
   >
@@ -188,7 +188,7 @@ export function HowItWorks() {
   return (
     <section ref={section} id="how-it-works" aria-labelledby="how-title" className="relative py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="grid gap-6 lg:grid-cols-[1fr_minmax(0,26rem)] lg:gap-16">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_minmax(0,26rem)] lg:gap-16">
           <div className="max-w-2xl">
             <p className="eyebrow">How it works</p>
             <h2 id="how-title" className="text-section mt-4 text-espresso">

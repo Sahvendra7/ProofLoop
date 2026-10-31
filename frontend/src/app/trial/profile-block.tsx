@@ -15,6 +15,7 @@ import {
 } from "@/lib/format";
 import type { Frequency, Reactive, SelfReport, SkinRegion, Trial, UserView } from "@/lib/types";
 import { useResource } from "@/lib/hooks";
+import { useAnnounce } from "@/components/announcer";
 import { Button, Notice, Segmented } from "@/components/ui";
 
 const REGIONS: SkinRegion[] = ["whole", "t_zone", "u_zone"];
@@ -53,6 +54,7 @@ export function ProfileBlock({ trial, onUpdate }: { trial: Trial; onUpdate: (t: 
   // Edits need the feature on; removal never does, so switching it off can't trap anyone's answers.
   const status = useResource("status", api.status);
   const canEdit = status.data?.skin_profile_enabled === true;
+  const announce = useAnnounce();
   if (!profile) {
     // Only for trials that started with skin profiles available; older trials never had the option.
     // `== null` also covers an API that predates the field.
@@ -65,15 +67,20 @@ export function ProfileBlock({ trial, onUpdate }: { trial: Trial; onUpdate: (t: 
     );
   }
 
-  async function run(action: () => Promise<void>, then: FocusTarget) {
+  // `said`: a status sentence for the live region, built from the server's copy of the trial, only after the change
+  // was saved. Focus returns to a control that doesn't describe the outcome, so it is announced instead.
+  async function run(action: () => Promise<void>, then: FocusTarget, said?: (updated: Trial) => string | null) {
     setBusy(true);
     setError(null);
     try {
       await action();
-      onUpdate(await api.trial(trial.id));
+      const updated = await api.trial(trial.id);
+      onUpdate(updated);
       setEditing(false);
       setConfirming(false);
       focusAfterRender(then);
+      const message = said?.(updated);
+      if (message) announce(message);
     } catch (err) {
       setError(err instanceof ApiError ? err : new ApiError("unknown", "Couldn't save that change.", 0));
     } finally {
@@ -130,9 +137,16 @@ export function ProfileBlock({ trial, onUpdate }: { trial: Trial; onUpdate: (t: 
                 focusAfterRender("edit");
               }}
               onSave={(report, view) =>
-                run(async () => {
-                  await api.amendProfile(trial.id, { self_report: report, user_view: view, expected_amendments: profile.amendments });
-                }, "edit")
+                run(
+                  async () => {
+                    await api.amendProfile(trial.id, { self_report: report, user_view: view, expected_amendments: profile.amendments });
+                  },
+                  "edit",
+                  (updated) =>
+                    updated.profile?.latest
+                      ? `Answers saved: ${describeAnswers(updated.profile.latest.self_report)}. This trial keeps the profile it started with.`
+                      : null,
+                )
               }
             />
           ) : confirming ? (

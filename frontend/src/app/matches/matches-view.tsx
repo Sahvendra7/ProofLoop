@@ -138,7 +138,7 @@ function ReasonItem({ reason }: { reason: Reason }) {
   return (
     <li className={`flex gap-2.5 text-sm leading-relaxed ${caution ? "text-demo" : "text-ink-2"}`}>
       <Icon aria-hidden className={`mt-0.5 size-4 shrink-0 ${caution ? "text-demo" : "text-accent"}`} />
-      <span><span className="sr-only">{reason.kind}: </span>{reason.text}</span>
+      <span className="min-w-0"><span className="sr-only">{reason.kind}: </span>{reason.text}</span>
     </li>
   );
 }
@@ -156,7 +156,7 @@ function MatchCard({ match, scanId, goal }: { match: Match; scanId: string; goal
   const tierStyle = match.tier === "strong" ? "bg-better-soft text-better" : match.tier === "good" ? "bg-sunken text-ink" : "bg-demo-soft text-demo";
   return (
     <li>
-      <Card className="grid grid-cols-[84px_1fr] gap-4 p-4 sm:grid-cols-[180px_1fr] sm:gap-6 sm:p-6">
+      <Card className="grid grid-cols-[84px_minmax(0,1fr)] gap-4 p-4 sm:grid-cols-[180px_minmax(0,1fr)] sm:gap-6 sm:p-6">
         <ProductArt product={p} className="aspect-[5/6] w-full" />
         <div className="min-w-0">
           <div className="flex flex-wrap items-start justify-between gap-3">

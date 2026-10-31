@@ -32,8 +32,10 @@ export function SiteNav() {
 
   return (
       <div className="sticky top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
-        <header className="mx-auto max-w-6xl rounded-[1.4rem] bg-white shadow-[var(--shadow-float)] ring-1 ring-espresso/8 backdrop-blur-xl supports-[backdrop-filter]:bg-white/93">
-          <div className="flex h-14 items-center justify-between gap-3 pl-4 pr-2 sm:h-16 sm:pl-5 sm:pr-2.5">
+        <header className="@container mx-auto max-w-6xl rounded-[1.4rem] bg-white shadow-[var(--shadow-float)] ring-1 ring-espresso/8 backdrop-blur-xl supports-[backdrop-filter]:bg-white/93">
+          {/* With large text the row is narrower than 18 rem and wraps instead of widening the page (WCAG 1.4.4, 1.4.10).
+              At the default size it never wraps, so the bar keeps its one-row height even at 320 px. */}
+          <div className="flex min-h-14 items-center justify-between gap-x-3 gap-y-1 pl-4 pr-2 @max-[18rem]:flex-wrap @max-[18rem]:py-1 sm:min-h-16 sm:pl-5 sm:pr-2.5">
             <Logo />
             <nav aria-label="Primary" className="hidden items-center gap-0.5 nav:flex">
               {LINKS.map((l) => (
@@ -51,7 +53,7 @@ export function SiteNav() {
               <Link
                 href="/scan"
                 aria-label="Start a fair test"
-                className="inline-flex h-10 items-center gap-2 rounded-full bg-strawberry-ink px-4 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] transition-colors duration-[var(--duration-fast)] hover:bg-berry-deep sm:h-11 sm:px-5"
+                className="inline-flex min-h-10 items-center gap-2 rounded-full bg-strawberry-ink px-4 py-1 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] transition-colors duration-[var(--duration-fast)] hover:bg-berry-deep sm:min-h-11 sm:px-5"
               >
                 <span aria-hidden className="size-1.5 rounded-full bg-white/90" />
                 <span className="hidden min-[400px]:inline">Start a fair test</span>

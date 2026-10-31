@@ -1,9 +1,12 @@
-type Point = { label: string; score: number; synthetic?: boolean; baseline?: boolean };
+/** `compared`: the check-in the server's verdict is based on (from `comparison.current_scan_id`). */
+type Point = { label: string; score: number; synthetic?: boolean; baseline?: boolean; compared?: boolean };
+
+const signedPoints = (d: number) => `${d > 0 ? "+" : ""}${d} ${Math.abs(d) === 1 ? "point" : "points"}`;
 
 /**
  * Focus-metric history with the noise band drawn around the baseline.
  * A point outside the band is a measured change; inside it is not.
- * Rendered as a figure with a visually hidden data table for screen readers.
+ * Rendered as a figure with a "Show the numbers" table that carries the same values in text.
  */
 export function BandChart({
   points,
@@ -49,25 +52,36 @@ export function BandChart({
         {illustrative && " Illustration with example numbers."}
         {synthetic && " Hollow points are synthetic demo data, not measurements."}
       </figcaption>
-      {/* sr-only on the wrapper: overflow:hidden does not clip a table box, which caused page-wide overflow on phones. */}
-      <div className="sr-only">
-        <table>
-          <caption>{metricLabel} scores</caption>
+      {/* The plot is aria-hidden, so this table is its equivalent for everyone: screen readers, magnifiers and
+          anyone who can't tell the point colours apart (A11Y-15). Closed by default to keep the figure compact. */}
+      <details className="mt-3 text-sm">
+        <summary className="cursor-pointer select-none font-semibold text-ink-2 hover:text-ink">Show the numbers</summary>
+        <table className="mt-3 w-full border-collapse text-left">
+          <caption className="sr-only">{metricLabel} scores, oldest first</caption>
           <thead>
-            <tr><th>When</th><th>Score</th><th>Difference from baseline</th></tr>
+            <tr className="border-b border-line-strong text-ink-2">
+              <th scope="col" className="py-2 pr-3 font-semibold">When</th>
+              <th scope="col" className="py-2 pr-3 font-semibold">Score</th>
+              <th scope="col" className="py-2 font-semibold">Difference from baseline</th>
+            </tr>
           </thead>
-          <tbody>
+          <tbody className="tabular text-ink">
             {points.map((p, i) => (
-              <tr key={i}>
-                <td>{p.label}{p.synthetic ? " (synthetic demo)" : ""}</td>
-                <td>{p.score}</td>
+              <tr key={i} className="border-b border-line last:border-b-0">
+                <th scope="row" className="py-2 pr-3 font-normal text-ink-2 [overflow-wrap:anywhere]">
+                  {p.label}
+                  {p.synthetic && !/synthetic/i.test(p.label) ? " (synthetic demo)" : ""}
+                  {p.compared && <span className="block text-xs text-ink-3">Used for the result above</span>}
+                </th>
+                <td className="py-2 pr-3">{p.score}</td>
                 {/* Numbers only: whether a change counts is the server's verdict, given in words above the chart. */}
-                <td>{p.baseline ? "Baseline" : `${p.score - base.score > 0 ? "+" : ""}${p.score - base.score} points`}</td>
+                <td className="py-2">{p.baseline ? "Baseline" : signedPoints(p.score - base.score)}</td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+        <p className="mt-2 text-xs text-ink-3">Normal variation is ±{band} points around the baseline score of {base.score}.</p>
+      </details>
     </figure>
   );
 }

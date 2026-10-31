@@ -104,6 +104,9 @@
   body {
     background: var(--color-paper);
     color: var(--color-ink);
+    /* A word wider than its line (very large text, long translations) breaks instead of being clipped or
+       widening the page. Only applies when a word can't fit, so it never changes normal line breaks. */
+    overflow-wrap: break-word;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

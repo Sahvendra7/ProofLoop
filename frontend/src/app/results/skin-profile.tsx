@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Layers } from "lucide-react";
 import {
+  describeAnswers,
   FREQUENCY_OPTIONS,
   REACTIVE_OPTIONS,
   READING_ISNT,
@@ -68,6 +69,8 @@ export function InYourWords({
   hasReading,
   draft,
   plan,
+  planFailed,
+  onRetry,
   onApply,
   onSkip,
 }: {
@@ -75,11 +78,30 @@ export function InYourWords({
   hasReading: boolean;
   draft: ProfileDraft | null;
   plan: FocusPlan | null;
+  /** The server couldn't order the focuses for the applied answers; the list below is in its default order. */
+  planFailed: boolean;
+  onRetry: () => void;
   onApply: (draft: ProfileDraft) => void;
   onSkip: () => void;
 }) {
   const [editing, setEditing] = useState(draft === null);
   const [open, setOpen] = useState(false);
+  // The control that had focus is replaced on each step, so focus moves to what replaced it (WCAG 2.4.3):
+  // "Edit answers" after applying, the first question after opening the form.
+  const editRef = useRef<HTMLButtonElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const pendingFocus = useRef<"edit" | "form" | null>(null);
+  useEffect(() => {
+    const target = pendingFocus.current;
+    if (target === null) return;
+    pendingFocus.current = null;
+    if (target === "edit") editRef.current?.focus();
+    else {
+      // The first question's chosen answer, or its first option: where a radio group's Tab stop is.
+      const first = formRef.current?.querySelector("fieldset");
+      (first?.querySelector<HTMLInputElement>("input:checked") ?? first?.querySelector<HTMLInputElement>("input"))?.focus();
+    }
+  });
   const [report, setReport] = useState<SelfReport>(draft?.profile.self_report ?? EMPTY);
   const [view, setView] = useState<UserView | null>(draft?.profile.user_view ?? null);
   const [useReading, setUseReading] = useState(draft?.profile.use_camera_reading ?? true);
@@ -101,7 +123,18 @@ export function InYourWords({
     return (
       <Card className="p-6">
         <h2 className="text-lg font-semibold text-ink">In your words</h2>
-        {notes.length === 0 ? (
+        <p className="mt-2 text-sm text-ink">{describeAnswers(draft.profile.self_report)}</p>
+        {planFailed ? (
+          <Notice
+            tone="error"
+            live={false}
+            className="mt-3"
+            title="The focus list couldn't be updated for these answers."
+            action={<Button variant="secondary" size="sm" onClick={onRetry}>Try again</Button>}
+          >
+            The list below is in its default order.
+          </Notice>
+        ) : notes.length === 0 ? (
           <p className="mt-2 text-sm text-ink-2">Your answers are used to order the focuses below.</p>
         ) : (
           <ul className="mt-3 space-y-2 text-sm leading-relaxed text-ink-2">
@@ -113,7 +146,17 @@ export function InYourWords({
         <p className="mt-3 text-xs text-ink-3">
           {draft.save ? "These answers will be saved with your trial when you start it." : "Not saved: these answers stay in this tab."}
         </p>
-        <Button variant="secondary" size="sm" className="mt-4" onClick={() => setEditing(true)}>
+        <Button
+          ref={editRef}
+          variant="secondary"
+          size="sm"
+          className="mt-4"
+          onClick={() => {
+            setEditing(true);
+            setOpen(true);
+            pendingFocus.current = "form";
+          }}
+        >
           Edit answers
         </Button>
       </Card>
@@ -126,17 +169,26 @@ export function InYourWords({
       <p className="mt-1 text-sm text-ink-2">The camera sees one photo. You know how your skin behaves day to day.</p>
       {!open ? (
         <div className="mt-4 flex flex-wrap gap-3">
-          <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setOpen(true);
+              pendingFocus.current = "form";
+            }}
+          >
             Add your answers
           </Button>
         </div>
       ) : (
         <form
+          ref={formRef}
           className="mt-5 space-y-5"
           onSubmit={(e) => {
             e.preventDefault();
             onApply({ profile: { self_report: report, user_view: hasReading && useReading ? view : null, use_camera_reading: hasReading && useReading }, save });
             setEditing(false);
+            pendingFocus.current = "edit";
           }}
         >
           <Segmented<Frequency> label="Shine through the day" value={report.shine ?? ("" as Frequency)} options={FREQUENCY_OPTIONS} onChange={(v) => set("shine", v)} />

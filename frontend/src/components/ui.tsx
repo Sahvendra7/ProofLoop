@@ -6,7 +6,7 @@ type Variant = "primary" | "secondary" | "ghost" | "quiet" | "inverse";
 type Size = "md" | "lg" | "sm";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-[background,color,box-shadow,transform] duration-[var(--duration-fast)] ease-[var(--ease-out-soft)] disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 forced-colors:aria-disabled:text-[GrayText] select-none";
+  "inline-flex items-center justify-center gap-2 rounded-full text-center font-semibold transition-[background,color,box-shadow,transform] duration-[var(--duration-fast)] ease-[var(--ease-out-soft)] disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 forced-colors:aria-disabled:text-[GrayText] select-none";
 const variants: Record<Variant, string> = {
   primary:
     "bg-strawberry-ink text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_12px_26px_-14px_rgb(214_26_47/0.85)] hover:bg-berry-deep hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_16px_30px_-14px_rgb(184_0_31/0.9)] active:translate-y-px",
@@ -17,9 +17,11 @@ const variants: Record<Variant, string> = {
   quiet: "text-strawberry-ink underline underline-offset-4 decoration-strawberry-ink/30 hover:decoration-strawberry-ink rounded-sm",
 };
 const sizes: Record<Size, string> = {
-  sm: "h-10 px-4 text-sm",
-  md: "h-12 px-6 text-[0.95rem]",
-  lg: "h-14 px-8 text-base",
+  // Minimum, not fixed, heights: a label that wraps under large text or text spacing grows the pill instead of
+  // spilling out of it (WCAG 1.4.4, 1.4.12).
+  sm: "min-h-10 px-4 py-1.5 text-sm",
+  md: "min-h-12 px-6 py-2 text-[0.95rem]",
+  lg: "min-h-14 px-8 py-2.5 text-base",
 };
 
 export function buttonClass(variant: Variant = "primary", size: Size = "md", extra = "") {
