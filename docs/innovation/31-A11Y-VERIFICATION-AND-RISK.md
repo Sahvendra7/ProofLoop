@@ -200,7 +200,7 @@ Branch `feat/a11y-r1`, committed as `e6e3e85`; not pushed or deployed. Implement
 | TypeScript (`tsc --noEmit`), ESLint | Clean | |
 | Production build (`next build`) | Compiled; all 9 routes static | |
 | **Keyboard walkthrough** (agent-driven, real key presses in Chromium, dev build, keyless local backend) | Pass after two fixes (below) | Not a human session; not a screen reader |
-| **Screen-reader testing** (VoiceOver, TalkBack, NVDA) | **Not performed** | Scripts in §7 |
+| **Screen-reader testing** (VoiceOver, TalkBack, NVDA) | Not performed at the time of this table. Later the same day: **VoiceOver V1–V12 run by scripted control** (speech recorded, not listened to; §6.4). TalkBack and NVDA not performed | Scripts in §7 |
 | **Testing with blind or low-vision people** | **Not performed** | Plan in §4 |
 
 **Keyboard walkthrough journeys (all pass):** first load (focus untouched, first Tab = skip link); "Explore with
@@ -298,8 +298,9 @@ and were **not run**.
 |---|---|---|---|
 | Verdict headline read twice on focus | High (breaks the "read once" rule) | Release 1 (region named by the focused heading) | **Fixed** in a follow-up commit on this branch; E2E guard added; VoiceOver re-check passes |
 | "-1 points" / "+1 points" in Result in words and the dial caption | Low (wording) | Release 1 / pre-existing caption | **Fixed**: "1 point"; E2E scenario added |
-| Previous page's heading spoken before the new one, once | Medium (misleading) | Probably Next.js's route announcer reading a hidden previous page | Not fixed; intermittent (not reproduced). Re-check with a person listening |
-| Matches heading focused while still saying "Matching products" | Low | Release 1 timing: the loading heading takes focus | Not fixed; candidate follow-up: focus the heading after data loads |
+| Previous page's heading spoken before the new one | Medium (misleading) | Next.js's route announcer: if `document.title` is empty when it runs, it reads the first `h1` in the document, and the previous page stays mounted but hidden. Reproduced in Chromium during final review (8 runs): Product → Trial spoke the product's heading 8/8; Home → Snapshot spoke the old home heading 1/8 | Not fixed. Not caused by Release 1 code, but heard right before Release 1's focus move. Fixing it means controlling the title during navigation: needs its own design and approval |
+| Matches heading focused while still saying "Matching products" | Low | Release 1 timing: the loading heading takes focus. Reproduced 8/8 in Chromium; the route announcer also spoke "Matching products" in 4/8 | Not fixed; follow-up: give the heading its final text before it can take focus (without adding another announcement) |
+| Instrument-check heading focused inside a section named by itself | Likely Medium (same structure as the verdict double reading) | Release 1 (`trial-view.tsx`, `aria-labelledby="instrument-title"`) | Not fixed and not heard with VoiceOver (not in V1–V12). Structural reproduction 8/8 in Chromium; same one-line fix as the verdict |
 | Score read as "69Room to improve", then "out of 100," as a separate phrase | Medium | Pre-existing (`MetricBar`) | Not fixed (outside Release 1); candidate Stage 2 item |
 | Filter options read twice in linear reading ("≤ $25 radio button", then "≤ $25"); group labels read in capitals ("BUDGET group") | Low | Pre-existing `Segmented` markup / CSS uppercase | Not fixed; candidate Stage 2 item |
 | Section names repeated after a focused control (e.g. "…button Delete all my data region") | Low | VoiceOver landmark context | Accept, or drop names from non-landmark sections later |
