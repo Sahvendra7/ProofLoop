@@ -451,6 +451,7 @@ labels such as "Calm visible redness" to one word per line.
 | `E2E_SKIN_PROFILE=false npx playwright test` | 135 passed, 31 skipped, 0 failed |
 | `npx playwright test e2e/a11y-followups-2.spec.ts --repeat-each 3` | 51 passed, 21 skipped, 0 failed |
 | `E2E_SKIN_PROFILE=false npx playwright test e2e/a11y-followups.spec.ts -g "each score is read" --repeat-each 10` (one failure on 2026-10-31 under full-suite load) | 20 passed |
+| New spec against `main` `648f577` (without this PR) | 13 failed, 4 passed (focus at 200 %/400 % zoom and text spacing at 390 px, which `main` already meets) |
 | Axe WCAG 2.0–2.2 A/AA (every spec using the shared helper) | 0 serious or critical; 0 moderate or minor logged |
 | `npx tsc --noEmit -p .`, `npx eslint src e2e playwright.config.ts`, `npx next build` | Clean; build 11/11 pages |
 | Backend `pytest`: SQLite / PostgreSQL 17.11 (throwaway container) | 1370 passed, 2 skipped / 1370 passed, 2 skipped |
