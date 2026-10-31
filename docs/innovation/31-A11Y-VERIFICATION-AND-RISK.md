@@ -311,6 +311,8 @@ also remain outstanding. Nothing here substitutes for testing with blind and low
 
 ### 6.5 Known limitations carried into review (not addressed in Release 1)
 
+**Superseded by §6.7** (2026-10-31, after PR #4 merged): every row below was worked on; §6.7 has the outcome.
+
 | Limitation | WCAG | Where | Status |
 |---|---|---|---|
 | Positioning the photo needs dragging or arrow keys; there's no single-pointer alternative | 2.5.7 Dragging Movements (AA) — **fail** | `frontend/src/app/scan/framer.tsx` | Stage 2 (move and centre buttons), not approved |
@@ -356,6 +358,57 @@ structural (accessibility tree) plus the earlier VoiceOver observation of the id
 - Legacy score announcements, duplicate filter-option announcements and uppercase group labels are outside this
   release.
 
+### 6.7 Remaining issues resolved after PR #4 merged (2026-10-31)
+
+`main` `7a705ac` (PR #4, skin profile) was merged into `feat/a11y-r1` as `12849f9`. Conflicts in `scan-flow.tsx` and
+`trial-view.tsx` were resolved by keeping both sides. Fixes are in `4c10222` and `c74dafd`, and the regression tests
+in `frontend/e2e/a11y-followups.spec.ts`.
+
+**Evidence levels, kept apart:**
+- **Automated:** Playwright in Chromium, desktop and Pixel 7 emulation, axe WCAG 2.0–2.2 A/AA.
+- **Accessibility tree:** Playwright `ariaSnapshot` and DOM inspection, not a screen reader.
+- **Keyboard:** scripted Tab, Shift+Tab, Enter and Space key presses in Chromium.
+- **Screen reader:** **none in this pass.** VoiceOver was not running, and switching it on is the owner's setting.
+- **People:** **none.**
+
+| # | Issue | WCAG | Root cause | Change | Status |
+|---|---|---|---|---|---|
+| 1 | Photo positioning needs dragging | 2.5.7 Dragging Movements (AA) | Only drag, or arrow keys on the focused frame | `framer.tsx`: "Move photo left/up/down/right" and "Centre photo" buttons (40 px) in a "Move photo" group. They share one clamped nudge with the arrow keys; scale and crop are unchanged | **Fixed and tested** (click, tap, Enter/Space; one press equals a drag of the same distance; analysis still runs). Awaiting AT confirmation of the button names |
+| 2 | Homepage motion without a pause | 2.2.2 Pause, Stop, Hide (A) | `.marquee` (38 s, infinite) and three `.float` chips (6 s, infinite) start on their own and run beside other content | "Pause animations" button (`aria-pressed`) in the hero. It pauses both, is stored in `localStorage`, and is applied before first paint, so motion never restarts on reload or navigation. Under `prefers-reduced-motion` nothing moves and the control is hidden | **Fixed and tested** (pause, resume, no creep while paused, kept across reload and navigation; reduced motion). **Exempt:** `.rise` (560 ms), `.reveal` (700 ms), `.dial-draw` (900 ms) and the colour transitions, which are one-shot and under 5 s |
+| 3 | Sticky headers might hide focus | 2.4.11 Focus Not Obscured (Min) (AA) | Nav plus homepage step bar against 6 rem `scroll-padding-top` | **None needed** | **Passes in the tested scenarios (automated):**<ul><li>Tab then Shift+Tab across `/` (~72 stops), `/privacy` (~36) and a decided sample trial (~35), on desktop and mobile;</li><li>the homepage again with smooth scrolling;</li><li>the open mobile menu;</li><li>programmatic moves: Matches heading, instrument-check result, verdict, delete-all confirmation.</li></ul>Each focused box was sampled on a 5×5 grid: 0% covered anywhere, which also meets 2.4.12 on these paths. A sanity run with `scroll-padding-top: 0` does fail ("Start a fair test" hidden), so the test detects the problem. Untested: other zoom levels and text spacing, and real phones |
+| 4 | Profile removal focus | 2.4.3, 4.1.3 | Each step replaced the focused button | PR #4 `30b781c`: focus goes to the confirm question, back on Cancel, and to the outcome after removal. It is read once by the focus move, with nothing in any live region | **Fixed and tested** (with PR #8's announcer present: announcer silent, outcome unique, no buttons left, plan unchanged, Tab continues). Awaiting AT |
+| 5 | Stale route announcement | 4.1.3 / 2.4.2 | Next.js's `AppRouterAnnouncer` reads `document.title` in a passive effect when the route tree changes, and falls back to the **first `h1` in the document** while the new route's metadata title hasn't arrived. The previous page is still mounted (hidden), so Product → Trial said "Hydrating Milk Essence" | `RouteTitle` sets each route's title in a layout effect. Layout effects run before every passive effect of the commit, so the announcer reads the new title. Titles are shared with each route's `metadata` (`lib/titles.ts`). No custom router, and browser Back works | **Fixed and tested** (seven consecutive navigations incl. Back and the logo link, 8/8 runs). Awaiting AT: whether the title plus the focused `h1` still sounds repetitive (V3) |
+| 6 | Matches heading focused while it said "Matching products" | 2.4.6 / 2.4.3 | The `h1` showed placeholder text until data arrived, and became the placeholder again on every filter reload | The `h1` renders only once its text is final, and keeps the goal across filter reloads. Route focus already waits for the `h1` (MutationObserver), so no timeouts are added | **Fixed and tested** (immediate and 1.5 s delayed API; filter reload never changes the heading) |
+| 7 | "69Room to improve" | 1.3.1 | Score, an sr-only " out of 100, " and the band label were adjacent inline spans | `MetricBar`: one sr-only phrase "69 out of 100, room to improve"; the visual parts are `aria-hidden` | **Fixed and tested** (tree inspection). Awaiting AT |
+| 8 | Filter options read twice | 1.3.1 / 4.1.2 | A visually hidden native radio is named by its `<label>`, and the label's visible text is a separate text node, so linear reading met both. `Toggle` had the same structure | Inputs are named with `aria-label`; the visible text is `aria-hidden`; clicking the text still selects | **Fixed and tested** (the Filters region tree lists each option once; click-to-select). Awaiting AT |
+| 9 | Group labels read in capitals | 1.3.1 (pronunciation; best practice) | `text-transform: uppercase` (`.eyebrow`, uppercase table headers and labels); WebKit passes transformed text to VoiceOver | `CapsText`: the visible copy is `aria-hidden`, and an sr-only `normal-case` copy is read. No visual change. It is wrapped in a `relative` span, because the absolutely positioned copy otherwise escaped a scrolling table and widened the page at 320 px (caught by the existing reflow tests) | **Fixed and tested** (no readable text under `uppercase` on `/`, matches, product and trial). Awaiting AT |
+
+**Commands** (from a scratch copy of the branch on a virtualenv built from the merged pins; no YouCam or Gemini key):
+
+| Command | Result |
+|---|---|
+| `npx playwright test` (flag on, desktop + mobile) | **140 passed, 2 skipped** (the 320 px reflow test is desktop-only; the mobile-menu test is mobile-only) |
+| `E2E_SKIN_PROFILE=false npx playwright test` | **126 passed, 16 skipped** (the above, plus 14 profile tests that skip with the flag off) |
+| `npx playwright test e2e/a11y-followups.spec.ts e2e/profile.spec.ts --repeat-each 2` | 86 passed, 2 skipped |
+| Axe 2.0–2.2 A/AA (every spec using the shared helper, now including `profile.spec.ts`, the framer and the homepage with motion allowed) | 0 serious or critical; 0 logged moderate |
+| `npx tsc --noEmit`, `npx eslint src e2e playwright.config.ts` | Clean |
+| Backend `pytest`, SQLite / PostgreSQL 17 | 1370 passed, 2 skipped / 1370 passed, 2 skipped |
+
+**Status after this pass (supersedes §6.2 for these rows).** This is not a conformance claim.
+
+| SC | Status | Basis |
+|---|---|---|
+| 2.5.7 Dragging Movements | Fixed and tested (automated) | Move buttons |
+| 2.2.2 Pause, Stop, Hide | Fixed and tested (automated) | Pause control + reduced motion |
+| 2.4.11 Focus Not Obscured (Minimum) | Passes on the tested paths (automated); not manually verified | Grid sampling |
+| 2.4.3 / 4.1.3 (route announcement, Matches heading, profile removal) | Fixed and tested; awaiting screen-reader confirmation | Announcer recording, focus tests |
+| 1.3.1 (scores, options, capitals) | Fixed and tested in the accessibility tree; awaiting screen-reader confirmation | `ariaSnapshot`, DOM inspection |
+
+**Not fixed in this pass:** visible chart table and markers (A11Y-15), Stage 3 copy and Stage 4 items, and type sizes.
+These are unchanged from `30` §7.3.
+
+**Not applicable:** none of the nine items.
+
 ## 7. Screen-reader test scripts for Release 1
 
 **Who runs them:** the owner (or anyone), on the two available setups. Record the actual speech; mark each step
@@ -392,6 +445,12 @@ highlight each item". Turn on the Caption Panel (VO+Cmd+F8 → Visuals) to copy 
 | V12 | Tick, Continue | "Add your photo, heading level 2" |
 | V13 | Upload `frontend/e2e/fixtures/synthetic-portrait.png` | "Fill the oval with your face, heading level 2"; zoom slider "Zoom 160 percent" |
 | V14 | "Analyse this photo" (local, no key) | "Live analysis isn't configured on this server., heading level 2", read once, not followed by a second "alert" reading |
+| V15 | Back at the framer: VO+Right to "Move photo" and press "Move photo right" twice, then "Centre photo" | "Move photo, group"; each button read by name; the photo moves; nothing else is announced |
+| V16 | `/`: VO+Right to "Pause animations", VO+Space twice | "Pause animations, toggle button, not pressed" → "pressed" → "not pressed"; the ticker stops and starts |
+| V17 | Product → "Save baseline & start trial" (repeat 3×) | The route title is "Trial · ProofLoop", never the product name; then the trial `h1`. Record whether title + `h1` sounds repetitive |
+| V18 | Snapshot: VO+Right through the scores | "Hydration … 69 out of 100, room to improve", with no "69Room" |
+| V19 | Matches: VO+Right through the filters (linear reading, not Tab) | Each option read once ("≤ $25, radio button, 2 of 4"); "Budget" and "Finish" in natural case, not spelled |
+| V20 | Flag on: trial → "Profile at the start" → "Remove profile" → Cancel → "Remove profile" → "Remove" | Question read on open; back on "Remove profile" after Cancel; after Remove, "You removed your answers…" read **once** |
 
 ### 7.2 TalkBack + Chrome (Android)
 
@@ -410,11 +469,35 @@ to record speech.
 | T7 | `/trials`: delete, cancel, delete, confirm | Same as V10 |
 | T8 | `/scan`: consent without tick; then continue | Same as V11–V12 |
 | T9 | Optional, real camera: "Take a photo" → allow → wait | "Take your photo, heading 2", then "Camera ready. The Capture button is below the preview." **Capture and Analyse on the local keyless server only**, so no units are spent |
+| T10 | Framer: double-tap each "Move photo …" button, then "Centre photo" | Names read; the photo moves with a single tap (no drag needed) |
+| T11 | `/`: double-tap "Pause animations" | "On"/"Off" (or pressed/not pressed); motion stops; it stays stopped after reload |
+| T12 | Same as V17–V19 | Same expectations |
+| T13 | Same as V20 (flag on) | Same expectations |
+
+### 7.2a NVDA + Firefox/Chrome (Windows) and iOS VoiceOver + Safari: checklist for whoever has the device
+
+Run the V-script steps in browse mode (NVDA) or with swipes (iOS). Record speech with NVDA's Speech Viewer, or iOS
+"Copy last spoken phrase".
+- Route changes are announced once, as the new page (V3, V17).
+- Scores, filters and labels are read naturally (V18, V19).
+- Move buttons and the pause toggle (V15, V16) work by name.
+- Delete-all and profile removal (V10, V20) move focus as described.
+- Forced colours: confirm on Windows contrast themes (only Chromium emulation so far).
+
+### 7.2b Sessions with blind and low-vision people (§4)
+
+Use §4's protocol. In addition, ask participants to:
+- position a photo with the move buttons;
+- pause the homepage;
+- find a score and say what it means;
+- remove a saved profile.
+
+Record task success and where they hesitated. None of this has been done yet.
 
 ### 7.3 Still outstanding
 
-- **VoiceOver V1–V12 were run by scripted control on 2026-10-31 (§6.4); V13–V14 and the whole TalkBack script
-  T1–T9 were not.** A person listening should still repeat V1–V12, especially V3 (stale heading) and V8. Until then, R1's focus and announcement behaviour is verified
+- **VoiceOver V1–V12 were run by scripted control on 2026-10-31 (§6.4); V13–V20 and the whole TalkBack script
+  T1–T13 were not.** The §6.7 fixes have not been heard with any screen reader (VoiceOver was not running in that pass). A person listening should still repeat V1–V12, especially V3 (stale heading) and V8. Until then, R1's focus and announcement behaviour is verified
   by automation and an agent-driven keyboard walkthrough only.
 - **iOS VoiceOver and NVDA: unverified.** No device or machine is available.
 - **Real blind and low-vision participants (§4): not started.**
