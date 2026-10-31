@@ -2,21 +2,24 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode, Ref } from "react";
 import { AlertTriangle, Check, Info, Loader2, XCircle } from "lucide-react";
 
-type Variant = "primary" | "secondary" | "ghost" | "quiet";
+type Variant = "primary" | "secondary" | "ghost" | "quiet" | "inverse";
 type Size = "md" | "lg" | "sm";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-[background,color,box-shadow,transform] duration-200 disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 forced-colors:aria-disabled:text-[GrayText] select-none";
+  "inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-[background,color,box-shadow,transform] duration-[var(--duration-fast)] ease-[var(--ease-out-soft)] disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 forced-colors:aria-disabled:text-[GrayText] select-none";
 const variants: Record<Variant, string> = {
-  primary: "bg-strawberry-ink text-white shadow-[0_10px_24px_-12px_rgb(214_26_47/0.7)] hover:bg-berry-deep active:translate-y-px",
-  secondary: "bg-white text-strawberry-ink ring-1 ring-line-strong hover:ring-strawberry-ink/50 active:translate-y-px",
+  primary:
+    "bg-strawberry-ink text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_12px_26px_-14px_rgb(214_26_47/0.85)] hover:bg-berry-deep hover:shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_16px_30px_-14px_rgb(184_0_31/0.9)] active:translate-y-px",
+  secondary: "bg-white text-ink ring-1 ring-line-strong shadow-[0_1px_0_rgb(44_26_26/0.04)] hover:ring-ink/40 hover:bg-paper active:translate-y-px",
   ghost: "text-ink-2 hover:text-ink hover:bg-sunken",
+  /** For night and strawberry surfaces. */
+  inverse: "bg-white text-espresso hover:bg-berry-soft active:translate-y-px",
   quiet: "text-strawberry-ink underline underline-offset-4 decoration-strawberry-ink/30 hover:decoration-strawberry-ink rounded-sm",
 };
 const sizes: Record<Size, string> = {
   sm: "h-10 px-4 text-sm",
   md: "h-12 px-6 text-[0.95rem]",
-  lg: "h-14 px-7 text-base",
+  lg: "h-14 px-8 text-base",
 };
 
 export function buttonClass(variant: Variant = "primary", size: Size = "md", extra = "") {
@@ -66,7 +69,42 @@ export function ButtonLink({
 }
 
 export function Card({ className = "", ...props }: ComponentProps<"div">) {
-  return <div className={`rounded-[1.75rem] bg-card shadow-[var(--shadow-card)] ring-1 ring-line forced-colors:border forced-colors:border-[CanvasText] ${className}`} {...props} />;
+  return <div className={`rounded-[var(--radius-lg)] bg-card shadow-[var(--shadow-card)] ring-1 ring-line forced-colors:border forced-colors:border-[CanvasText] ${className}`} {...props} />;
+}
+
+/** Card look for elements that aren't divs (sections with their own headings). */
+export const cardClass = "rounded-[var(--radius-lg)] bg-card shadow-[var(--shadow-card)] ring-1 ring-line forced-colors:border forced-colors:border-[CanvasText]";
+
+const FLOW = ["Measure", "Understand", "Choose", "Trial"] as const;
+
+/**
+ * Where the user is in the four-step flow, drawn as a short calibrated scale. Read as one sentence
+ * ("Step 2 of 4: Understand. 11 Oct") rather than as a list of four items.
+ */
+export function FlowProgress({ step, note, label }: { step: 1 | 2 | 3 | 4; note?: ReactNode; label?: string }) {
+  return (
+    <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <p className="sr-only">
+        Step {step} of 4: {label ?? FLOW[step - 1]}
+        {note ? <>. {note}</> : null}
+      </p>
+      <ol aria-hidden className="flex items-center gap-1.5">
+        {FLOW.map((name, i) => (
+          <li key={name} className="flex items-center gap-1.5">
+            <span
+              className={`h-1.5 rounded-full transition-[width,background] duration-[var(--duration-base)] ${
+                i + 1 === step ? "w-9 bg-strawberry-ink" : i + 1 < step ? "w-5 bg-espresso" : "w-5 bg-line-strong"
+              } forced-colors:bg-[CanvasText]`}
+            />
+          </li>
+        ))}
+      </ol>
+      <p aria-hidden className="text-sm font-semibold text-ink-2">
+        <span className="tabular text-ink">Step {step} of 4</span> <span className="text-ink-3">/</span> {label ?? FLOW[step - 1]}
+        {note ? <span className="font-normal text-ink-3"> — {note}</span> : null}
+      </p>
+    </div>
+  );
 }
 
 const noticeStyles = {
@@ -203,12 +241,20 @@ export function Toggle({ label, checked, onChange }: { label: string; checked: b
   );
 }
 
+/** Page title style shared by every app screen: condensed display, tight leading. */
+export const pageTitleClass = "font-display text-[clamp(2.5rem,6.4vw,4.75rem)] font-bold leading-[0.92] tracking-[-0.03em] text-espresso [font-variation-settings:'wdth'_78]";
+
 export function PageIntro({ eyebrow, title, children }: { eyebrow?: ReactNode; title: ReactNode; children?: ReactNode }) {
   return (
     <header className="max-w-2xl">
-      {eyebrow && <div className="mb-4 inline-flex rounded-full bg-berry-milk px-3 py-1 text-xs font-semibold text-berry-deep">{eyebrow}</div>}
-      <h1 className="font-display text-[clamp(2.4rem,6vw,4.25rem)] font-bold leading-[0.98] text-espresso">{title}</h1>
-      {children && <div className="mt-4 text-lg leading-relaxed text-ink-2">{children}</div>}
+      {eyebrow && <p className="eyebrow mb-5">{eyebrow}</p>}
+      <h1 className={pageTitleClass}>{title}</h1>
+      {children && <div className="mt-5 text-lg leading-relaxed text-ink-2">{children}</div>}
     </header>
   );
+}
+
+/** Page width and rhythm for app screens. */
+export function AppShell({ children, narrow = false }: { children: ReactNode; narrow?: boolean }) {
+  return <div className={`mx-auto px-4 pb-16 pt-8 sm:px-6 sm:pt-12 ${narrow ? "max-w-3xl" : "max-w-6xl"}`}>{children}</div>;
 }

@@ -1,5 +1,52 @@
 # Design direction
 
+## Current system: "Calibration" (redesign, November 2026)
+
+ProofLoop is a measuring instrument for one skincare product, so its visual language comes from instruments:
+tick scales, a single tolerance band, a reference needle and a dark instrument panel. The earlier berry-milk
+storytelling system (below, kept for history) borrowed its structure from a reference site; this one is built
+from ProofLoop's own idea.
+
+**Colour carries one meaning each, everywhere.** Brand colours are unchanged; their use is not.
+
+| Token | Value | Meaning |
+|---|---|---|
+| `espresso` | #2c1a1a | The baseline, and ink |
+| `berry-milk` | #fcd7f3 | The normal-variation band (tolerance, noise) — dial arc, band charts, "within" states, eyebrow swatch |
+| `strawberry` / `strawberry-ink` | #fe3144 / #d61a2f | The check-in signal (needles, current tick) and actions (buttons) |
+| `night` / `night-2` | #1f1514 / #2b1e1d | Instrument panels: hero, story stage, measured-change verdicts, final CTA (white 17:1, berry-milk 13:1, strawberry 4.6:1) |
+| `paper` / `sunken` / `card` | #faf7f8 / #f2ecee / #fff | A cool lightbox white for app screens (no cream) |
+| `tick` | #b9a9b0 | Inactive scale marks |
+
+The verdict colour rule is unchanged: up and down beyond the band share one treatment, told apart by arrow and words.
+
+**Type.** Bricolage Grotesque (the existing display face) set condensed through its `wdth` axis for headlines
+and numeric readouts, like an instrument faceplate; IBM Plex Sans for UI, body and tabular numerals. Labels are
+sentence case: no tracked all-caps.
+
+**Shape and depth.** Radii by hierarchy — controls full pill, cards 24px, panels 32px, stages 40px. Shadows are
+warm and layered (a contact line plus a long fall-off). A faint calibration grid and grain appear only on night panels.
+
+**Motion.** Tokens in `globals.css` (`--duration-*`, `--ease-*`) mirrored in `src/lib/motion.ts`.
+- One orchestrated moment per page. Homepage: the hero dial's ticks light in sequence and the check-in needle
+  swings from the baseline to the demo value; the visitor can then move it with a slider.
+- Motion (`motion/react`, `LazyMotion` + `domAnimation`) for responses to actions: mobile menu, verdict tab
+  changes, the hero reading, showcase drift on wide screens.
+- GSAP + ScrollTrigger only in "How it works", only on desktop with motion allowed, loaded with a dynamic import:
+  it scrubs a progress line and a slight device tilt. The sticky stage itself is CSS `position: sticky`, so nothing is
+  pinned or scroll-jacked, and phones get a swipeable step row instead.
+- Dial needles turn with CSS transitions (interruptible). Under `prefers-reduced-motion` everything is static and the
+  "Pause animations" control is hidden; the control pauses the ticker and floating chips otherwise (WCAG 2.2.2).
+- No Lenis: native scrolling everywhere.
+
+**Homepage chapters.** Hero instrument → the problem (mirror photo, problem rail) → why a fair test (the
+repeatability study and the bands, drawn as ±8 scales) → how it works (six steps, sticky device) → the three verdicts
+(dial explorer) → inside the app → what ProofLoop does and can't tell you → final CTA → footer.
+
+---
+
+## Previous system (October 2026)
+
 Reference studied: driveberry.fr (desktop 1440×900 and mobile 375×812, 2026-10-12). This document records what
 ProofLoop adapts, what it deliberately does not, and the resulting system.
 

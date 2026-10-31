@@ -10,7 +10,7 @@ import { shortDate } from "@/lib/format";
 import { useDocumentTitle, useResource } from "@/lib/hooks";
 import type { Capture, Preflight, Scan } from "@/lib/types";
 import { useAnnounce } from "@/components/announcer";
-import { Button, CapsText, Notice } from "@/components/ui";
+import { Button, CapsText, FlowProgress, Notice, pageTitleClass } from "@/components/ui";
 import { CheckinScreen, PhoneFrame } from "@/components/previews";
 import { SampleDataButton } from "../sample-data-button";
 import { Framer, type FramedImage } from "./framer";
@@ -75,11 +75,15 @@ export function ScanFlow() {
     <StepFocusContext.Provider value={moved}>
     <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       <header className="mb-10 max-w-2xl">
-        <p className="mb-4 inline-flex rounded-full bg-berry-milk px-3 py-1 text-xs font-semibold text-berry-deep">{repeat ? "Instrument check" : trialId ? "Trial check-in" : "Step 1 of 4 · Measure"}</p>
-        <h1 className="font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold leading-[0.98] text-espresso">
+        {repeat || trialId ? (
+          <p className="eyebrow mb-5">{repeat ? "Instrument check" : "Trial check-in"}</p>
+        ) : (
+          <FlowProgress step={1} />
+        )}
+        <h1 className={pageTitleClass}>
           {repeat ? "Take a second baseline photo" : trialId ? "Check in on your trial" : "Take your baseline"}
         </h1>
-        <p className="mt-3 text-lg leading-relaxed text-ink-2">
+        <p className="mt-5 text-lg leading-relaxed text-ink-2">
           {repeat
             ? "Step away, come back and take a fresh photo in the same spot and light. Your skin hasn't changed, so any difference between the two scans is the instrument's own variation."
             : trialId
@@ -193,15 +197,15 @@ function FailedNotice({ title, hint }: { title: string; hint: string | null }) {
 function FairPhotoGuide() {
   const tips = ["Face a window or soft, even light", "No makeup, hair off your forehead", "Glasses off, mouth closed", "Same spot and camera every time", "Same time of day if you can"];
   return (
-    <aside aria-label="What makes a fair photo" className="strawberry-glow hidden overflow-hidden rounded-[2rem] p-8 text-white lg:block">
-      <p className="font-display text-2xl font-bold leading-tight">A fair test starts with a fair photo.</p>
+    <aside aria-label="What makes a fair photo" className="on-night night-stage grain hidden overflow-hidden rounded-[var(--radius-stage)] p-8 text-white lg:block">
+      <p className="font-display text-2xl font-bold leading-tight tracking-[-0.02em]">A fair test starts with a fair photo.</p>
       <PhoneFrame label="Illustration of the framing oval" className="mx-auto mt-6 w-[13.5rem]">
         <CheckinScreen title="Fill the oval" />
       </PhoneFrame>
       <ul className="mt-6 space-y-2.5 text-sm">
         {tips.map((t) => (
           <li key={t} className="flex items-center gap-2.5">
-            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-white/25"><Check aria-hidden className="size-3" /></span>
+            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-berry-milk text-espresso"><Check aria-hidden className="size-3" /></span>
             {t}
           </li>
         ))}
@@ -523,7 +527,7 @@ function CaptureMatch({
             </Notice>
             <table className="mt-5 w-full max-w-md text-left text-sm">
               <caption className="sr-only">Baseline and check-in capture conditions</caption>
-              <thead className="text-xs uppercase tracking-wider text-ink-3">
+              <thead className="text-xs text-ink-3">
                 <tr><th scope="col" className="py-2 font-semibold"></th><th scope="col" className="py-2 font-semibold"><CapsText>Baseline</CapsText></th><th scope="col" className="py-2 font-semibold"><CapsText>This photo</CapsText></th></tr>
               </thead>
               <tbody className="divide-y divide-line">
