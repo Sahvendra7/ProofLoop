@@ -28,7 +28,9 @@ secondary evidence only (see `competitive-analysis.md`).
 | `429` / `5xx` / timeout / malformed handling | Implemented, **fixture-tested only** | `tests/test_provider_client.py` (MockTransport); not provoked against the live API |
 | Webhooks | **Not implemented** | Bounded polling instead (see ADR-003) |
 | HD concerns (`hd_*`) | **Not implemented** | Need ≥1080 px short side and different pricing; SD is sufficient for the product |
-| Skin Tone / Fitzpatrick / Face Analyzer APIs | **Not implemented** | Out of scope |
+| Skin Analysis `skin_type` (SD `dst_action`; whole / t_zone / u_zone labels) | **Verified live 2026-10-26; implemented behind `SKIN_PROFILE_ENABLED` (off)** | Paired gate on identical bytes: 8 actions = 12 units, 8 + `skin_type` = **14** (it counts as a concern); the 8 shared `ui_score`/`raw_score` identical. Entries `{type:"skin_type", region, skin_type, mask_urls, url}`, no score or confidence. Report `backend/tests/fixtures/youcam/skin-type-gate-report-20261026T094239Z.json`, response `skin-type-success-live.json` |
+| Fitzpatrick (`/s2s/v2.0/task/fitzpatrick-scale-analyzer`, 10 units) / Facial Color Tones (`/s2s/v2.0/task/skin-tone-analysis`, 20 units) | **Researched 2026-10-26, rejected** | See `docs/innovation/17-SKIN-PROFILE-DECISION-MEMO.md` §7 |
+| Face Analyzer API | **Not implemented** | Out of scope |
 
 Nothing on a ProofLoop screen says "YouCam" unless the data on that screen came from one of the
 verified rows above. Sample data is labelled as a replay; synthetic follow-ups are labelled synthetic.
@@ -132,6 +134,10 @@ days apart) is the second line of defence, and a poor-comparability pair yields 
 | UI: 1 simulation + 1 check-in analysis | 16 |
 | **Total** (credit 980 → 852, reconciled) | **128** |
 
+Later live spend: the owner's supervised instrument check on 2026-10-25 (24 units, 840 → 816) and the paired `skin_type` gate on 2026-10-26
+(**26 units**, 816 → 804 → 790; one 8-action and one 9-action analysis of the same bytes, no retries,
+no other balance movement; `scripts/skin_type_gate.py`, capped at 26 by an isolated ledger).
+
 ## Running the live checks yourself
 
 ```bash
@@ -139,6 +145,7 @@ cd backend
 YOUCAM_LIVE=1 ./venv/bin/python -m pytest -m live -k credit        # 0 units
 YOUCAM_LIVE=1 YOUCAM_LIVE_IMAGE=face.jpg ./venv/bin/python -m pytest -m live   # 12 units
 YOUCAM_LIVE=1 ./venv/bin/python -m scripts.youcam_live_probe --image face.jpg --face-box x0,y0,x1,y1 [--simulate] [--repeatability]
+YOUCAM_LIVE=1 ./venv/bin/python -m scripts.skin_type_gate --image face.jpg --face-box x0,y0,x1,y1   # ≤ 26 units, hard cap
 ```
 
 Ordinary `pytest` runs never touch the network; provider tests replay the live-captured fixtures through

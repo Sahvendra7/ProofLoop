@@ -26,9 +26,9 @@ from app.domain.compare import (
     detectability,
     next_step,
 )
-from app.domain.metrics import GOALS_BY_KEY, REQUESTED_PROVIDER_ACTIONS
+from app.domain.metrics import GOALS_BY_KEY
 from app.providers.youcam import endpoints as ep
-from app.services import demo
+from app.services import demo, profiles
 from app.services import protocol as proto
 from app.services.imaging import prepare_image
 
@@ -58,7 +58,7 @@ def _instrument_out(db: Session, trial: TrialRow, baseline: ScanRow, sealed: boo
         scan_id=repeat.id if repeat is not None else None,
         sample=sample,
         note=demo.repeat_note() if sample else None,
-        units=0 if sample else ep.analysis_units(len(REQUESTED_PROVIDER_ACTIONS)),
+        units=0 if sample else ep.analysis_units(len(proto.trial_actions(baseline))),
         table_band=table,
         spread=spread,
         personal_band=band,
@@ -166,11 +166,19 @@ def _trial_out(db: Session, trial: TrialRow) -> s.TrialOut:
         comparison=comparison,
         focus_noise_band=protocol.noise_band,
         protocol=protocol,
+        profile=profiles.profile_out(trial, proto.repeat_scan(db, trial)),
     )
 
 
 @router.post("", response_model=s.TrialOut, status_code=status.HTTP_201_CREATED)
-def create_trial(body: s.TrialCreateIn, session: SessionRow = Depends(current_session), db: Session = Depends(get_db)):
+def create_trial(
+    body: s.TrialCreateIn,
+    session: SessionRow = Depends(current_session),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(settings_dep),
+):
+    if body.profile is not None:
+        profiles.ensure_enabled(settings)
     scan = owned_scan(db, session, body.scan_id)
     if scan.status != "complete":
         raise AppError("scan_not_complete", "A trial needs a completed scan as its baseline.", 409)
@@ -192,6 +200,8 @@ def create_trial(body: s.TrialCreateIn, session: SessionRow = Depends(current_se
         focus_band=NOISE_BANDS[goal.metric],
         band_evidence=band_evidence(goal.metric),
         planned_checkin_days=PLANNED_CHECKIN_DAYS,
+        # Frozen with the plan; validated before anything is saved.
+        profile_json=profiles.snapshot(scan, body.profile, p.scores_of(scan)) if body.profile is not None else None,
     )
     db.add(trial)
     db.flush()
@@ -324,6 +334,34 @@ def preflight(
             source=source, width=prepared.width, height=prepared.height, luminance_mean=prepared.luminance_mean
         ),
     )
+
+
+@router.patch("/{trial_id}/profile", response_model=s.ProfileOut)
+def amend_profile(
+    trial_id: str,
+    body: s.ProfilePatchIn,
+    session: SessionRow = Depends(current_session),
+    db: Session = Depends(get_db),
+    settings: Settings = Depends(settings_dep),
+) -> s.ProfileOut:
+    """Record changed answers. The snapshot taken at commitment, and the plan, stay as they were."""
+    profiles.ensure_enabled(settings)
+    trial = owned_trial(db, session, trial_id)
+    proto.lock(db, trial)
+    profiles.amend(trial, body)
+    db.flush()
+    out = profiles.profile_out(trial, proto.repeat_scan(db, trial))
+    assert out is not None
+    return out
+
+
+@router.delete("/{trial_id}/profile", status_code=status.HTTP_204_NO_CONTENT)
+def withdraw_profile(trial_id: str, session: SessionRow = Depends(current_session), db: Session = Depends(get_db)):
+    """Erase the saved answers and the skin-type readings of this trial's photos. Always allowed."""
+    trial = owned_trial(db, session, trial_id)
+    proto.lock(db, trial)
+    profiles.withdraw(db, trial)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.delete("/{trial_id}", status_code=status.HTTP_204_NO_CONTENT)

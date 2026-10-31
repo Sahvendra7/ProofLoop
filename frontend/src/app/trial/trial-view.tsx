@@ -16,6 +16,7 @@ import { ProvenanceNote } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
 import { Button, ButtonLink, Card, Notice, Skeleton } from "@/components/ui";
 import { AssistantPanel } from "./assistant-panel";
+import { ProfileBlock } from "./profile-block";
 import { ResultInWords } from "./result-in-words";
 
 export function TrialView() {
@@ -56,6 +57,8 @@ function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) =
       <InstrumentCheck trial={trial} check={trial.protocol.instrument_check} onUpdate={onUpdate} />
 
       <ProtocolCard trial={trial} protocol={trial.protocol} decided={trial.comparison !== null} />
+
+      <ProfileBlock trial={trial} onUpdate={onUpdate} />
 
       {pendingCheckin && (
         <Notice

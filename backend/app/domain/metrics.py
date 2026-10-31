@@ -40,6 +40,14 @@ METRICS_BY_PROVIDER_TYPE = {m.provider_type: m for m in METRICS}
 
 # Eight SD concerns = one task in the documented 5-8 concern tier (12 units).
 REQUESTED_PROVIDER_ACTIONS: tuple[str, ...] = tuple(m.provider_type for m in METRICS)
+# YouCam's skin-type reading (whole / t_zone / u_zone labels) from the same task as the scores. The paired
+# gate on 2026-10-26 found the eight scores identical with and without it; see domain/profile.py.
+SKIN_TYPE_ACTION = "skin_type"
+
+
+def baseline_actions(skin_type: bool) -> tuple[str, ...]:
+    """What a new baseline requests. A trial's later scans reuse their baseline's stored set instead."""
+    return (*REQUESTED_PROVIDER_ACTIONS, SKIN_TYPE_ACTION) if skin_type else REQUESTED_PROVIDER_ACTIONS
 
 
 class Band(str, Enum):

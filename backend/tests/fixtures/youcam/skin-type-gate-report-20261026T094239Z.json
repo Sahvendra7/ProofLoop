@@ -1,0 +1,117 @@
+{
+  "run_at": "2026-10-26T09:42:21.919810+00:00",
+  "cap_units": 26,
+  "image": {
+    "bytes": 147866,
+    "sha256": "3db3dcb688363244d8ff24928b3522c8191ccdabe32c3dc1d79372a47985b247",
+    "content_type": "image/jpeg",
+    "width": 720,
+    "height": 961,
+    "luminance_mean": 84.3
+  },
+  "file_registration": "POST /s2s/v2.0/file/{feature}",
+  "arms": [
+    {
+      "name": "baseline",
+      "request": {
+        "endpoint": "POST /s2s/v2.0/task/skin-analysis",
+        "body": {
+          "src_file_id": "<per attempt>",
+          "dst_actions": [
+            "moisture",
+            "oiliness",
+            "redness",
+            "texture",
+            "pore",
+            "acne",
+            "radiance",
+            "dark_circle_v2"
+          ],
+          "format": "json"
+        }
+      },
+      "units_reserved_worst_case": 12,
+      "attempts": [
+        {
+          "status": "success",
+          "units_charged": 12,
+          "duration_s": 7.48,
+          "balance_before": 816.0,
+          "balance_after": 804.0
+        }
+      ],
+      "units_charged": 12
+    },
+    {
+      "name": "with_skin_type",
+      "request": {
+        "endpoint": "POST /s2s/v2.0/task/skin-analysis",
+        "body": {
+          "src_file_id": "<per attempt>",
+          "dst_actions": [
+            "moisture",
+            "oiliness",
+            "redness",
+            "texture",
+            "pore",
+            "acne",
+            "radiance",
+            "dark_circle_v2",
+            "skin_type"
+          ],
+          "format": "json"
+        }
+      },
+      "units_reserved_worst_case": 14,
+      "attempts": [
+        {
+          "status": "success",
+          "units_charged": 14,
+          "duration_s": 7.2,
+          "balance_before": 804.0,
+          "balance_after": 790.0
+        }
+      ],
+      "units_charged": 14
+    }
+  ],
+  "failures": [],
+  "balance_start": 816.0,
+  "total_units": 26,
+  "ledger_units_committed": 26,
+  "balance_end": 790.0,
+  "balance_delta": 26,
+  "unexplained_balance_moves": [],
+  "skin_type_counts_as_concern": true,
+  "scores": {
+    "identical": true,
+    "differences": [],
+    "context_scores_a_b": {
+      "all": [
+        85.25,
+        85.25
+      ],
+      "skin_age": [
+        26,
+        26
+      ]
+    }
+  },
+  "skin_type": {
+    "labels": {
+      "whole": "Dry",
+      "t_zone": "Normal",
+      "u_zone": "Dry"
+    },
+    "entry_keys": [
+      "mask_urls",
+      "region",
+      "skin_type",
+      "type",
+      "url"
+    ],
+    "numeric_fields": [],
+    "problems": []
+  },
+  "outcome": "A4"
+}

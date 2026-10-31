@@ -57,6 +57,7 @@ def system_status(db: Session = Depends(get_db), settings: Settings = Depends(se
         noise_bands=NOISE_BANDS,
         demo_note=demo.fixture_note(),
         catalog_disclaimer=load_catalog().disclaimer,
+        skin_profile_enabled=settings.skin_profile_enabled,
     )
 
 

@@ -7,9 +7,11 @@ import { useMemo, useState } from "react";
 import { ArrowRight, Eye } from "lucide-react";
 import { api } from "@/lib/api";
 import { loadCapture } from "@/lib/capture-store";
-import { countsAsChange, shortDate, summarise } from "@/lib/format";
+import { BADGE_COPY, countsAsChange, shortDate, summarise } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
-import type { Goal, Metric, Scan } from "@/lib/types";
+import { clearDraft, loadDraft, saveDraft, type ProfileDraft } from "@/lib/profile-store";
+import type { FocusPlan, Goal, Metric, Scan } from "@/lib/types";
+import { InYourWords, NoReadingNote, PriorityNote, SkinTypeCard } from "./skin-profile";
 import { BandLegend, MetricBar, ProvenanceNote } from "@/components/measure";
 import { Button, ButtonLink, Card, Notice, Skeleton } from "@/components/ui";
 
@@ -52,6 +54,20 @@ export function ResultsView() {
 
 function Snapshot({ scan, goals }: { scan: Scan; goals: Goal[] | null }) {
   const capture = useMemo(() => loadCapture(scan.id), [scan.id]);
+  const status = useResource("status", api.status);
+  const profileOn = status.data?.skin_profile_enabled === true;
+  // Hold the column until we know whether profile cards appear above the picker, so nothing shifts under a tap.
+  const statusKnown = status.data !== null || status.error !== null;
+  const [draft, setDraft] = useState<ProfileDraft | null>(() => loadDraft(scan.id));
+  const applied = draft?.profile ?? { self_report: null, user_view: null, use_camera_reading: true };
+  // Server-ordered focuses with plain-language notes. No units; the answers travel in the request body only.
+  const plan = useResource(profileOn ? `plan:${scan.id}:${JSON.stringify(applied)}` : null, () =>
+    api.focusPlan(scan.id, { self_report: applied.self_report, use_camera_reading: applied.use_camera_reading }),
+  );
+  // Wait for the first plan only (its notes can add lines to rows); later re-orders follow the user's own edits.
+  const [planSeen, setPlanSeen] = useState(false);
+  if (!planSeen && (plan.data !== null || plan.error !== null)) setPlanSeen(true);
+  const pickerReady = !profileOn || planSeen;
   return (
     <Shell>
       <header className="max-w-3xl">
@@ -103,10 +119,34 @@ function Snapshot({ scan, goals }: { scan: Scan; goals: Goal[] | null }) {
           )}
         </Card>
 
+        {statusKnown ? (
         <div className="space-y-8">
+          {profileOn && (scan.skin_type ? <SkinTypeCard reading={scan.skin_type} observedAt={scan.observed_at} /> : <NoReadingNote />)}
+          {profileOn && goals && (
+            <InYourWords
+              goals={goals}
+              hasReading={scan.skin_type?.status === "complete" || scan.skin_type?.status === "partial"}
+              draft={draft}
+              plan={plan.data}
+              onApply={(d) => {
+                saveDraft(scan.id, d);
+                setDraft(d);
+              }}
+              onSkip={() => {
+                clearDraft(scan.id);
+                setDraft(null);
+              }}
+            />
+          )}
           <MaskViewer scan={scan} capture={capture} />
-          <GoalPicker scan={scan} goals={goals} />
+          {pickerReady ? <GoalPicker scan={scan} goals={goals} plan={profileOn ? plan.data : null} /> : <Skeleton className="h-96" />}
         </div>
+        ) : (
+          <div className="space-y-8" aria-hidden>
+            <Skeleton className="h-48" />
+            <Skeleton className="h-96" />
+          </div>
+        )}
       </div>
     </Shell>
   );
@@ -157,16 +197,22 @@ function MaskViewer({ scan, capture }: { scan: Scan; capture: string | null }) {
   );
 }
 
-function GoalPicker({ scan, goals }: { scan: Scan; goals: Goal[] | null }) {
+function GoalPicker({ scan, goals, plan }: { scan: Scan; goals: Goal[] | null; plan: FocusPlan | null }) {
   const go = useGo();
   const scores = Object.fromEntries(scan.metrics.map((m) => [m.key, m]));
-  // Testable focuses first (a gain could register), lowest score first; ceiling
-  // focuses next; unmeasured last. A focus at the ceiling can still be chosen to
-  // watch for a drop, but it can never show an improvement.
+  const planned = new Map(plan?.order.map((o) => [o.goal, o]) ?? []);
+  // With a server plan (skin profile on), its order and notes are used: same rule as below, plus the user's
+  // own priorities among focuses that could show a gain. Otherwise: testable focuses first (a gain could
+  // register), lowest score first; ceiling focuses next; unmeasured last. A focus at the ceiling can still
+  // be chosen to watch for a drop, but it can never show an improvement.
   const rank = (m?: Metric) => (!m ? 2 : m.improve_at === null ? 1 : 0);
   const ordered = (goals ?? [])
-    .map((g) => ({ goal: g, metric: scores[g.metric] as Metric | undefined }))
-    .sort((a, b) => rank(a.metric) - rank(b.metric) || (a.metric?.ui_score ?? 999) - (b.metric?.ui_score ?? 999));
+    .map((g) => ({ goal: g, metric: scores[g.metric] as Metric | undefined, plan: planned.get(g.key) }))
+    .sort((a, b) =>
+      plan
+        ? (a.plan?.rank ?? 99) - (b.plan?.rank ?? 99)
+        : rank(a.metric) - rank(b.metric) || (a.metric?.ui_score ?? 999) - (b.metric?.ui_score ?? 999),
+    );
   const [choice, setChoice] = useState<string>("");
   const selected = choice || ordered[0]?.goal.key || "";
   const selectedMetric = ordered.find((o) => o.goal.key === selected)?.metric;
@@ -179,13 +225,15 @@ function GoalPicker({ scan, goals }: { scan: Scan; goals: Goal[] | null }) {
         Each focus is tied to one measured score. Before you start, ProofLoop shows the score a later check-in would need for
         it to call a change, so the test is decided in advance.
       </p>
+      {plan && <p className="mt-2 text-xs text-ink-3">{plan.ranking_explanation}</p>}
+      <PriorityNote plan={plan} />
       {!goals ? (
         <div className="mt-5 space-y-2"><Skeleton className="h-14" /><Skeleton className="h-14" /><Skeleton className="h-14" /></div>
       ) : (
         <fieldset className="mt-5">
           <legend className="sr-only">Focus</legend>
           <div className="space-y-2">
-            {ordered.map(({ goal, metric }, i) => (
+            {ordered.map(({ goal, metric, plan: item }, i) => (
               <label
                 key={goal.key}
                 className={`flex cursor-pointer items-center gap-4 rounded-[var(--radius-md)] border-2 p-3 transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[var(--focus-ring)] ${
@@ -210,9 +258,15 @@ function GoalPicker({ scan, goals }: { scan: Scan; goals: Goal[] | null }) {
                       {metric.band_evidence === "assumed" && <span className="text-ink-3"> · band assumed</span>}
                     </span>
                   )}
+                  {item?.notes.map((n) => (
+                    <span key={n.rule_id} className="mt-1 block text-xs leading-relaxed text-ink-2">{n.text}</span>
+                  ))}
                 </span>
-                {i === 0 && metric && metric.improve_at !== null && <span className="shrink-0 rounded-full bg-card px-2 py-0.5 text-[0.7rem] font-semibold text-accent ring-1 ring-accent/30">Most room</span>}
-                {metric && metric.improve_at === null && <span className="shrink-0 rounded-full bg-sunken px-2 py-0.5 text-[0.7rem] font-semibold text-ink-2">Can&apos;t show gains</span>}
+                <span className="flex shrink-0 flex-col items-end gap-1">
+                  {item?.badges.includes("picked") && <span className="rounded-full bg-berry-milk px-2 py-0.5 text-[0.7rem] font-semibold text-berry-deep">{BADGE_COPY.picked}</span>}
+                  {i === 0 && metric && metric.improve_at !== null && <span className="rounded-full bg-card px-2 py-0.5 text-[0.7rem] font-semibold text-accent ring-1 ring-accent/30">{BADGE_COPY.most_room}</span>}
+                  {metric && metric.improve_at === null && <span className="rounded-full bg-sunken px-2 py-0.5 text-[0.7rem] font-semibold text-ink-2">{BADGE_COPY.cant_show_gains}</span>}
+                </span>
               </label>
             ))}
           </div>

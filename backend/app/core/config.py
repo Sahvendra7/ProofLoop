@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     # set, and every typed question must present the key. Only the hash lives in the environment.
     assistant_owner_token_sha256: str | None = Field(default=None, alias="ASSISTANT_OWNER_TOKEN_SHA256")
 
+    # --- Checked skin profile ---------------------------------------------
+    # Off by default. When on, new baselines also request YouCam's `skin_type` reading (14 units instead of 12,
+    # measured 2026-10-26) and the profile endpoints accept writes. Trials keep their baseline's action set.
+    skin_profile_enabled: bool = Field(default=False, alias="SKIN_PROFILE_ENABLED")
+
     # --- Uploads ---------------------------------------------------------
     max_upload_bytes: int = Field(default=10 * 1024 * 1024, alias="MAX_UPLOAD_BYTES")
 
