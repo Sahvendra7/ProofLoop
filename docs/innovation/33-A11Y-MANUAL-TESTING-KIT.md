@@ -1,13 +1,12 @@
-# 33 — Manual accessibility testing kit: screen readers and participant sessions (2026-10-31)
+# 33 — Manual accessibility testing kit: screen readers and participant sessions (2026-11-01)
 
-**Status: every check in this document is pending. None has been run.** Release 1 (`31` §6.4–§6.7) and the
-follow-up (`31` §6.8) are verified by automated browser tests, accessibility-tree inspection and scripted keyboard
-runs. VoiceOver V1–V12 were driven by script once, before the final fixes, and the recording was never listened to.
-Nothing here can be completed by an AI model or by simulation: results only count when a person runs the screen
-reader, or a participant does the task, and the speech or the session notes are recorded.
+**Status: ready to run; results pending.** Release 1 (`31` §6.4–§6.7) and the follow-up (`31` §6.8) are covered by
+automated browser tests, accessibility-tree inspection and scripted keyboard runs. This kit is the next layer:
+screen readers driven by a person, and sessions with blind and low-vision participants. A check counts once its
+speech or session notes are recorded.
 
-This document adds what `31` §4 and §7 don't have: checks for the follow-up, numbered NVDA and iOS lists, one
-result sheet, consent wording, expected outcomes per task, and how findings become fixes.
+It adds what `31` §4 and §7 don't have: checks for the follow-up, numbered NVDA and iOS lists, one result sheet,
+consent wording, expected outcomes per task, and how findings become fixes.
 
 ## 1. Setup (no units, nothing deployed)
 
@@ -33,7 +32,7 @@ was expected.
 | V21 | Decided sample trial → chart card: VO+Right past the caption to "Show the numbers", VO+Space, then VO+Right into the table (or VO+Cmd+T) | "Show the numbers, collapsed" → "expanded"; "Hydration scores, oldest first, table, 3 columns, 2 rows" (or similar); each row read with its header ("Baseline · Oct 31", "Score 69") |
 | V22 | Snapshot: "Add your answers", pick an answer, "Use my answers" | Focus on the first question when the form opens; after Use, focus on "Edit answers, button", then once: "Answers applied: {answers}. The focus list has been re-ordered." (or "…is unchanged") |
 | V23 | Trial with a saved profile: "Edit answers" → change one → "Save answers" | Back on "Edit answers, button", then once: "Answers saved: {answers}. This trial keeps the profile it started with." |
-| V24 | Safari → Settings → Zoom the page to 200 %; Tab through `/` and the trial | Nothing cut off; the focused item is visible each time (the step bar may be partly under the header at narrow widths) |
+| V24 | Safari → Settings → Zoom the page to 200 %; Tab through `/` and the trial | Nothing cut off; the focused item is visible each time (a scroll region taller than the screen may be partly out of view) |
 
 ### 2.2 TalkBack + Chrome (Android), additions
 
@@ -155,4 +154,4 @@ Same scale as `25` §5:
 - Whether TalkBack cuts announcements short when focus moves at the same time (T4, T15).
 - Whether "Show the numbers" is found without prompting, and whether its table is worth its length.
 - Whether "Answers applied … re-ordered" is understood without seeing the list move.
-- Whether the step bar being partly under the header at high zoom matters in practice.
+- Whether large scroll regions (the app showcase, the concern table) are comfortable to use at high zoom.

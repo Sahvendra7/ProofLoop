@@ -29,7 +29,7 @@ export function ProvenanceNote({ provenance }: { provenance: Provenance }) {
     >
       <ProvenanceBadge provenance={provenance} size="sm" />
       {/* Moves under the badge, rather than shrinking to a few characters, when large text leaves no room beside it. */}
-      <p className="min-w-0 flex-[1_1_8rem] leading-relaxed">{provenance.detail}</p>
+      <p className="min-w-32 flex-1 leading-relaxed">{provenance.detail}</p>
     </div>
   );
 }
@@ -46,19 +46,20 @@ export function MetricBar({ metric, compact = false }: { metric: Metric; compact
         <p className="shrink-0 text-right">
           {/* One phrase in reading order for screen readers; the visual number and label ran together ("69Room to improve"). */}
           <span className="sr-only">{`${metric.ui_score} out of 100, ${metric.band_label.toLowerCase()}`}</span>
-          <span aria-hidden className="tabular font-display text-2xl text-ink">{metric.ui_score}</span>
+          <span aria-hidden className="tabular font-condensed text-3xl font-bold leading-none text-ink">{metric.ui_score}</span>
           <span aria-hidden className="ml-2 text-xs font-medium" style={{ color: BAND_TEXT[metric.band] }}>
             {metric.band_label}
           </span>
         </p>
       </div>
-      <div className="relative mt-2 h-2 rounded-full bg-sunken" aria-hidden>
-        <div className="absolute inset-y-0 left-[60%] w-px bg-line-strong" />
-        <div className="absolute inset-y-0 left-[80%] w-px bg-line-strong" />
+      {/* A short scale: the bar, with the 60 and 80 band edges marked as ticks above and below it. */}
+      <div className="relative mt-2.5 h-2.5 rounded-full bg-sunken" aria-hidden>
         <div
-          className="h-full rounded-full transition-[width] duration-700 ease-out"
+          className="h-full rounded-full transition-[width] duration-[var(--duration-scene)] ease-[var(--ease-out-soft)]"
           style={{ width: `${metric.ui_score}%`, background: BAND_COLOR[metric.band] }}
         />
+        <div className="absolute -inset-y-1 left-[60%] w-px bg-ink-3/50" />
+        <div className="absolute -inset-y-1 left-[80%] w-px bg-ink-3/50" />
       </div>
     </div>
   );

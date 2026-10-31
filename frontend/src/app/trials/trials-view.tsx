@@ -9,8 +9,9 @@ import { clearCaptures } from "@/lib/capture-store";
 import { focusIfFree } from "@/lib/focus";
 import { shortDate } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
+import { LoopMark } from "@/components/logo";
 import { ProvenanceBadge } from "@/components/measure";
-import { Button, ButtonLink, Card, Notice, PageIntro, Skeleton } from "@/components/ui";
+import { Button, ButtonLink, Notice, PageIntro, Skeleton } from "@/components/ui";
 
 export function TrialsView() {
   const trials = useResource("trials", api.trials);
@@ -55,7 +56,7 @@ export function TrialsView() {
   );
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+    <div className="mx-auto max-w-5xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12">
       <PageIntro eyebrow="Your data" title="My trials">
         Trials and scans in this browser&apos;s session. ProofLoop stores scores and capture metadata — never your photos.
       </PageIntro>
@@ -71,18 +72,27 @@ export function TrialsView() {
         <h2 id="trials-h" className="text-lg font-semibold text-ink">Trials</h2>
         {trials.loading && <Skeleton className="mt-4 h-24" />}
         {trials.data && trials.data.length === 0 && (
-          <Card className="mt-4 flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-ink-2">No trials yet. A trial starts from a scan, a focus and a product.</p>
-            <ButtonLink href="/scan" size="sm">Start with a scan</ButtonLink>
-          </Card>
+          <div className="calibration-grid-light mt-4 flex flex-col items-start gap-6 rounded-[var(--radius-xl)] bg-white p-7 ring-1 ring-line sm:flex-row sm:items-center sm:justify-between sm:p-8">
+            <div className="flex items-center gap-5">
+              <LoopMark className="size-12 shrink-0" />
+              <p className="max-w-md leading-relaxed text-ink-2">
+                <strong className="block font-display text-xl font-bold text-ink">No trials yet.</strong> A trial starts from a scan, a focus and a
+                product. Your baseline and its band are fixed the moment you start.
+              </p>
+            </div>
+            <ButtonLink href="/scan">Start with a scan</ButtonLink>
+          </div>
         )}
         <ul className="mt-4 space-y-3">
           {trials.data?.map((t) => (
             <li key={t.id}>
-              <Link href={`/trial?id=${t.id}`} className="group flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius-lg)] bg-card p-5 shadow-[var(--shadow-card)] ring-1 ring-line hover:ring-ink/30">
-                <div>
+              <Link href={`/trial?id=${t.id}`} className="group flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius-lg)] bg-card p-5 shadow-[var(--shadow-card)] ring-1 ring-line transition-[box-shadow,transform] duration-[var(--duration-fast)] hover:-translate-y-px hover:shadow-[var(--shadow-lift)] sm:px-6">
+                <div className="flex items-center gap-4">
+                  <LoopMark className="size-8 shrink-0" />
+                  <div>
                   <p className="font-semibold text-ink">{t.goal.label} · {t.product_name}</p>
                   <p className="mt-1 text-sm text-ink-3">Started {shortDate(t.created_at)} · {t.checkin_count} check-in{t.checkin_count === 1 ? "" : "s"}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <ProvenanceBadge provenance={t.provenance} size="sm" />

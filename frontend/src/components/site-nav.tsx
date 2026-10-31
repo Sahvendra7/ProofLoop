@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowUpRight, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Logo } from "./logo";
 
 const LINKS = [
@@ -13,7 +13,10 @@ const LINKS = [
   { href: "/privacy", label: "Privacy" },
 ];
 
-/** Floating rounded nav. Collapses to a disclosure menu under 900px. */
+/**
+ * Floating nav bar. Collapses to a disclosure menu under 900px. The menu's entrance is a CSS animation (`.menu-in`)
+ * rather than Motion, so the nav — on every route — adds no animation library to the app's JavaScript.
+ */
 export function SiteNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -28,68 +31,66 @@ export function SiteNav() {
   const isActive = (href: string) => !href.startsWith("/#") && pathname.startsWith(href);
 
   return (
-    <div className="sticky top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
-      <header className="@container mx-auto max-w-6xl rounded-[1.75rem] bg-white/95 shadow-[var(--shadow-float)] ring-1 ring-black/5 backdrop-blur supports-[backdrop-filter]:bg-white/85">
-        {/* With large text the row is narrower than 18 rem and wraps instead of widening the page (WCAG 1.4.4, 1.4.10).
-            At the default size it never wraps, so the bar keeps its one-row height even at 320 px. */}
-        <div className="flex min-h-14 items-center justify-between gap-x-3 gap-y-1 pl-5 pr-2 @max-[18rem]:flex-wrap @max-[18rem]:py-1 sm:min-h-16 sm:pr-2.5">
-          <Logo />
-          <nav aria-label="Primary" className="hidden items-center gap-1 min-[900px]:flex">
-            {LINKS.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                aria-current={isActive(l.href) ? "page" : undefined}
-                className="rounded-full px-3.5 py-2 text-sm font-medium text-strawberry-ink transition-colors hover:bg-berry-soft aria-[current=page]:bg-berry-soft aria-[current=page]:text-berry-deep"
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="flex items-center gap-1.5">
-            <Link
-              href="/scan"
-              aria-label="Start a fair test"
-              className="group inline-flex min-h-10 items-center gap-2 rounded-full bg-strawberry-ink py-1 pl-4 pr-1.5 text-sm font-semibold text-white transition-colors hover:bg-berry-deep sm:min-h-11 sm:pl-5"
-            >
-              <span className="hidden min-[400px]:inline">Start a fair test</span>
-              <span className="min-[400px]:hidden">Start</span>
-              <span aria-hidden className="grid size-7 place-items-center rounded-full bg-white/20 transition-transform group-hover:translate-x-0.5 sm:size-8">
-                <ArrowUpRight className="size-4" />
-              </span>
-            </Link>
-            <button
-              type="button"
-              className="grid size-10 place-items-center rounded-full text-strawberry-ink hover:bg-berry-soft min-[900px]:hidden"
-              aria-expanded={open}
-              aria-controls="mobile-menu"
-              aria-label={open ? "Close menu" : "Open menu"}
-              onClick={() => setOpen((o) => !o)}
-            >
-              {open ? <X aria-hidden className="size-5" /> : <Menu aria-hidden className="size-5" />}
-            </button>
-          </div>
-        </div>
-        {open && (
-          <nav id="mobile-menu" aria-label="Mobile" className="border-t border-line px-3 pb-3 pt-2 min-[900px]:hidden">
-            <ul className="grid gap-1">
+      <div className="sticky top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
+        <header className="@container mx-auto max-w-6xl rounded-[1.4rem] bg-white shadow-[var(--shadow-float)] ring-1 ring-espresso/8 backdrop-blur-xl supports-[backdrop-filter]:bg-white/93">
+          {/* With large text the row is narrower than 18 rem and wraps instead of widening the page (WCAG 1.4.4, 1.4.10).
+              At the default size it never wraps, so the bar keeps its one-row height even at 320 px. */}
+          <div className="flex min-h-14 items-center justify-between gap-x-3 gap-y-1 pl-4 pr-2 @max-[18rem]:flex-wrap @max-[18rem]:py-1 sm:min-h-16 sm:pl-5 sm:pr-2.5">
+            <Logo />
+            <nav aria-label="Primary" className="hidden items-center gap-0.5 nav:flex">
               {LINKS.map((l) => (
-                <li key={l.href}>
-                  <Link
-                    href={l.href}
-                    onClick={() => setOpen(false)}
-                    aria-current={isActive(l.href) ? "page" : undefined}
-                    className="flex items-center justify-between rounded-2xl px-4 py-3 font-display text-lg font-semibold text-espresso hover:bg-berry-soft aria-[current=page]:bg-berry-soft"
-                  >
-                    {l.label}
-                    <ArrowUpRight aria-hidden className="size-4 text-strawberry-ink" />
-                  </Link>
-                </li>
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  aria-current={isActive(l.href) ? "page" : undefined}
+                  className="relative rounded-full px-3.5 py-2 text-sm font-medium text-ink-2 transition-colors duration-[var(--duration-fast)] hover:bg-sunken hover:text-ink aria-[current=page]:text-ink after:pointer-events-none after:absolute after:inset-x-3.5 after:bottom-1 after:h-[3px] after:rounded-full after:bg-berry-milk after:opacity-0 after:transition-opacity aria-[current=page]:after:opacity-100 aria-[current=page]:after:bg-strawberry-ink"
+                >
+                  {l.label}
+                </Link>
               ))}
-            </ul>
-          </nav>
-        )}
-      </header>
-    </div>
+            </nav>
+            <div className="flex items-center gap-1.5">
+              <Link
+                href="/scan"
+                aria-label="Start a fair test"
+                className="inline-flex min-h-10 items-center gap-2 rounded-full bg-strawberry-ink px-4 py-1 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18)] transition-colors duration-[var(--duration-fast)] hover:bg-berry-deep sm:min-h-11 sm:px-5"
+              >
+                <span aria-hidden className="size-1.5 rounded-full bg-white/90" />
+                <span className="hidden min-[400px]:inline">Start a fair test</span>
+                <span className="min-[400px]:hidden">Start</span>
+              </Link>
+              <button
+                type="button"
+                className="grid size-10 place-items-center rounded-full text-ink hover:bg-sunken nav:hidden"
+                aria-expanded={open}
+                aria-controls="mobile-menu"
+                aria-label={open ? "Close menu" : "Open menu"}
+                onClick={() => setOpen((o) => !o)}
+              >
+                {open ? <X aria-hidden className="size-5" /> : <Menu aria-hidden className="size-5" />}
+              </button>
+            </div>
+          </div>
+            {open && (
+              <nav id="mobile-menu" aria-label="Mobile" className="nav:hidden">
+                <ul className="grid gap-0.5 border-t border-line px-2.5 pb-3 pt-2">
+                  {LINKS.map((l, i) => (
+                    <li key={l.href} className="menu-in" style={{ animationDelay: `${i * 40}ms` }}>
+                      <Link
+                        href={l.href}
+                        onClick={() => setOpen(false)}
+                        aria-current={isActive(l.href) ? "page" : undefined}
+                        className="flex items-center justify-between rounded-2xl px-4 py-3 font-display text-xl font-semibold text-espresso hover:bg-sunken aria-[current=page]:bg-berry-soft"
+                      >
+                        {l.label}
+                        <span aria-hidden className="h-1 w-5 rounded-full bg-berry-milk" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
+        </header>
+      </div>
   );
 }

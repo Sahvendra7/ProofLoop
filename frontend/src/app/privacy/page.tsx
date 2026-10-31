@@ -155,21 +155,27 @@ const sections: { id: string; title: string; body: React.ReactNode }[] = [
 
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+    <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12">
       <RouteTitle title={titled(TITLE)} />
       <PageIntro eyebrow="Trust" title="How ProofLoop works, and what it can't tell you">
         Plain answers about the measurement, your data and the matching logic.
       </PageIntro>
       <div className="mt-12 grid gap-12 lg:grid-cols-[220px_1fr]">
         <nav aria-label="On this page" className="hidden lg:block">
-          <ul className="sticky top-24 space-y-2 text-sm">
-            {sections.map((s) => <li key={s.id}><a className="text-ink-3 hover:text-ink" href={`#${s.id}`}>{s.title}</a></li>)}
+          <ul className="sticky top-28 space-y-1 border-l border-line-strong text-sm">
+            {sections.map((s) => (
+              <li key={s.id}>
+                <a className="-ml-px block border-l-2 border-transparent py-1.5 pl-4 text-ink-3 transition-colors hover:border-strawberry-ink hover:text-ink" href={`#${s.id}`}>
+                  {s.title}
+                </a>
+              </li>
+            ))}
           </ul>
         </nav>
         <div className="max-w-3xl space-y-14">
           {sections.map((s) => (
             <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className="scroll-mt-24">
-              <h2 id={`${s.id}-h`} className="font-display text-3xl tracking-tight text-ink">{s.title}</h2>
+              <h2 id={`${s.id}-h`} className="font-display text-[2rem] font-bold leading-tight tracking-[-0.025em] text-ink">{s.title}</h2>
               <div className="mt-4 space-y-4 text-lg leading-relaxed text-ink-2 [&_code]:rounded [&_code]:bg-sunken [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-sm [&_li]:pl-1 [&_strong]:text-ink [&_ul]:list-disc [&_ul]:space-y-3 [&_ul]:pl-5">
                 {s.body}
               </div>

@@ -13,7 +13,7 @@ import { clearDraft, loadDraft } from "@/lib/profile-store";
 import type { Goal, Match, Product, Scan, Simulation } from "@/lib/types";
 import { ProvenanceBadge } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
-import { Button, CapsText, Card, Notice, Segmented, Skeleton } from "@/components/ui";
+import { Button, CapsText, Card, Notice, Segmented, Skeleton, pageTitleClass } from "@/components/ui";
 
 const SIM_PHRASE: Record<string, string> = {
   calm_redness: "less visible redness",
@@ -59,9 +59,9 @@ export function ProductView() {
         <div className="space-y-6">
           <header>
             <p className="eyebrow"><CapsText>{p.brand} · {p.category}</CapsText></p>
-            <h1 className="mt-2 font-display text-[clamp(2.4rem,6vw,4.5rem)] font-bold leading-[0.98] text-espresso">{p.name}</h1>
-            <p className="mt-3 flex items-baseline gap-3">
-              <span className="tabular font-display text-3xl text-ink">{money(p.price)}</span>
+            <h1 className={`mt-4 ${pageTitleClass}`}>{p.name}</h1>
+            <p className="mt-4 flex items-baseline gap-3">
+              <span className="tabular font-condensed text-4xl font-bold text-ink">{money(p.price)}</span>
               <span className="text-ink-3">{p.size_ml} ml</span>
             </p>
             <p className="mt-4 text-lg leading-relaxed text-ink-2">{p.description}</p>
@@ -242,9 +242,9 @@ function TrialCard({ scan, goal, product }: { scan: Scan; goal: Goal; product: P
     }
   }
   return (
-    <div className="on-espresso rounded-[var(--radius-xl)] bg-ink p-6 text-paper sm:p-7">
+    <div className="on-night night-stage grain overflow-hidden rounded-[var(--radius-xl)] p-6 text-paper sm:p-8">
       <CalendarCheck aria-hidden className="size-6 text-paper/70" />
-      <h2 className="mt-4 font-display text-2xl">Start a trial with this product</h2>
+      <h2 className="mt-4 font-display text-[1.75rem] font-bold leading-tight tracking-[-0.02em]">Start a trial with this product</h2>
       <p className="mt-2 leading-relaxed text-paper/75">
         This scan becomes your baseline for “{goal.label}”. Use the product as directed, then check in after 3–4 weeks in
         similar light. ProofLoop will compare the two scans and tell you whether {goal.metric_label.toLowerCase()} moved beyond normal variation.
@@ -265,5 +265,5 @@ function TrialCard({ scan, goal, product }: { scan: Scan; goal: Goal; product: P
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">{children}</div>;
+  return <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12">{children}</div>;
 }

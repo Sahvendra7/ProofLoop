@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, IBM_Plex_Sans } from "next/font/google";
 import { AnnouncerProvider } from "@/components/announcer";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
@@ -7,9 +7,9 @@ import { MOTION_KEY } from "@/lib/motion";
 import { SITE_TITLE } from "@/lib/titles";
 import "./globals.css";
 
+// Display: Bricolage Grotesque with its width axis, set condensed for headlines and readouts. UI and numerals: IBM Plex Sans.
 const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", axes: ["opsz", "wdth"] });
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
-const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
+const plex = IBM_Plex_Sans({ subsets: ["latin"], variable: "--font-plex", axes: ["wdth"] });
 
 export const metadata: Metadata = {
   title: {
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fcd7f3",
+  themeColor: "#faf7f8",
   width: "device-width",
   initialScale: 1,
 };
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${bricolage.variable} ${geist.variable} ${geistMono.variable}`}
+      className={`${bricolage.variable} ${plex.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -46,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex min-h-dvh flex-col">
         <a
           href="#main"
-          className="sr-only z-[60] rounded-full bg-espresso px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+          className="on-espresso sr-only z-[60] rounded-full bg-espresso px-4 py-2 text-white focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
         >
           Skip to content
         </a>
