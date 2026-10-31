@@ -215,6 +215,9 @@ test.describe("trial", () => {
     const c = trial.comparison!;
     const focus = c.changes.find((x) => x.metric === c.focus_metric)!;
     await expect(focused(page)).toHaveText(OUTCOME_COPY[c.focus_outcome].headline);
+    // VoiceOver read "No clear change yet. No clear change yet. region" when the focused heading also named its
+    // section: the verdict must not be a region named by its own headline.
+    await expect(page.getByRole("region", { name: OUTCOME_COPY[c.focus_outcome].headline })).toHaveCount(0);
     await expect(page).toHaveTitle(`${OUTCOME_COPY[c.focus_outcome].headline.replace(/\.$/, "")} · ${trial.goal.label} · ProofLoop`);
     const words = page.getByRole("region", { name: "Result in words" });
     await expect(words).toContainText(`${focus.baseline}`);
@@ -265,6 +268,16 @@ test.describe("trial", () => {
         mustNot: [],
       },
       {
+        name: "a one-point change",
+        edit: (t) => {
+          const f = focusOf(t);
+          Object.assign(f, { current: f.baseline! + 1, delta: 1, verdict: "within_variation" });
+          Object.assign(t.comparison!, { focus_outcome: "no_clear_change", early: false, next_step: { ...t.comparison!.next_step, action: "consider_switching" } });
+        },
+        must: ["a change of +1 point."],
+        mustNot: ["1 points"],
+      },
+      {
         name: "measured decline",
         edit: (t) => {
           const f = focusOf(t);
@@ -283,7 +296,8 @@ test.describe("trial", () => {
         route.request().method() === "GET" ? route.fulfill({ json: edited }) : route.continue(),
       );
       await page.reload();
-      const verdict = page.getByRole("region", { name: OUTCOME_COPY[edited.comparison!.focus_outcome].headline });
+      const verdict = page.locator("section:has(#verdict)");
+      await expect(page.locator("#verdict"), s.name).toHaveText(OUTCOME_COPY[edited.comparison!.focus_outcome].headline);
       await expect(verdict, s.name).toBeVisible();
       const words = page.getByRole("region", { name: "Result in words" });
       for (const text of s.must) await expect(words, `${s.name}: ${text}`).toContainText(text);

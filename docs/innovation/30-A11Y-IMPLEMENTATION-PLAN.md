@@ -193,7 +193,9 @@ strawberry-glow made the final CTA's white body text 3.81:1 on phones (1.4.3).
 | Accessibility statement, "Read aloud" label | Stage 4, optional | — |
 
 **Integration (2026-10-31).** `main` (`c0f01c3`: #5–#7) was merged into the branch as `e6b91cc` with no conflicts;
-results in `31` §6.3. Known limitations carried into review: `31` §6.5.
+results in `31` §6.3. Known limitations carried into review: `31` §6.5. The VoiceOver run (`31` §6.4) found the verdict
+headline read twice; fixed by not naming the verdict section after its own heading (`trial-view.tsx`), with "1 point"
+wording fixed in Result in words and the dial caption.
 
 **Rollback.** Frontend-only and stateless: discard the worktree branch, or after a future merge revert the commit
 and use Vercel's instant rollback. Nothing to migrate.

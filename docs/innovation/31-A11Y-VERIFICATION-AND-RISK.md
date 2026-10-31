@@ -262,12 +262,51 @@ and the temporary Playwright config used to point at it were not committed.
 
 Skips are the 320 px reflow test on the mobile project, by design. No YouCam or Gemini key was present in any run.
 
-### 6.4 Manual screen-reader validation: not performed
+### 6.4 Screen-reader validation (2026-10-31)
 
-The VoiceOver (macOS) and TalkBack (Android) scripts in §7 have **not** been run. The agent running these checks
-can't hear speech output and isn't permitted to switch on VoiceOver (a system accessibility setting), and no
-Android device was connected. No observations are recorded, and nothing in this file should be read as a
-screen-reader pass. NVDA, iOS VoiceOver and research with blind and low-vision people also remain outstanding.
+**VoiceOver + Safari on macOS: performed by scripted control, V1–V12.** Setup: macOS 27.0.1, Safari 27.0.1,
+VoiceOver turned on by the owner, with "Allow VoiceOver to be controlled with AppleScript" enabled by the owner.
+The agent stepped VoiceOver's own cursor (the equivalent of VO+Right and VO+Space) and recorded the exact text
+VoiceOver spoke (its "last phrase") after each action. Ran against a local production build of the integrated
+branch with a backend lacking YouCam or Gemini keys (upgraded packages; no units spent).
+
+**Method limits.** This is VoiceOver's real output, but no person listened. Speech rate, timing, interruptions
+and comprehension were not judged. Tab-key navigation wasn't exercised, because macOS blocks scripted key presses
+without an Accessibility permission the agent may not grant. Navigation was by VoiceOver cursor, and keyboard focus
+was read back from VoiceOver's keyboard cursor. V13–V14 (file upload, analysis failure) need the macOS file dialog
+and were **not run**.
+
+| # | Result | VoiceOver said (verbatim, abridged with …) |
+|---|---|---|
+| V1 | Pass | "main" → "Is it working? Run a fair test. region" → "heading level 1 Is it working? Run a fair test. 3 items" |
+| V2 | Pass | "Preview of the snapshot screen: eight skin scores from sample data image": one image, no mock scores read |
+| V3 | Pass, with an unexpected first phrase | "Is it working?Run a fair test." then "heading level 1 Your skin snapshot main". The first phrase is the *previous* page's heading, read as raw text; most likely Next.js's route announcer picking up the hidden previous page. Not reproduced on a second run (§6.4.1) |
+| V4 | Pass | "Focus group" → "Brighter under-eyes Under-eye 68 · room to improve 72 or higher counts as up · 64 or lower as down Most room selected radio button, 1 of 8" |
+| V5 | Pass | "Matches · ProofLoop" (title). VoiceOver and keyboard cursors were both on "Calm visible redness heading level 1"; the heading wasn't read separately (no double reading). On the re-run, focus reached the heading while it still said "Matching products" (loading text), so the goal name wasn't spoken |
+| V6 | Pass | "on Fragrance-free only switch" → "3 products match." (announcer) |
+| V7 | Pass | "heading level 1 Calm Barrier Serum" (product) → "heading level 1 Calm visible redness" (trial) |
+| V8 | **Failed, fixed, re-tested: pass** | Before: "heading level 2 No clear change yet. No clear change yet. region": the verdict was read twice, because the section was a region named by its own heading. After the fix: "heading level 2 No clear change yet." once. Reading order: explanation → "Under-eye dial: baseline 68, check-in 69, normal variation plus or minus 3 points. The result is described in words below." → "+1 point · normal variation ±3" → "Result in words region" → "heading level 2 Result in words" → "description list 6 items" → "Timing 1 of 12" … "Next step 11 of 12" |
+| V9 | Pass | "Your redness score went from 99 to 98. That is inside your ±7 band … From your plan · no AI." Keyboard focus stayed on "Is it working? button" |
+| V10 | Pass, repetitive | "Yes, delete everything Removes this session … This can't be undone. button". Cancel → "Delete all my data button Delete all my data region" (VoiceOver adds the section's name). Confirm → "heading level 2 Everything was deleted. main" |
+| V11 | Pass | "I'm 18 or over, this is my own face, and I agree … Tick the box to confirm before continuing. invalid data unticked tickbox" |
+| V12 | Pass | "ticked … tickbox", then Continue → "heading level 2 Add your photo main" |
+| V13–V14 | Not run | File dialog |
+
+#### 6.4.1 Findings
+
+| Finding | Severity | Source | Action |
+|---|---|---|---|
+| Verdict headline read twice on focus | High (breaks the "read once" rule) | Release 1 (region named by the focused heading) | **Fixed** in a follow-up commit on this branch; E2E guard added; VoiceOver re-check passes |
+| "-1 points" / "+1 points" in Result in words and the dial caption | Low (wording) | Release 1 / pre-existing caption | **Fixed**: "1 point"; E2E scenario added |
+| Previous page's heading spoken before the new one, once | Medium (misleading) | Probably Next.js's route announcer reading a hidden previous page | Not fixed; intermittent (not reproduced). Re-check with a person listening |
+| Matches heading focused while still saying "Matching products" | Low | Release 1 timing: the loading heading takes focus | Not fixed; candidate follow-up: focus the heading after data loads |
+| Score read as "69Room to improve", then "out of 100," as a separate phrase | Medium | Pre-existing (`MetricBar`) | Not fixed (outside Release 1); candidate Stage 2 item |
+| Filter options read twice in linear reading ("≤ $25 radio button", then "≤ $25"); group labels read in capitals ("BUDGET group") | Low | Pre-existing `Segmented` markup / CSS uppercase | Not fixed; candidate Stage 2 item |
+| Section names repeated after a focused control (e.g. "…button Delete all my data region") | Low | VoiceOver landmark context | Accept, or drop names from non-landmark sections later |
+
+**TalkBack + Chrome on Android: not performed.** No Android device was connected, and TalkBack and USB debugging
+are device settings the agent may not change. NVDA, iOS VoiceOver and research with blind and low-vision people
+also remain outstanding. Nothing here substitutes for testing with blind and low-vision users.
 
 ### 6.5 Known limitations carried into review (not addressed in Release 1)
 
@@ -335,7 +374,8 @@ to record speech.
 
 ### 7.3 Still outstanding
 
-- **Run V1–V14 and T1–T9 and record the speech** (not run as of the integration on 2026-10-31; see §6.4). Until then, R1's focus and announcement behaviour is verified
+- **VoiceOver V1–V12 were run by scripted control on 2026-10-31 (§6.4); V13–V14 and the whole TalkBack script
+  T1–T9 were not.** A person listening should still repeat V1–V12, especially V3 (stale heading) and V8. Until then, R1's focus and announcement behaviour is verified
   by automation and an agent-driven keyboard walkthrough only.
 - **iOS VoiceOver and NVDA: unverified.** No device or machine is available.
 - **Real blind and low-vision participants (§4): not started.**

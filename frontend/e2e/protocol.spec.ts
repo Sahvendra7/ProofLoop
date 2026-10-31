@@ -51,7 +51,7 @@ test("trial shows its pre-registered plan, and the verdict is judged against it"
 
   await page.getByRole("button", { name: "Show synthetic 21-day follow-up" }).click();
   // Said in the verdict panel and again in the Result in words summary.
-  await expect(page.getByRole("region", { name: /^Measured change/ }).getByText("Early look: day 21 of a planned 28-day test.")).toBeVisible();
+  await expect(page.locator("section:has(#verdict)").getByText("Early look: day 21 of a planned 28-day test.")).toBeVisible();
   await expect(page.getByRole("region", { name: "Result in words" })).toContainText("Early look: day 21 of a planned 28-day test.");
   await expect(plan).toContainText("The plan this verdict was judged against");
   // Unmeasured concerns carry the conservative band and say so.

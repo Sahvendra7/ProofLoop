@@ -167,7 +167,8 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
 
   return (
     <>
-      <section aria-labelledby="verdict" className={`mt-10 overflow-hidden rounded-[2.5rem] p-7 sm:p-12 ${changed ? "on-espresso" : ""} ${panel}`}>
+      {/* Not a named region: VoiceOver read the headline twice ("…heading, …region") when focus moved to it. */}
+      <section className={`mt-10 overflow-hidden rounded-[2.5rem] p-7 sm:p-12 ${changed ? "on-espresso" : ""} ${panel}`}>
         <div className="grid gap-10 md:grid-cols-[1.25fr_1fr] md:items-center">
           <div>
             {synthetic && (
@@ -202,7 +203,7 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
                 caption={
                   <p className={`text-sm font-semibold ${sub}`}>
                     {focus.delta! > 0 ? "+" : ""}
-                    {focus.delta} points · normal variation ±{band}
+                    {focus.delta} {Math.abs(focus.delta ?? 0) === 1 ? "point" : "points"} · normal variation ±{band}
                     {focus.band_evidence === "assumed" ? " (assumed)" : ""}
                   </p>
                 }

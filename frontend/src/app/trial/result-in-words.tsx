@@ -25,7 +25,7 @@ export function ResultInWords({ trial, comparison, synthetic }: { trial: Trial; 
   if (outcome === "insufficient_data") numbers = OUTCOME_COPY.insufficient_data.body;
   else if (outcome === "inconclusive") numbers = "The scores are in the table below for context only. They don't count as a result.";
   else if (usesNumbers && focus && focus.baseline !== null && focus.current !== null && focus.delta !== null)
-    numbers = `${label} was ${focus.baseline} at baseline and ${focus.current} at this check-in, a change of ${focus.delta > 0 ? "+" : ""}${focus.delta} points.`;
+    numbers = `${label} was ${focus.baseline} at baseline and ${focus.current} at this check-in, a change of ${focus.delta > 0 ? "+" : ""}${focus.delta} ${Math.abs(focus.delta) === 1 ? "point" : "points"}.`;
   else numbers = `The ${label.toLowerCase()} measurement isn't available for this comparison.`;
 
   const rows: [string, string][] = [];
