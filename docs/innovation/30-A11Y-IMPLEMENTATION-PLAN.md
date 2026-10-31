@@ -192,5 +192,8 @@ strawberry-glow made the final CTA's white body text 3.81:1 on phones (1.4.3).
 | Capture guide, "Use the whole photo", ordering sentence, mask sentence, decorative product art | Stage 3, not approved | — |
 | Accessibility statement, "Read aloud" label | Stage 4, optional | — |
 
+**Integration (2026-10-31).** `main` (`c0f01c3`: #5–#7) was merged into the branch as `e6b91cc` with no conflicts;
+results in `31` §6.3. Known limitations carried into review: `31` §6.5.
+
 **Rollback.** Frontend-only and stateless: discard the worktree branch, or after a future merge revert the commit
 and use Vercel's instant rollback. Nothing to migrate.

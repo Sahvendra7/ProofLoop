@@ -242,6 +242,42 @@ unlock (covered by mocked E2E), "Check again" (covered by stubbed E2E), the inst
 
 No WCAG conformance claim follows from this table.
 
+### 6.3 Integration with `main` `c0f01c3` (2026-10-31)
+
+`main` moved from `bcc2cba` to `c0f01c3` (#5 backend dependency upgrades, #6 12 MP image guard, #7 privacy
+retention wording). It was merged into `feat/a11y-r1` as `e6b91cc` with **no conflicts**; the accessibility commits
+`e6e3e85` and `c9a1377` are unchanged. The worktree's linked `backend/venv` still holds the pre-#5 packages (Pillow
+11.0.0, FastAPI 0.115.6), so backend tests and the E2E backend ran in a throwaway virtualenv built from the merged
+`requirements-dev.txt` (Pillow 13.0.0, FastAPI 0.133.0, Starlette 1.3.1, python-multipart 0.0.31). That virtualenv
+and the temporary Playwright config used to point at it were not committed.
+
+| Check | Release 1 baseline (on `bcc2cba`) | Integrated (on `c0f01c3`) |
+|---|---|---|
+| Full Playwright suite, desktop + mobile | 95 passed, 1 skipped | **97 passed, 1 skipped, 0 failed**. The +2 are #7's `privacy.spec.ts` on both projects |
+| `a11y.spec.ts` + `privacy.spec.ts`, repeated 2× | — (a11y ×3: 117 passed) | **82 passed, 2 skipped, 0 failed** |
+| Axe 2.0–2.2 A/AA, incl. `/privacy` with #7's new text | 0 violations | **0 violations** (none logged at any impact) |
+| Backend `pytest` | 1,239 passed, 2 skipped | **1,256 passed, 2 skipped**. The +17 are #6's image-guard tests; 1 warning is a Starlette deprecation notice from #5's upgrade, unrelated to accessibility |
+| TypeScript, ESLint | Clean | **Clean** |
+| `next build` | Compiled | **Compiled**; `/privacy` static |
+
+Skips are the 320 px reflow test on the mobile project, by design. No YouCam or Gemini key was present in any run.
+
+### 6.4 Manual screen-reader validation: not performed
+
+The VoiceOver (macOS) and TalkBack (Android) scripts in §7 have **not** been run. The agent running these checks
+can't hear speech output and isn't permitted to switch on VoiceOver (a system accessibility setting), and no
+Android device was connected. No observations are recorded, and nothing in this file should be read as a
+screen-reader pass. NVDA, iOS VoiceOver and research with blind and low-vision people also remain outstanding.
+
+### 6.5 Known limitations carried into review (not addressed in Release 1)
+
+| Limitation | WCAG | Where | Status |
+|---|---|---|---|
+| Positioning the photo needs dragging or arrow keys; there's no single-pointer alternative | 2.5.7 Dragging Movements (AA) — **fail** | `frontend/src/app/scan/framer.tsx` | Stage 2 (move and centre buttons), not approved |
+| Homepage marquee and floating chips loop with no pause control (hover-only pause; reduced motion stops them) | 2.2.2 Pause, Stop, Hide (A) — **fail** | `globals.css` `.marquee`/`.float`, `page.tsx`, `previews.tsx` | Stage 2, not approved |
+| Two sticky layers (nav + homepage step bar) versus 6 rem scroll padding may hide focused items; untested | 2.4.11 Focus Not Obscured (Minimum) (AA) — **unknown** | `globals.css`, `home/how-it-works.tsx` | Stage 2 reverse-Tab test, not approved |
+| Profile removal and profile form focus/announcements | 2.4.3, 4.1.3 | `profile-block.tsx`, `skin-profile.tsx` (PR #4 only) | Waits for PR #4 to merge; fix described in `30` §7.3 |
+
 ## 7. Screen-reader test scripts for Release 1
 
 **Who runs them:** the owner (or anyone), on the two available setups. Record the actual speech; mark each step
@@ -299,7 +335,7 @@ to record speech.
 
 ### 7.3 Still outstanding
 
-- **Run V1–V14 and T1–T9 and record the speech.** Until then, R1's focus and announcement behaviour is verified
+- **Run V1–V14 and T1–T9 and record the speech** (not run as of the integration on 2026-10-31; see §6.4). Until then, R1's focus and announcement behaviour is verified
   by automation and an agent-driven keyboard walkthrough only.
 - **iOS VoiceOver and NVDA: unverified.** No device or machine is available.
 - **Real blind and low-vision participants (§4): not started.**
