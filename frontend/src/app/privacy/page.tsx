@@ -42,7 +42,12 @@ const sections: { id: string; title: string; body: React.ReactNode }[] = [
         <li><strong>Your photo</strong> is decoded, stripped of all metadata (including location) and re-encoded on our server, sent to YouCam, and then discarded from memory. ProofLoop never writes it to disk or a database.</li>
         <li><strong>In your browser</strong>, the framed photo is kept in this tab&apos;s session storage so YouCam&apos;s detection masks can be overlaid and a preview generated. It disappears when you close the tab or delete your data.</li>
         <li><strong>On our server</strong> we keep scores, the time of each scan, the photo&apos;s size and average brightness (for comparability), a one-way fingerprint (SHA-256) of the cleaned photo so a later check-in or instrument check can&apos;t silently reuse the baseline photo (the photo can&apos;t be rebuilt from it), and your trials — linked to an anonymous session token held in your browser. No name, email or account.</li>
-        <li><strong>YouCam</strong> documents that processed results are retained for 24 hours. YouCam&apos;s own terms govern its processing.</li>
+        <li>
+          <strong>YouCam</strong> keeps different data for different periods, according to its documentation. The{" "}
+          <strong>photo ProofLoop uploads, and its file ID, are stored for 30 days</strong>, and uploaded and generated
+          images are removed automatically after 30 days. <strong>Skin Analysis results are retained for 24 hours</strong>{" "}
+          after the analysis completes. YouCam&apos;s own terms govern its processing.
+        </li>
         <li><strong>Deletion</strong>: &ldquo;Delete all my data&rdquo; on My trials removes the session and everything linked to it immediately. A usage ledger keeps only unit counts, with no link to you.</li>
       </ul>
     ),

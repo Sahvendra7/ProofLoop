@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import warnings
 from dataclasses import dataclass
 
 from PIL import Image, ImageOps, ImageStat, UnidentifiedImageError
@@ -19,7 +20,13 @@ from app.core.errors import AppError
 ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP", "MPO"}
 MIN_SHORT_SIDE = 480  # YouCam SD minimum
 MAX_LONG_SIDE = 2048  # below YouCam's 2560 auto-resize, keeps masks aligned
-MAX_PIXELS = 40_000_000  # decompression-bomb guard
+# Decompression-bomb guard, checked from the header before any pixel is decoded. Decoding costs about
+# 12 bytes of peak memory per pixel here (RGB plus the transpose, conversion and luminance copies): about
+# 150 MB at 12 MP, 495 MB at 40 MP and 926 MB at 80 MP, measured 2026-10-26, against a 512 MB instance.
+# Pillow alone only warns between 1x and 2x its limit, so the old 40 MP setting let images up to 80 MP
+# decode. 12 MP still takes a full 4000x3000 phone photo; the in-browser framer never sends more than
+# 1080x1440 (1.6 MP).
+MAX_PIXELS = 12_000_000
 TOO_DARK_LUMINANCE = 28.0  # only reject when obviously unusable; YouCam judges the rest
 
 Image.MAX_IMAGE_PIXELS = MAX_PIXELS
@@ -36,12 +43,28 @@ class PreparedImage:
     digest: str  # sha256 of the cleaned bytes; stored on the scan (not the image) to spot a reused photo
 
 
+def _too_many_pixels(width: int | None, height: int | None) -> AppError:
+    size = f" ({width}×{height}, {width * height / 1e6:.0f} MP)" if width and height else ""
+    return AppError(
+        "image_too_large",
+        f"That photo has too many pixels to process{size}. The limit is {MAX_PIXELS // 1_000_000} MP.",
+        413,
+        hint="Use your phone's standard photo mode, or take the photo in ProofLoop, which frames it for you.",
+    )
+
+
 def prepare_image(raw: bytes) -> PreparedImage:
     if not raw:
         raise AppError("empty_upload", "The photo was empty.", 400)
     try:
-        with Image.open(io.BytesIO(raw)) as probe:
+        with warnings.catch_warnings():
+            # Pillow warns between 1x and 2x MAX_IMAGE_PIXELS; the explicit check below refuses those images.
+            warnings.simplefilter("ignore", Image.DecompressionBombWarning)
+            probe = Image.open(io.BytesIO(raw))
+        with probe:
             fmt = probe.format
+            if probe.width * probe.height > MAX_PIXELS:
+                raise _too_many_pixels(probe.width, probe.height)
             probe.verify()
         if fmt not in ALLOWED_FORMATS:
             raise AppError("unsupported_image", "Use a JPEG, PNG or WebP photo.", 415)
@@ -51,8 +74,8 @@ def prepare_image(raw: bytes) -> PreparedImage:
             img = img.convert("RGB")
     except AppError:
         raise
-    except Image.DecompressionBombError as exc:
-        raise AppError("image_too_large", "That photo is too large to process.", 413) from exc
+    except Image.DecompressionBombError as exc:  # Pillow's own backstop, above 2x MAX_PIXELS
+        raise _too_many_pixels(None, None) from exc
     except (UnidentifiedImageError, OSError, SyntaxError, ValueError) as exc:
         raise AppError("unreadable_image", "We couldn't read that file as a photo.", 400) from exc
 
