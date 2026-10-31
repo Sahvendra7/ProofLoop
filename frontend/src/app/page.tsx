@@ -4,15 +4,19 @@ import { ArrowDown, ArrowRight, ArrowUpRight, CalendarClock, Check, Eye, Lock, S
 import { Dial } from "@/components/dial";
 import { FloatChip, MatchScreen, PhoneFrame, SnapshotScreen, SourceTag, VerdictScreen } from "@/components/previews";
 import { Reveal } from "@/components/reveal";
+import { RouteTitle } from "@/components/route-title";
 import { CONCERNS } from "@/lib/sample";
+import { SITE_TITLE } from "@/lib/titles";
 import { HowItWorks } from "./home/how-it-works";
 import { ProblemRail } from "./home/problem-rail";
 import { VerdictExplorer } from "./home/verdict-explorer";
 import { SampleDataButton } from "./sample-data-button";
+import { CapsText } from "@/components/ui";
 
 export default function Home() {
   return (
     <>
+      <RouteTitle title={SITE_TITLE} />
       <Hero />
       <ConcernMarquee />
       <Problem />
@@ -132,7 +136,7 @@ function Problem() {
     <section aria-labelledby="problem-title" className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
       <div className="grid gap-6 md:grid-cols-[1.2fr_1fr] md:items-end">
         <Reveal>
-          <p className="eyebrow">The problem</p>
+          <p className="eyebrow"><CapsText>The problem</CapsText></p>
           <h2 id="problem-title" className="text-section mt-3 text-espresso">
             The mirror is a <span className="text-strawberry">bad instrument.</span>
           </h2>
@@ -155,7 +159,7 @@ function Insight() {
     <section id="fair-test" aria-labelledby="insight-title" className="bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <Reveal className="mx-auto max-w-3xl text-center">
-          <p className="eyebrow">Why a fair test</p>
+          <p className="eyebrow"><CapsText>Why a fair test</CapsText></p>
           <h2 id="insight-title" className="text-section mt-3 text-espresso">
             A change only counts if it&apos;s <span className="text-strawberry">bigger than the noise.</span>
           </h2>
@@ -222,7 +226,7 @@ function Showcase() {
   return (
     <section aria-labelledby="showcase-title" className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
       <Reveal className="max-w-2xl">
-        <p className="eyebrow">Inside the app</p>
+        <p className="eyebrow"><CapsText>Inside the app</CapsText></p>
         <h2 id="showcase-title" className="text-section mt-3 text-espresso">
           Every screen is built around <span className="text-strawberry">the evidence.</span>
         </h2>
@@ -279,7 +283,7 @@ function Trust() {
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="grid gap-10 lg:grid-cols-[1fr_1.5fr]">
           <Reveal>
-            <p className="eyebrow">Trust</p>
+            <p className="eyebrow"><CapsText>Trust</CapsText></p>
             <h2 id="trust-title" className="text-section mt-3 text-espresso">What we promise — <span className="text-strawberry">and what we don&apos;t.</span></h2>
             <Link href="/privacy" className="mt-8 inline-flex items-center gap-2 rounded-full bg-berry-soft px-5 py-3 font-semibold text-berry-deep hover:bg-berry-milk">
               How it works &amp; privacy <ArrowUpRight aria-hidden className="size-4" />

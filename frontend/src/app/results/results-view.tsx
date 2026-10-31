@@ -13,7 +13,7 @@ import { clearDraft, loadDraft, saveDraft, type ProfileDraft } from "@/lib/profi
 import type { FocusPlan, Goal, Metric, Scan } from "@/lib/types";
 import { InYourWords, NoReadingNote, PriorityNote, SkinTypeCard } from "./skin-profile";
 import { BandLegend, MetricBar, ProvenanceNote } from "@/components/measure";
-import { Button, ButtonLink, Card, Notice, Skeleton } from "@/components/ui";
+import { Button, ButtonLink, CapsText, Card, Notice, Skeleton } from "@/components/ui";
 
 export function ResultsView() {
   const params = useSearchParams();
@@ -219,7 +219,7 @@ function GoalPicker({ scan, goals, plan }: { scan: Scan; goals: Goal[] | null; p
 
   return (
     <Card className="p-6 sm:p-8">
-      <p className="eyebrow">Step 3 of 4 · Choose</p>
+      <p className="eyebrow"><CapsText>Step 3 of 4 · Choose</CapsText></p>
       <h2 className="mt-2 font-display text-2xl text-ink">Pick one focus to test</h2>
       <p className="mt-2 text-sm leading-relaxed text-ink-2">
         Each focus is tied to one measured score. Before you start, ProofLoop shows the score a later check-in would need for

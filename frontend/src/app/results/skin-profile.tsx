@@ -16,7 +16,7 @@ import {
 } from "@/lib/format";
 import type { ProfileDraft } from "@/lib/profile-store";
 import type { FocusPlan, Frequency, Goal, Reactive, SelfReport, SkinRegion, SkinType, UserView } from "@/lib/types";
-import { Button, Card, Notice, Segmented } from "@/components/ui";
+import { Button, CapsText, Card, Notice, Segmented } from "@/components/ui";
 
 const REGIONS: SkinRegion[] = ["whole", "t_zone", "u_zone"];
 const MAX_PRIORITIES = 2;
@@ -143,7 +143,7 @@ export function InYourWords({
           <Segmented<Frequency> label="Tight or flaky" value={report.tightness ?? ("" as Frequency)} options={FREQUENCY_OPTIONS} onChange={(v) => set("tightness", v)} />
           <Segmented<Reactive> label="Reacts easily to new products" value={report.reactive ?? ("" as Reactive)} options={REACTIVE_OPTIONS} onChange={(v) => set("reactive", v)} />
           <fieldset>
-            <legend className="eyebrow mb-2">What matters most (up to {MAX_PRIORITIES})</legend>
+            <legend className="eyebrow mb-2"><CapsText>What matters most (up to {MAX_PRIORITIES})</CapsText></legend>
             <div className="flex flex-wrap gap-2">
               {goals.map((g) => {
                 const on = report.priorities.includes(g.key);

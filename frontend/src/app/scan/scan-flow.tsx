@@ -10,7 +10,7 @@ import { shortDate } from "@/lib/format";
 import { useDocumentTitle, useResource } from "@/lib/hooks";
 import type { Capture, Preflight, Scan } from "@/lib/types";
 import { useAnnounce } from "@/components/announcer";
-import { Button, Notice } from "@/components/ui";
+import { Button, CapsText, Notice } from "@/components/ui";
 import { CheckinScreen, PhoneFrame } from "@/components/previews";
 import { SampleDataButton } from "../sample-data-button";
 import { Framer, type FramedImage } from "./framer";
@@ -501,7 +501,7 @@ function CaptureMatch({
       </div>
       {/* The result is announced once through the app announcer; this block is not a live region. */}
       <div>
-        <p className="eyebrow inline-flex items-center gap-2"><Scale aria-hidden className="size-4" /> Capture match · free</p>
+        <p className="eyebrow inline-flex items-center gap-2"><Scale aria-hidden className="size-4" /> <CapsText>Capture match · free</CapsText></p>
         <StepHeading className="mt-2 font-display text-2xl text-ink">Is this a fair comparison?</StepHeading>
         <p className="mt-2 text-sm leading-relaxed text-ink-2">
           Before spending YouCam units, ProofLoop compares this photo with your baseline&apos;s conditions. The photo is checked and
@@ -524,7 +524,7 @@ function CaptureMatch({
             <table className="mt-5 w-full max-w-md text-left text-sm">
               <caption className="sr-only">Baseline and check-in capture conditions</caption>
               <thead className="text-xs uppercase tracking-wider text-ink-3">
-                <tr><th scope="col" className="py-2 font-semibold"></th><th scope="col" className="py-2 font-semibold">Baseline</th><th scope="col" className="py-2 font-semibold">This photo</th></tr>
+                <tr><th scope="col" className="py-2 font-semibold"></th><th scope="col" className="py-2 font-semibold"><CapsText>Baseline</CapsText></th><th scope="col" className="py-2 font-semibold"><CapsText>This photo</CapsText></th></tr>
               </thead>
               <tbody className="divide-y divide-line">
                 <tr><th scope="row" className="py-2 font-medium text-ink">Brightness</th><td className="tabular py-2 text-ink-2">{base.light}</td><td className="tabular py-2 text-ink">{now.light}</td></tr>

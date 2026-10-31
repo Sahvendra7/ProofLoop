@@ -14,7 +14,7 @@ import { BandChart } from "@/components/band-chart";
 import { Dial } from "@/components/dial";
 import { ProvenanceNote } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
-import { Button, ButtonLink, Card, Notice, Skeleton } from "@/components/ui";
+import { Button, ButtonLink, CapsText, Card, Notice, Skeleton } from "@/components/ui";
 import { AssistantPanel } from "./assistant-panel";
 import { ProfileBlock } from "./profile-block";
 import { ResultInWords } from "./result-in-words";
@@ -119,7 +119,7 @@ function Waiting({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) => vo
   return (
     <div className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
       <Card className="p-6 sm:p-8">
-        <p className="eyebrow">Baseline saved</p>
+        <p className="eyebrow"><CapsText>Baseline saved</CapsText></p>
         <p className="mt-3 font-display text-6xl text-ink tabular">{base?.ui_score ?? "—"}</p>
         <p className="mt-1 text-ink-2">{trial.goal.metric_label} score on {shortDate(trial.baseline.observed_at)}</p>
         <h2 className="mt-8 text-lg font-semibold text-ink">Check in on or after {shortDate(trial.protocol.planned_checkin_at)}</h2>
@@ -180,7 +180,7 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
               </p>
             )}
             <p className={`text-xs font-semibold uppercase tracking-[0.14em] ${sub}`}>
-              {synthetic ? "Demo verdict" : "Verdict"} · {trial.goal.metric_label} · {comparison.comparability.days_apart} days apart
+              <CapsText>{synthetic ? "Demo verdict" : "Verdict"} · {trial.goal.metric_label} · {comparison.comparability.days_apart} days apart</CapsText>
             </p>
             {comparison.early && (
               <p className={`mt-2 text-sm font-semibold ${sub}`}>
@@ -239,11 +239,11 @@ function Verdict({ trial, comparison, band }: { trial: Trial; comparison: Compar
           <table className="w-full min-w-[520px] text-left text-sm">
             <thead className="text-xs uppercase tracking-wider text-ink-3">
               <tr>
-                <th scope="col" className="px-6 py-3 font-semibold sm:px-8">Concern</th>
-                <th scope="col" className="px-3 py-3 text-right font-semibold">Baseline</th>
-                <th scope="col" className="px-3 py-3 text-right font-semibold">Now</th>
-                <th scope="col" className="px-3 py-3 text-right font-semibold">Change</th>
-                <th scope="col" className="px-6 py-3 font-semibold sm:px-8">Reading</th>
+                <th scope="col" className="px-6 py-3 font-semibold sm:px-8"><CapsText>Concern</CapsText></th>
+                <th scope="col" className="px-3 py-3 text-right font-semibold"><CapsText>Baseline</CapsText></th>
+                <th scope="col" className="px-3 py-3 text-right font-semibold"><CapsText>Now</CapsText></th>
+                <th scope="col" className="px-3 py-3 text-right font-semibold"><CapsText>Change</CapsText></th>
+                <th scope="col" className="px-6 py-3 font-semibold sm:px-8"><CapsText>Reading</CapsText></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -263,7 +263,7 @@ function NextStep({ trial, comparison, synthetic }: { trial: Trial; comparison: 
   return (
     <section aria-labelledby="next-step" className="mt-6 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
       <p className="eyebrow inline-flex items-center gap-2">
-        <ArrowRight aria-hidden className="size-4" /> {synthetic ? "Next step (demo)" : "Next step"} · follows from your plan
+        <ArrowRight aria-hidden className="size-4" /> <CapsText>{synthetic ? "Next step (demo)" : "Next step"} · follows from your plan</CapsText>
       </p>
       <h2 id="next-step" className="mt-2 font-display text-2xl text-ink">{copy.title}</h2>
       <p className="mt-2 max-w-3xl leading-relaxed text-ink-2">{copy.body}</p>
@@ -327,7 +327,7 @@ function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Chec
     // Not a named region, like the verdict: its heading takes focus, and naming the section after it reads it twice.
     <section className="mt-8 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
       <p className="eyebrow inline-flex items-center gap-2">
-        <Gauge aria-hidden className="size-4" /> Instrument check{check.sealed ? " · part of the plan" : " · optional, before your first check-in"}
+        <Gauge aria-hidden className="size-4" /> <CapsText>Instrument check{check.sealed ? " · part of the plan" : " · optional, before your first check-in"}</CapsText>
       </p>
       <h2 id="instrument-title" tabIndex={-1} className="mt-2 font-display text-2xl text-ink">
         {check.status === "complete" && check.spread !== null
@@ -371,11 +371,11 @@ function InstrumentCheck({ trial, check, onUpdate }: { trial: Trial; check: Chec
                 <caption className="sr-only">Baseline scan and second scan of unchanged skin, by concern</caption>
                 <thead className="text-xs uppercase tracking-wider text-ink-3">
                   <tr>
-                    <th scope="col" className="py-2 pr-3 font-semibold">Concern</th>
-                    <th scope="col" className="px-3 py-2 text-right font-semibold">Baseline</th>
-                    <th scope="col" className="px-3 py-2 text-right font-semibold">Second scan</th>
-                    <th scope="col" className="px-3 py-2 text-right font-semibold">Difference</th>
-                    <th scope="col" className="py-2 pl-3 font-semibold">Standard band</th>
+                    <th scope="col" className="py-2 pr-3 font-semibold"><CapsText>Concern</CapsText></th>
+                    <th scope="col" className="px-3 py-2 text-right font-semibold"><CapsText>Baseline</CapsText></th>
+                    <th scope="col" className="px-3 py-2 text-right font-semibold"><CapsText>Second scan</CapsText></th>
+                    <th scope="col" className="px-3 py-2 text-right font-semibold"><CapsText>Difference</CapsText></th>
+                    <th scope="col" className="py-2 pl-3 font-semibold"><CapsText>Standard band</CapsText></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -481,7 +481,7 @@ function ProtocolCard({ trial, protocol, decided }: { trial: Trial; protocol: Pr
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="eyebrow inline-flex items-center gap-2">
-            <ClipboardCheck aria-hidden className="size-4" /> {decided ? "The plan this verdict was judged against" : "Your fair-test plan"}
+            <ClipboardCheck aria-hidden className="size-4" /> <CapsText>{decided ? "The plan this verdict was judged against" : "Your fair-test plan"}</CapsText>
           </p>
           <h2 id="protocol-title" className="mt-2 font-display text-2xl text-ink">
             Decided before the check-in, not after
@@ -498,7 +498,7 @@ function ProtocolCard({ trial, protocol, decided }: { trial: Trial; protocol: Pr
       <ol className="mt-5 grid gap-2 sm:grid-cols-3" aria-label="What the check-in score would mean">
         {zones.map((z) => (
           <li key={z.key} className={`rounded-[var(--radius-md)] p-4 ring-1 ${z.key === "none" ? "bg-berry-milk/60 ring-line" : "bg-paper ring-line"}`}>
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-3">{z.label}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-ink-3"><CapsText>{z.label}</CapsText></p>
             <p className="tabular mt-1 font-display text-2xl font-bold text-ink">{z.value}</p>
           </li>
         ))}

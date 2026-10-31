@@ -6,6 +6,7 @@ import { ArrowUpRight } from "lucide-react";
 import { BaselineScreen, CheckinScreen, FocusScreen, MatchScreen, PhoneFrame, VerdictScreen } from "@/components/previews";
 import { Reveal } from "@/components/reveal";
 import { SampleDataButton } from "../sample-data-button";
+import { CapsText } from "@/components/ui";
 
 type Step = { id: string; tab: string; tag: string; title: string; body: string; preview: string; screen: ReactNode; cta: ReactNode };
 
@@ -109,7 +110,7 @@ export function HowItWorks() {
       <div className="berry-glow mx-auto max-w-[88rem] rounded-[2.5rem] pb-16 pt-20 sm:pb-24 sm:pt-28">
         <div className="mx-auto max-w-6xl px-5 sm:px-8">
           <Reveal className="max-w-2xl">
-            <p className="eyebrow">How it works</p>
+            <p className="eyebrow"><CapsText>How it works</CapsText></p>
             <h2 id="how-title" className="text-section mt-3 text-espresso">
               Six steps from <span className="text-berry-deep">hope to evidence.</span>
             </h2>

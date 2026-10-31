@@ -47,14 +47,14 @@ test("sample-data journey: snapshot → matches → product → trial → labell
 
   await page.getByRole("link", { name: /Details & trial/ }).first().click();
   await expect(page).toHaveURL(/\/product\?id=/);
-  await expect(page.getByText("Product facts · from the catalogue")).toBeVisible();
-  await expect(page.getByText("Match logic · from your scan")).toBeVisible();
+  await expect(page.getByText("Product facts · from the catalogue").first()).toBeVisible();
+  await expect(page.getByText("Match logic · from your scan").first()).toBeVisible();
   // Hydration is not a YouCam Skin Simulation concern: no fake preview.
   await expect(page.getByText(/doesn't support hydration/)).toBeVisible();
 
   await page.getByRole("button", { name: "Save baseline & start trial" }).click();
   await expect(page).toHaveURL(/\/trial\?id=/);
-  await expect(page.getByText("Baseline saved")).toBeVisible();
+  await expect(page.getByText("Baseline saved").first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Check in now" })).toHaveCount(0); // demo trials can't take live check-ins
 
   await page.getByRole("button", { name: "Show synthetic 21-day follow-up" }).click();

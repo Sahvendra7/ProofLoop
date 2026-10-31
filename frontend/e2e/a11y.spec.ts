@@ -186,7 +186,7 @@ test.describe("matches", () => {
     await expect(selected.locator("svg")).toBeVisible();
     await expect(budget.locator("label", { has: page.locator("input:not(:checked)") }).locator("svg")).toHaveCount(0);
 
-    const track = page.locator('label:has(input[role="switch"]) > span[aria-hidden]');
+    const track = page.locator('label:has(input[role="switch"]) > span[aria-hidden]').first();
     expect(contrast(await cssColor(track, "border-top-color"), await backgroundBehind(track))).toBeGreaterThanOrEqual(3);
   });
 
@@ -204,7 +204,7 @@ test.describe("matches", () => {
     const selected = page.getByRole("group", { name: "Budget" }).locator("label", { has: page.locator("input:checked") });
     await expect(selected.locator("svg")).toBeVisible();
     expect(await selected.evaluate((e) => getComputedStyle(e).borderTopStyle)).toBe("solid");
-    const track = page.locator('label:has(input[role="switch"]) > span[aria-hidden]');
+    const track = page.locator('label:has(input[role="switch"]) > span[aria-hidden]').first();
     expect(await track.evaluate((e) => getComputedStyle(e).borderTopStyle)).toBe("solid");
   });
 });

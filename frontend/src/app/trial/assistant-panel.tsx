@@ -13,7 +13,7 @@ import {
 } from "@/lib/format";
 import type { AssistantAction, AssistantConfig, AssistantIntent, AssistantReply, Trial } from "@/lib/types";
 import { useAnnounce } from "@/components/announcer";
-import { Button, ButtonLink } from "@/components/ui";
+import { Button, ButtonLink, CapsText } from "@/components/ui";
 import { focusWhenRendered } from "@/lib/focus";
 
 const CONSENT_KEY = "proofloop.assistant.consent";
@@ -180,7 +180,7 @@ export function AssistantPanel({ trial, onUpdate }: { trial: Trial; onUpdate: (t
   return (
     <section aria-labelledby="assistant-title" className="mt-8 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
       <p className="eyebrow inline-flex items-center gap-2">
-        <MessageCircleQuestion aria-hidden className="size-4" /> Read-only · answers from your plan
+        <MessageCircleQuestion aria-hidden className="size-4" /> <CapsText>Read-only · answers from your plan</CapsText>
       </p>
       <h2 id="assistant-title" className="mt-2 font-display text-2xl text-ink">Ask about this trial</h2>
 

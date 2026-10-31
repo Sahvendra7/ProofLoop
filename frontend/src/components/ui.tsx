@@ -131,6 +131,22 @@ export function Skeleton({ className = "" }: { className?: string }) {
   return <div aria-hidden className={`animate-pulse rounded-[var(--radius-md)] bg-sunken ${className}`} />;
 }
 
+/**
+ * Text styled in capitals (`.eyebrow`) but read in its own case. WebKit hands text-transformed text to VoiceOver,
+ * which then reads labels such as "BUDGET" in capitals or letter by letter. The visible copy is hidden from
+ * assistive technology and a natural-case copy is read instead; nothing changes visually.
+ */
+export function CapsText({ children }: { children: ReactNode }) {
+  // `relative` keeps the absolutely positioned copy inside its box: in a horizontally scrolling table it otherwise
+  // escapes the scroll container and widens the page.
+  return (
+    <span className="relative">
+      <span aria-hidden>{children}</span>
+      <span className="sr-only normal-case">{children}</span>
+    </span>
+  );
+}
+
 export function Segmented<T extends string>({
   label,
   value,
@@ -144,7 +160,7 @@ export function Segmented<T extends string>({
 }) {
   return (
     <fieldset className="min-w-0">
-      <legend className="eyebrow mb-2">{label}</legend>
+      <legend className="eyebrow mb-2"><CapsText>{label}</CapsText></legend>
       <div className="inline-flex flex-wrap gap-1 rounded-full bg-sunken p-1">
         {options.map((opt) => (
           <label
@@ -153,17 +169,20 @@ export function Segmented<T extends string>({
               value === opt.value ? "border-ink bg-ink font-semibold text-paper" : "border-transparent text-ink-2 hover:text-ink"
             }`}
           >
+            {/* Named directly, with the visible text hidden from assistive technology: as a separate text node next to
+                the visually hidden radio, it was read a second time in linear reading. Clicking it still selects. */}
             <input
               type="radio"
               className="sr-only"
               name={label}
               value={opt.value}
+              aria-label={opt.label}
               checked={value === opt.value}
               onChange={() => onChange(opt.value)}
             />
             {/* Selection is shown by shape as well as colour, and survives forced-colours mode. */}
             {value === opt.value && <Check aria-hidden className="size-3.5 shrink-0" />}
-            {opt.label}
+            <span aria-hidden>{opt.label}</span>
           </label>
         ))}
       </div>
@@ -174,12 +193,12 @@ export function Segmented<T extends string>({
 export function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <label className="inline-flex cursor-pointer items-center gap-3 text-sm text-ink-2">
-      <input type="checkbox" role="switch" className="peer sr-only" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <input type="checkbox" role="switch" aria-label={label} className="peer sr-only" checked={checked} onChange={(e) => onChange(e.target.checked)} />
       <span
         aria-hidden
         className="relative h-6 w-10 shrink-0 rounded-full border-2 border-ink-3 bg-white transition-colors peer-checked:border-accent peer-checked:bg-accent peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-[var(--focus-ring)] after:absolute after:left-0.5 after:top-0.5 after:size-4 after:rounded-full after:bg-ink-3 after:transition-transform peer-checked:after:translate-x-4 peer-checked:after:bg-white forced-colors:[forced-color-adjust:none] forced-colors:border-[CanvasText] forced-colors:bg-[Canvas] forced-colors:after:bg-[CanvasText] forced-colors:peer-checked:bg-[Highlight] forced-colors:peer-checked:after:bg-[HighlightText]"
       />
-      {label}
+      <span aria-hidden>{label}</span>
     </label>
   );
 }
