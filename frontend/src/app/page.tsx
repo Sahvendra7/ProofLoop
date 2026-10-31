@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowDown, ArrowRight, ArrowUpRight, CalendarClock, Check, Eye, Lock, Scale, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
 import { Dial } from "@/components/dial";
 import { FloatChip, MatchScreen, PhoneFrame, SnapshotScreen, SourceTag, VerdictScreen } from "@/components/previews";
+import { MotionToggle } from "@/components/motion-toggle";
 import { Reveal } from "@/components/reveal";
 import { RouteTitle } from "@/components/route-title";
 import { CONCERNS } from "@/lib/sample";
@@ -69,6 +70,7 @@ function Hero() {
               <span>No photo to hand?</span>
               <SampleDataButton variant="quiet" label="Explore with sample data" />
             </div>
+            <MotionToggle className="-ml-2 mt-3" />
           </div>
 
           {/* Mobile: phone overlaps the photo's lower right. sm+: side by side in a 5:6 box. */}

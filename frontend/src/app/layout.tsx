@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import { AnnouncerProvider } from "@/components/announcer";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
+import { MOTION_KEY } from "@/lib/motion";
 import { SITE_TITLE } from "@/lib/titles";
 import "./globals.css";
 
@@ -35,6 +36,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* Opt in to reveal animations only when JS runs; without it everything stays visible. */}
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+        {/* A paused-animations choice (MotionToggle) applies before first paint, so nothing starts moving again. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem(${JSON.stringify(MOTION_KEY)})==="paused")document.documentElement.dataset.motion="paused"}catch(e){}`,
+          }}
+        />
       </head>
       <body className="flex min-h-dvh flex-col">
         <a

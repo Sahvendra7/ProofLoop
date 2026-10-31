@@ -212,7 +212,9 @@
   .marquee {
     animation: marquee 38s linear infinite;
   }
-  .marquee:hover {
+  .marquee:hover,
+  :root[data-motion="paused"] .marquee,
+  :root[data-motion="paused"] .float {
     animation-play-state: paused;
   }
 
@@ -267,6 +269,10 @@
   }
   .marquee {
     animation: none;
+  }
+  /* Nothing on the page moves, so there is nothing to pause. */
+  .motion-toggle {
+    display: none;
   }
   .js .reveal {
     opacity: 1;
