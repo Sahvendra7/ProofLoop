@@ -35,13 +35,13 @@ function Hero() {
   return (
     <section aria-labelledby="hero-title" className="-mt-[4.5rem] px-3 sm:-mt-20 sm:px-5">
       <div className="berry-glow relative mx-auto max-w-[88rem] overflow-hidden rounded-b-[2.5rem] rounded-t-[2rem] pb-14 pt-28 sm:pb-20 sm:pt-32">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-5 sm:px-8 lg:grid-cols-[1.1fr_1fr]">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-5 sm:px-8 lg:grid-cols-[1.1fr_1fr]">
           <div className="rise">
             <p className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3.5 py-1.5 text-xs font-semibold text-berry-deep ring-1 ring-white">
               <span aria-hidden className="size-1.5 rounded-full bg-strawberry" /> Skin measurement by YouCam AI
             </p>
             <h1 id="hero-title" className="text-hero mt-6 text-espresso">
-              Is it <span className="whitespace-nowrap">working?</span>
+              Is it working?
               {/* berry-deep, not #fe3144: on berry-milk the brighter red is 2.8:1, under the 3:1 large-text minimum. */}
               <span className="mt-2 block text-berry-deep">Run a fair test.</span>
             </h1>
@@ -52,7 +52,7 @@ function Hero() {
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
                 href="/scan"
-                className="group inline-flex h-14 items-center justify-center gap-3 rounded-full bg-strawberry-ink pl-7 pr-2 text-base font-semibold text-white shadow-[0_16px_32px_-14px_rgb(214_26_47/0.8)] transition-colors hover:bg-berry-deep"
+                className="group inline-flex min-h-14 items-center justify-center gap-3 rounded-full bg-strawberry-ink py-2 pl-7 pr-2 text-base font-semibold text-white shadow-[0_16px_32px_-14px_rgb(214_26_47/0.8)] transition-colors hover:bg-berry-deep"
               >
                 Start a fair test
                 <span aria-hidden className="grid size-10 place-items-center rounded-full bg-white/20 transition-transform group-hover:translate-x-0.5">
@@ -61,7 +61,7 @@ function Hero() {
               </Link>
               <Link
                 href="#how-it-works"
-                className="inline-flex h-14 items-center justify-center gap-2 rounded-full bg-white px-7 font-semibold text-strawberry-ink ring-1 ring-white hover:ring-strawberry-ink/40"
+                className="inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-white px-7 py-2 font-semibold text-strawberry-ink ring-1 ring-white hover:ring-strawberry-ink/40"
               >
                 See how it works <ArrowDown aria-hidden className="size-4" />
               </Link>
@@ -136,7 +136,7 @@ function ConcernMarquee() {
 function Problem() {
   return (
     <section aria-labelledby="problem-title" className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
-      <div className="grid gap-6 md:grid-cols-[1.2fr_1fr] md:items-end">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1.2fr_1fr] md:items-end">
         <Reveal>
           <p className="eyebrow"><CapsText>The problem</CapsText></p>
           <h2 id="problem-title" className="text-section mt-3 text-espresso">
@@ -233,9 +233,9 @@ function Showcase() {
           Every screen is built around <span className="text-strawberry">the evidence.</span>
         </h2>
       </Reveal>
-      <div className="mt-12 grid gap-5 md:grid-cols-6">
+      <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-6">
         <Reveal className="berry-glow overflow-hidden rounded-[2rem] p-6 md:col-span-4 md:p-8">
-          <div className="grid items-center gap-8 sm:grid-cols-[1fr_15rem]">
+          <div className="grid grid-cols-1 items-center gap-8 sm:grid-cols-[1fr_15rem]">
             <div>
               <Eye aria-hidden className="size-6 text-strawberry-ink" />
               <h3 className="mt-4 font-display text-3xl font-bold leading-tight text-espresso">Scores you can read, and where they came from.</h3>
@@ -244,7 +244,7 @@ function Showcase() {
                 laid over your photo — on your device only.
               </p>
             </div>
-            <PhoneFrame label="Preview of the snapshot screen with six scores from sample data" className="mx-auto w-[15rem]"><SnapshotScreen rows={6} /></PhoneFrame>
+            <PhoneFrame label="Preview of the snapshot screen with six scores from sample data" className="mx-auto w-[15rem] max-w-full"><SnapshotScreen rows={6} /></PhoneFrame>
           </div>
         </Reveal>
         <Reveal delay={100} className="flex flex-col justify-between rounded-[2rem] bg-espresso p-6 text-white md:col-span-2 md:p-8">
@@ -260,12 +260,12 @@ function Showcase() {
         <Reveal className="rounded-[2rem] bg-white p-6 ring-1 ring-line md:col-span-3 md:p-8">
           <h3 className="font-display text-2xl font-bold leading-tight text-espresso">Matches with reasons, not percentages.</h3>
           <p className="mt-2 text-ink-2">Tiers from explicit rules; cautions drawn from your own scores.</p>
-          <PhoneFrame label="Preview of the matches screen: two products from the sample catalogue" className="mx-auto mt-6 w-[15rem]"><MatchScreen /></PhoneFrame>
+          <PhoneFrame label="Preview of the matches screen: two products from the sample catalogue" className="mx-auto mt-6 w-[15rem] max-w-full"><MatchScreen /></PhoneFrame>
         </Reveal>
         <Reveal delay={100} className="rounded-[2rem] bg-white p-6 ring-1 ring-line md:col-span-3 md:p-8">
           <h3 className="font-display text-2xl font-bold leading-tight text-espresso">A verdict that shows its working.</h3>
           <p className="mt-2 text-ink-2">Before and after, the normal-variation band, and every concern for context.</p>
-          <PhoneFrame label="Preview of a verdict screen from a synthetic demo, not a measurement" className="mx-auto mt-6 w-[15rem]"><VerdictScreen /></PhoneFrame>
+          <PhoneFrame label="Preview of a verdict screen from a synthetic demo, not a measurement" className="mx-auto mt-6 w-[15rem] max-w-full"><VerdictScreen /></PhoneFrame>
         </Reveal>
       </div>
     </section>
@@ -283,7 +283,7 @@ function Trust() {
   return (
     <section aria-labelledby="trust-title" className="bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="grid gap-10 lg:grid-cols-[1fr_1.5fr]">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1.5fr]">
           <Reveal>
             <p className="eyebrow"><CapsText>Trust</CapsText></p>
             <h2 id="trust-title" className="text-section mt-3 text-espresso">What we promise — <span className="text-strawberry">and what we don&apos;t.</span></h2>
@@ -309,7 +309,7 @@ function Trust() {
 function FinalCta() {
   return (
     <section aria-labelledby="cta-title" className="px-3 pt-20 sm:px-5 sm:pt-28">
-      <Reveal className="on-strawberry strawberry-glow relative mx-auto grid max-w-6xl items-center gap-10 overflow-hidden rounded-[2.5rem] px-6 py-14 text-white sm:px-12 sm:py-20 lg:grid-cols-[1.3fr_1fr]">
+      <Reveal className="on-strawberry strawberry-glow relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 overflow-hidden rounded-[2.5rem] px-6 py-14 text-white sm:px-12 sm:py-20 lg:grid-cols-[1.3fr_1fr]">
         <div>
           <h2 id="cta-title" className="text-section">Still wondering if it&apos;s working?</h2>
           <p className="mt-5 max-w-lg text-lg leading-relaxed text-white">
@@ -317,7 +317,7 @@ function FinalCta() {
           </p>
           <Link
             href="/scan"
-            className="group mt-8 inline-flex h-14 items-center gap-3 rounded-full bg-white pl-7 pr-2 font-semibold text-strawberry-ink hover:bg-berry-soft"
+            className="group mt-8 inline-flex min-h-14 items-center gap-3 rounded-full bg-white py-2 pl-7 pr-2 font-semibold text-strawberry-ink hover:bg-berry-soft"
           >
             Start a fair test
             <span aria-hidden className="grid size-10 place-items-center rounded-full bg-strawberry-ink text-white transition-transform group-hover:translate-x-0.5">

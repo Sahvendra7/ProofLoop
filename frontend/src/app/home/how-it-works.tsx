@@ -13,9 +13,9 @@ type Step = { id: string; tab: string; tag: string; title: string; body: string;
 const linkCta = (href: string, label: string) => (
   <Link
     href={href}
-    className="group inline-flex h-12 items-center gap-3 rounded-full bg-strawberry-ink pl-6 pr-1.5 font-semibold text-white hover:bg-berry-deep"
+    className="group inline-flex min-h-12 max-w-full items-center gap-3 rounded-full bg-strawberry-ink py-1.5 pl-6 pr-1.5 font-semibold text-white hover:bg-berry-deep"
   >
-    {label}
+    <span className="min-w-0">{label}</span>
     <span aria-hidden className="grid size-9 place-items-center rounded-full bg-white/20 transition-transform group-hover:translate-x-0.5">
       <ArrowUpRight className="size-4" />
     </span>
@@ -135,9 +135,9 @@ export function HowItWorks() {
           <ol className="mt-10 space-y-6">
             {STEPS.map((s, i) => (
               <li key={s.id} id={s.id} className="scroll-mt-44">
-                <Reveal className={`grid gap-4 md:grid-cols-2 ${i % 2 ? "md:[&>*:first-child]:order-2" : ""}`}>
+                <Reveal className={`grid grid-cols-1 gap-4 md:grid-cols-2 ${i % 2 ? "md:[&>*:first-child]:order-2" : ""}`}>
                   <div className="strawberry-glow flex items-center justify-center overflow-hidden rounded-[2rem] px-6 pt-10 md:min-h-[30rem]">
-                    <PhoneFrame label={s.preview} className="w-[15.5rem] translate-y-6">
+                    <PhoneFrame label={s.preview} className="w-[15.5rem] max-w-full translate-y-6">
                       {s.screen}
                     </PhoneFrame>
                   </div>

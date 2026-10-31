@@ -189,7 +189,7 @@ strawberry-glow made the final CTA's white body text 3.81:1 on phones (1.4.3).
 |---|---|---|
 | ~~Profile removal / profile form focus and announcements (A11Y-02b)~~ **Done:** removal and edit focus landed in PR #4 (`30b781c`) and are tested together with this branch's announcer (`31` §6.7). The profile form's "Answers applied" announcement is still open | That code existed only on PR #4's branch; this branch is from `main` by the owner's choice | Apply the same pattern to `profile-block.tsx` and `skin-profile.tsx` after PR #4 merges: `focusWhenRendered` to the confirm button / first field, focused result sentence after save/remove, `announce("Answers applied. The focus list has been re-ordered.")` |
 | Framer move buttons (A11Y-10 part), motion pause (A11Y-13), sticky-header focus (A11Y-12) | **Done 2026-10-31** (`c74dafd`; 2.4.11 needed no change, only tests) | `31` §6.7 |
-| Visible chart table and markers (A11Y-15), eyebrow/badge sizes, `min-h` buttons | Stage 2, not done | — |
+| ~~Visible chart table (A11Y-15), eyebrow/badge sizes, `min-h` buttons, "Answers applied"~~ **Done on `feat/a11y-followup`** (not merged). Chart markers stay colour-coded in the drawing; the table carries the values | Follow-up after Release 1 | `31` §6.8 |
 | Capture guide, "Use the whole photo", ordering sentence, mask sentence, decorative product art | Stage 3, not approved | — |
 | Accessibility statement, "Read aloud" label | Stage 4, optional | — |
 

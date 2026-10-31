@@ -51,7 +51,7 @@ export function ProductView() {
           <ArrowLeft aria-hidden className="size-4" /> Back to matches
         </Link>
       )}
-      <div className="mt-6 grid gap-10 lg:grid-cols-[1fr_1.1fr]">
+      <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1.1fr]">
         <div>
           <ProductArt product={p} className="aspect-[5/6] w-full" />
           <Facts product={p} />
@@ -87,7 +87,7 @@ function Facts({ product: p }: { product: Product }) {
           ["Fragrance", p.fragrance_free ? "Fragrance-free" : "Contains fragrance"],
           ["Targets", [...p.primary_targets.map((t) => METRIC_LABEL[t]), ...p.secondary_targets.map((t) => `${METRIC_LABEL[t]} (secondary)`)].join(", ")],
         ].map(([k, v]) => (
-          <div key={k} className="grid grid-cols-[120px_1fr] gap-4 px-4 py-3 text-sm">
+          <div key={k} className="grid grid-cols-[120px_minmax(0,1fr)] gap-4 px-4 py-3 text-sm">
             <dt className="text-ink-3">{k}</dt>
             <dd className="text-ink first-letter:uppercase">{v}</dd>
           </div>

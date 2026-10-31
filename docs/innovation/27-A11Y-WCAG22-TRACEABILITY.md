@@ -4,7 +4,7 @@
 (`e6e3e85` on `feat/a11y-r1`, not deployed), `31` §6.2 supersedes the rows for 2.4.3, 4.1.3, 2.4.7, 1.4.3, 1.4.11, 1.1.1 and 2.4.2;
 2.5.7 and 2.2.2 still fail and 2.4.11 is still unknown. **Update 2026-10-31:** `31` §6.7 supersedes the rows for 2.5.7
 (fixed, tested), 2.2.2 (fixed, tested), 2.4.11 (passes on the tested paths, automated only) and the reading-order
-issues under 1.3.1. Normative source: WCAG 2.2, W3C Recommendation 12 December 2024
+issues under 1.3.1. **Follow-up (`feat/a11y-followup`, not merged):** `31` §6.8 adds automated evidence for 1.4.4 (200 % text), 1.4.10 and 1.4.12 (no loss on 8 routes; text spacing at 320 px still widens the header), 1.4.1 (visible chart table), 4.1.3 (profile answers) and 2.4.11 at 200 %/400 % zoom. Normative source: WCAG 2.2, W3C Recommendation 12 December 2024
 (<https://www.w3.org/TR/WCAG22/>). 4.1.1 Parsing is obsolete in 2.2 and is omitted. Criterion quotations are short
 excerpts of the normative text. Issue IDs and evidence labels are defined in `25`.
 

@@ -409,6 +409,58 @@ These are unchanged from `30` §7.3.
 
 **Not applicable:** none of the nine items.
 
+### 6.8 Follow-up after Release 1: chart table, text resizing, profile announcements, focus at zoom (2026-10-31)
+
+Branch `feat/a11y-followup` from `main` `17eeb44` (production). Not merged or deployed. Regression tests are in
+`frontend/e2e/a11y-followups-2.spec.ts`. The manual checks this needs, with result sheets, are in `33`.
+
+**Evidence levels, kept apart:**
+- **Automated:** Playwright in Chromium (desktop and Pixel 7 emulation), axe WCAG 2.0–2.2 A/AA, geometry probes.
+- **Accessibility tree:** roles, names and table headers read through Playwright, not a screen reader.
+- **Keyboard:** scripted Tab, Shift+Tab and Enter in Chromium.
+- **Screen reader:** **none.** No VoiceOver, TalkBack or NVDA run was made in this pass.
+- **People:** **none.**
+
+**How zoom and text size were simulated.** 200 % and 400 % zoom = CSS viewports of 640 × 400 and 320 × 256 (a
+1280 × 800 / 1280 × 1024 window). "200 % text" = the root font size doubled, which is what a browser's text-size
+setting does to rem-based layouts. Media queries don't scale under that simulation, which is stricter than a real
+setting on desktop and identical on a phone, where no breakpoint applies anyway. Text spacing = the WCAG 1.4.12
+values (line height 1.5, letter 0.12 em, word 0.16 em, paragraph 2 em). Long text = every word pseudo-localised to
+about 140 % of its length. Real phones and real browser settings were not used.
+
+| # | Issue | WCAG | Found (before the change) | Change | Status |
+|---|---|---|---|---|---|
+| 1 | Chart numbers only for screen readers (A11Y-15) | 1.4.1, 1.3.1 | Table was `sr-only`; magnifier and colour-vision users had only point colours 1.13:1 apart | "Show the numbers" disclosure under the chart: the same table, now visible, with `th scope` columns and row headers, a caption ("Hydration scores, oldest first"), "Used for the result above" on the check-in the server compared (`comparison.current_scan_id`), and the band sentence. Values are the server's history; the difference column is arithmetic only, and nothing classifies a point. The sr-only copy is removed, so it is read once | **Fixed and tested** (values against the API response, headers, keyboard open, axe, 320 px reflow). Awaiting AT |
+| 2 | Pills with fixed heights (A11Y-25) | 1.4.4, 1.4.12 | At 200 % text the label wrapped and spilled out of "Start a fair test", "See how it works", "Try it with sample data", "Delete all my data", "Save baseline & start trial" | `min-h-*` plus vertical padding and centred text in `Button` and the hand-built CTA links | **Fixed and tested** |
+| 3 | Content clipped or page widened at 200 % text on a phone | 1.4.4 (beyond the 1.4.10 minimum) | Page scrolled sideways by 239 px; hero `h1`, verdict `h2` and CTA `h2` were cut off by `overflow-hidden` cards; score and focus rows squeezed text to 29–40 px | Single-column grids get `grid-cols-1` (a `minmax(0,1fr)` track instead of one sized by the longest word); `overflow-wrap: break-word` on `body` (only applies when a word can't fit its line); the header wraps only when its row is under 18 rem (container query, so never at the default size); provenance note and focus-option rows move badges under the text when there is no room; phone previews get `max-w-full`; reason text and two-column cards can shrink | **Fixed and tested** on all 8 routes |
+| 4 | Small type (A11Y-24) | AAA-adjacent | `.eyebrow` 0.72 rem with 0.14 em tracking; badges 0.65–0.7 rem | `.eyebrow` 0.8125 rem with 0.08 em; "Focus", tier, "Most room", "Can't show gains" and provenance badges 0.75 rem. Phone mock-ups (role `img`) unchanged | **Done** (visual check below) |
+| 5 | "Answers applied" never announced (A11Y-02b, last part) | 4.1.3, 2.4.3 | Snapshot: after "Use my answers" focus fell to the page and nothing was said; trial: focus returned to "Edit answers" with no confirmation | Snapshot: focus moves to "Edit answers"; once the server has ordered the focuses for those answers, the announcer says "Answers applied: {answers}. The focus list has been re-ordered." (or "…is unchanged", by comparing the server's orders). If that request fails, it says "Your answers are kept, but the focus list couldn't be updated…", shows a notice with "Try again", and never says "applied". "Add your answers" and "Edit answers" move focus to the first question. The summary card now lists the answers. Trial: after a successful save, "Answers saved: {answers from the server}. This trial keeps the profile it started with."; on failure the existing alert shows, nothing is announced and focus stays on "Save answers" | **Fixed and tested** (success, unchanged order, failure + retry, trial save and failed save; announced exactly once; frozen profile and plan unchanged). Awaiting AT |
+| 6 | Focus at 200 % / 400 % zoom, small phone, 200 % text | 2.4.11 | Not tested before | None needed | **Passes on the tested paths (automated):** Tab and Shift+Tab across `/`, `/privacy`, snapshot, matches, a decided trial and `/trials` at 640 × 400, 320 × 256, 320 × 568 and 200 % text, plus the programmatic moves (Matches heading, verdict, delete-all) at 320 × 256: no focused control entirely hidden. **Partly covered (2.4.12, AAA):** the homepage step bar is ~20 % under the site header after Shift+Tab at 320 px wide; "Why the mirror can't tell…" is up to 40 % covered at 320 × 256; the trial's scrollable "Every measured concern" table region is taller than the screen. No dialogs exist: delete-all and profile removal are inline, and the mobile menu is a disclosure (tested in §6.7) |
+
+**Not fixed, recorded:**
+- WCAG text spacing **at 320 px**: the header row (logo, Start, menu) still overflows by ~33 px, as on `main`.
+  1.4.12 doesn't require 320 px at the same time; it passes at 390 px. Fitting it needs a header redesign.
+- Visual point colours in the chart are unchanged (still computed in the browser for the drawing only); the visible
+  table and the verdict give the same information in text.
+- The announcer drops an identical sentence repeated within 2 s (an existing rule against double readings), so
+  applying the same answers twice within 2 s is announced once.
+
+**Design check.** Full-page screenshots of home, snapshot, matches and trial at 320, 390 and 1280 px, `main`
+against the branch, at the default text size. The intended differences are slightly larger eyebrows and badges,
+the "Show the numbers" row, and focus-option badges that move under the text on 320 px phones (where `main`
+squeezed "Balance shine" into a three-word column). The header and score rows are unchanged.
+
+**Commands** (from `frontend/`, backend on a virtualenv built from the merged pins; no YouCam or Gemini key):
+
+| Command | Result |
+|---|---|
+| `npx playwright test` (flag on, desktop + mobile) | **157 passed, 9 skipped, 0 failed** (140 before this change + 17 new), in each of three runs |
+| `E2E_SKIN_PROFILE=false npx playwright test` | **135 passed, 31 skipped** on the second and final runs. The first run had one failure, `a11y-followups.spec.ts` › "each score is read as one phrase" on mobile (focus still on "Explore with sample data"); it passed 16/16 with `--repeat-each 8` and in both full flag-on runs, so it is recorded as a timing flake |
+| New spec against unchanged `main` | 14 failed, 3 passed (the three 2.4.11 zoom guards, which needed no fix) |
+| Axe 2.0–2.2 A/AA | 0 serious or critical; 0 moderate logged |
+| `npx tsc --noEmit`, `npx eslint src e2e playwright.config.ts`, `npx next build` | Clean; compiled |
+| Backend `pytest` / `ruff` | 1370 passed, 2 skipped / clean |
+
 ## 7. Screen-reader test scripts for Release 1
 
 **Who runs them:** the owner (or anyone), on the two available setups. Record the actual speech; mark each step
@@ -501,5 +553,7 @@ Record task success and where they hesitated. None of this has been done yet.
   by automation and an agent-driven keyboard walkthrough only.
 - **iOS VoiceOver and NVDA: unverified.** No device or machine is available.
 - **Real blind and low-vision participants (§4): not started.**
+- **Follow-up (§6.8): none of it has been heard with a screen reader.** The pending checks (V21–V24, T14–T16, N1–N10,
+  I1–I10) and the participant kit are in `33`.
 - The questions to settle from these sessions: the title + `h1` double reading on route changes; TalkBack
   cut-offs; whether the Result in words list is too long; whether step headings should be more specific.
