@@ -39,8 +39,9 @@ trials.profile_json    TEXT NULL   -- snapshot, see below
 ```
 
 No new table and no image column. `scans.requested_metrics` (existing) already records each scan's action set,
-which is how action sets are pinned (§4.2). Downgrade drops both columns. The old code ignores them, so the
-`bcc2cba` code rolls back safely with 0004 applied.
+which is how action sets are pinned (§4.2). Downgrade drops both columns, deleting saved profiles and readings.
+Pre-0004 code can **not** run against a 0004 database: its start command (`alembic upgrade head`) fails on the
+unknown revision. A code rollback therefore needs the downgrade first (verified 2026-10-31; see `21` §5.3).
 
 Snapshot v1, written once at `POST /trials`:
 
@@ -234,5 +235,6 @@ Those need consented real-world data that we don't have. The UI and the submissi
 
 Follows `15` §3. Neon backup branch before 0004 → merge → cancel the Vercel production build → Render runs
 `alembic upgrade head` (0003 → 0004) → `/health/ready` → redeploy Vercel. Flag `false` at deploy; verify with
-sample data (0 units); enable; one owner live trial (≈ 42 units worst case). Rollback: flag false (instant), then
-code rollback to `bcc2cba` (columns are ignored), then `alembic downgrade 0003` only if needed.
+sample data (0 units); enable; one owner live trial (≈ 42 units worst case). Rollback: flag false (instant, no data
+loss). A code rollback needs `alembic downgrade 0003` **before** pre-#4 code is deployed. The downgrade deletes profile
+data. The full procedure is in `21` §5.3. Never roll back to `bcc2cba`, which has the pre-#5 dependency advisories.

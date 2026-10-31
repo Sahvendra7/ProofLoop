@@ -16,11 +16,14 @@ from sqlalchemy.orm import Session
 from app.api import schemas as s
 from app.core.config import Settings
 from app.core.errors import AppError
+from app.core.logging import get_logger
 from app.db.models import ScanRow, TrialRow, utcnow
 from app.domain import profile as pf
 from app.domain.metrics import SKIN_TYPE_ACTION
 
 SNAPSHOT_VERSION = 1
+
+log = get_logger("proofloop.profiles")
 
 
 def ensure_enabled(settings: Settings) -> None:
@@ -49,9 +52,10 @@ def _load(trial: TrialRow) -> dict | None:
     if not trial.profile_json:
         return None
     try:
-        return json.loads(trial.profile_json)
+        data = json.loads(trial.profile_json)
     except ValueError:
         return None
+    return data if isinstance(data, dict) else None
 
 
 def withdrawn(trial: TrialRow) -> bool:
@@ -83,7 +87,7 @@ def snapshot(baseline: ScanRow, data: s.ProfileIn, scores: dict[str, int]) -> st
 
 def amend(trial: TrialRow, patch: s.ProfilePatchIn) -> None:
     data = _load(trial)
-    if data is None or data.get("withdrawn_at") is not None:
+    if data is None or data.get("withdrawn_at") is not None or not isinstance(data.get("amendments"), list):
         raise AppError("profile_not_found", "This trial has no saved profile.", 404)
     if patch.expected_amendments != len(data["amendments"]):
         raise AppError(
@@ -101,8 +105,11 @@ def amend(trial: TrialRow, patch: s.ProfilePatchIn) -> None:
 
 
 def withdraw(db: Session, trial: TrialRow) -> None:
-    """Erase the answers and every skin-type reading linked to this trial. The plan and scores stay."""
-    if _load(trial) is None:
+    """Erase the answers and every skin-type reading linked to this trial. The plan and scores stay.
+
+    Checks the stored column, not its parsed form, so a profile that can't be read can still be erased.
+    """
+    if not trial.profile_json:
         raise AppError("profile_not_found", "This trial has no saved profile.", 404)
     trial.profile_json = json.dumps({"version": SNAPSHOT_VERSION, "withdrawn_at": utcnow().isoformat()})
     ids = {trial.baseline_scan_id, trial.repeat_scan_id} - {None}
@@ -117,9 +124,20 @@ def _aware(value: str) -> datetime:
 
 
 def profile_out(trial: TrialRow, repeat: ScanRow | None) -> s.ProfileOut | None:
+    """None when no profile was saved, or when the stored one can't be read (the trial itself still loads)."""
     data = _load(trial)
     if data is None:
+        if trial.profile_json:
+            log.warning("profile_unreadable", extra={"trial_id": trial.id})
         return None
+    try:
+        return _profile_out(data, repeat)
+    except (KeyError, TypeError, ValueError):
+        log.warning("profile_unreadable", extra={"trial_id": trial.id})
+        return None
+
+
+def _profile_out(data: dict, repeat: ScanRow | None) -> s.ProfileOut:
     if data.get("withdrawn_at") is not None:
         return s.ProfileOut(
             at_start=None, latest=None, amendments=0, stability="not_used", notes=[], rules_version=None, withdrawn=True

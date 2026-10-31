@@ -119,3 +119,101 @@ test("answers that aren't saved stay on the page and never reach the trial", asy
   await block.locator("summary").click();
   await expect(block).toContainText("No profile was saved with this trial");
 });
+
+async function startProfiledTrial(page: Page) {
+  await sampleSnapshot(page);
+  await page.getByRole("button", { name: "Add your answers" }).click();
+  const answers = page.locator("form").filter({ hasText: "Shine through the day" });
+  await answers.getByRole("group", { name: "Tight or flaky" }).getByRole("radio", { name: "Often" }).check({ force: true });
+  await answers.getByRole("checkbox", { name: /Save my answers with this trial/ }).check();
+  await answers.getByRole("button", { name: "Use my answers" }).click();
+  // The focuses re-order once the plan for these answers arrives; pick only after that.
+  await expect(page.getByText("You and the camera both point to dryness")).toBeVisible();
+  await startHydrationTrial(page);
+  await page.getByRole("button", { name: "Save baseline & start trial" }).click();
+  await expect(page).toHaveURL(/\/trial\?id=/);
+  const block = page.locator("details").filter({ hasText: "Profile at the start" });
+  await block.locator("summary").click();
+  return block;
+}
+
+const focusedText = (page: Page) => page.evaluate(() => document.activeElement?.textContent?.trim() ?? "");
+
+test("focus follows the edit and removal steps and never drops to the page", async ({ page }) => {
+  const block = await startProfiledTrial(page);
+
+  await block.getByRole("button", { name: "Edit answers" }).click();
+  await expect.poll(() => focusedText(page)).toContain("New answers are saved beside the profile at the start");
+  await block.getByRole("button", { name: "Cancel" }).click();
+  await expect(block.getByRole("button", { name: "Edit answers" })).toBeFocused();
+
+  await block.getByRole("button", { name: "Edit answers" }).click();
+  await block.getByRole("group", { name: "Shine through the day" }).getByRole("radio", { name: "Often" }).check({ force: true });
+  await block.getByRole("button", { name: "Save answers" }).click();
+  await expect(block).toContainText("Changed after your plan was fixed");
+  await expect(block.getByRole("button", { name: "Edit answers" })).toBeFocused();
+
+  // Cancelling the removal returns to the control that opened it.
+  await block.getByRole("button", { name: "Remove profile" }).press("Enter");
+  await expect.poll(() => focusedText(page)).toContain("Remove your answers and the skin-type readings from this trial?");
+  await block.getByRole("button", { name: "Cancel" }).click();
+  await expect(block.getByRole("button", { name: "Remove profile" })).toBeFocused();
+
+  // Confirming moves focus to the outcome, once, and the removed controls are gone.
+  await block.getByRole("button", { name: "Remove profile" }).press("Enter");
+  await page.keyboard.press("Tab");
+  await expect(block.getByRole("button", { name: "Remove", exact: true })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect.poll(() => focusedText(page)).toContain("You removed your answers and the skin-type readings from this trial.");
+  await expect(block.getByRole("button", { name: /Remove|Edit answers/ })).toHaveCount(0);
+  await expect(block.getByText("You removed your answers", { exact: false })).toHaveCount(1);
+  await expectNoSeriousA11yViolations(page);
+});
+
+test("with profiles switched off, a saved profile can still be removed but not edited", async ({ page }) => {
+  const block = await startProfiledTrial(page);
+  await page.route("**/api/v1/system/status", async (route) => {
+    const res = await route.fetch();
+    await route.fulfill({ response: res, json: { ...(await res.json()), skin_profile_enabled: false } });
+  });
+  await page.reload();
+  await block.locator("summary").click();
+  await expect(block).toContainText("tight or flaky often");
+  await expect(block.getByRole("button", { name: "Edit answers" })).toHaveCount(0);
+  await block.getByRole("button", { name: "Remove profile" }).click();
+  await block.getByRole("button", { name: "Remove", exact: true }).click();
+  await expect(block).toContainText("You removed your answers and the skin-type readings from this trial.");
+});
+
+test("a trial still starts if profiles are switched off after the answers were saved", async ({ page }) => {
+  await sampleSnapshot(page);
+  await page.getByRole("button", { name: "Add your answers" }).click();
+  const answers = page.locator("form").filter({ hasText: "Shine through the day" });
+  await answers.getByRole("group", { name: "Tight or flaky" }).getByRole("radio", { name: "Often" }).check({ force: true });
+  await answers.getByRole("checkbox", { name: /Save my answers with this trial/ }).check();
+  await answers.getByRole("button", { name: "Use my answers" }).click();
+  await expect(page.getByText("You and the camera both point to dryness")).toBeVisible();
+  await startHydrationTrial(page);
+  await expect(page.getByText("saved with it as they are today")).toBeVisible();
+  // The server refuses the profile (as it does once the flag is off) on the first attempt only.
+  let refused = 0;
+  await page.route("**/api/v1/trials", async (route) => {
+    const body = route.request().postDataJSON();
+    if (route.request().method() === "POST" && body?.profile && refused === 0) {
+      refused++;
+      await route.fulfill({
+        status: 404,
+        headers: { "access-control-allow-origin": "http://localhost:3100" },
+        json: { error: { code: "feature_disabled", message: "Skin profiles aren't available on this server.", hint: null } },
+      });
+      return;
+    }
+    await route.continue();
+  });
+  await page.getByRole("button", { name: "Save baseline & start trial" }).click();
+  await expect(page).toHaveURL(/\/trial\?id=/);
+  expect(refused).toBe(1);
+  const block = page.locator("details").filter({ hasText: "Profile at the start" });
+  await block.locator("summary").click();
+  await expect(block).toContainText("No profile was saved with this trial");
+});

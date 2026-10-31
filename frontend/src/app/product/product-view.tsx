@@ -220,16 +220,20 @@ function TrialCard({ scan, goal, product }: { scan: Scan; goal: Goal; product: P
   const demo = scan.provenance.kind === "demo";
   // Sent only if the user chose to save their answers; frozen with the plan from this moment on.
   const [draft] = useState(() => loadDraft(scan.id));
-  const saving = draft?.save === true;
+  const status = useResource("status", api.status);
+  const saving = draft?.save === true && status.data?.skin_profile_enabled === true;
   async function start() {
     setBusy(true);
+    const body = { scan_id: scan.id, goal: goal.key, product_id: product.id };
     try {
-      const trial = await api.createTrial({
-        scan_id: scan.id,
-        goal: goal.key,
-        product_id: product.id,
-        ...(saving && draft ? { profile: draft.profile } : {}),
-      });
+      let trial;
+      try {
+        trial = await api.createTrial(saving && draft ? { ...body, profile: draft.profile } : body);
+      } catch (err) {
+        // Profiles were switched off after this page loaded: start the trial without one rather than not at all.
+        if (!(saving && err instanceof ApiError && err.code === "feature_disabled")) throw err;
+        trial = await api.createTrial(body);
+      }
       if (saving) clearDraft(scan.id);
       go(`/trial?id=${trial.id}`);
     } catch (err) {

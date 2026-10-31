@@ -451,3 +451,51 @@ def test_removal_never_touches_the_plan_or_verdict(api):
         after = client.get(f"{V1}/trials/{t['id']}", headers=h).json()
         assert after["comparison"] == before["comparison"] and after["protocol"] == before["protocol"]
         assert after["baseline"]["skin_type"]["status"] == "removed"
+
+
+def test_profile_edits_and_removal_respect_ownership(api):
+    with api(skin_fake(), **ON) as client:
+        h = new_session(client)
+        t = start_trial(client, h, live_scan(client, h)["id"], profile={"self_report": ANSWERS}).json()
+        other = new_session(client)
+        assert client.delete(f"{V1}/trials/{t['id']}/profile", headers=other).status_code == 404
+        assert client.delete(f"{V1}/trials/{t['id']}/profile").status_code == 401
+        body = client.get(f"{V1}/trials/{t['id']}", headers=h).json()
+        assert body["profile"]["withdrawn"] is False and body["profile"]["at_start"]["self_report"] == ANSWERS
+
+
+def test_removal_works_with_the_flag_off_and_edits_do_not(api, make_settings):
+    with api(skin_fake(), **ON) as client:
+        h = new_session(client)
+        t = start_trial(client, h, live_scan(client, h)["id"], profile={"self_report": ANSWERS}).json()
+    # Switching the feature off (the first rollback step) must never trap a user's data.
+    with api(skin_fake()) as client:
+        r = client.patch(f"{V1}/trials/{t['id']}/profile", headers=h, json={"expected_amendments": 0})
+        assert r.status_code == 404 and r.json()["error"]["code"] == "feature_disabled"
+        assert client.delete(f"{V1}/trials/{t['id']}/profile", headers=h).status_code == 204
+        assert client.delete(f"{V1}/trials/{t['id']}/profile", headers=h).status_code == 204  # idempotent
+        body = client.get(f"{V1}/trials/{t['id']}", headers=h).json()
+        assert body["profile"]["withdrawn"] is True
+        assert body["baseline"]["skin_type"]["status"] == "removed"
+
+
+def test_an_unreadable_stored_profile_never_breaks_the_trial_and_can_still_be_erased(api, database_url):
+    with api(skin_fake(), **ON) as client:
+        h = new_session(client)
+        t = start_trial(client, h, live_scan(client, h)["id"], profile={"self_report": ANSWERS}).json()
+        engine = create_engine(database_url)
+        for broken in ("not json", "[]", '{"version": 1}', '{"camera": {"whole": "Dry"}, "created_at": "x"}'):
+            with engine.begin() as conn:
+                conn.execute(text("update trials set profile_json = :p"), {"p": broken})
+            r = client.get(f"{V1}/trials/{t['id']}", headers=h)
+            assert r.status_code == 200, broken
+            assert r.json()["profile"] is None and r.json()["protocol"] == t["protocol"]
+        r = client.patch(f"{V1}/trials/{t['id']}/profile", headers=h, json={"expected_amendments": 0})
+        assert r.status_code == 404 and r.json()["error"]["code"] == "profile_not_found"
+        assert client.delete(f"{V1}/trials/{t['id']}/profile", headers=h).status_code == 204
+        with engine.connect() as conn:
+            stored = conn.execute(text("select skin_type_json from scans")).scalars().all()
+            snap = conn.execute(text("select profile_json from trials")).scalar_one()
+        engine.dispose()
+        assert all(v is None or json.loads(v) == {"removed": True} for v in stored)
+        assert set(json.loads(snap)) == {"version", "withdrawn_at"}
