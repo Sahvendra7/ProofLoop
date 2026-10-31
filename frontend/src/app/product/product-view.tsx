@@ -9,6 +9,7 @@ import { api, ApiError } from "@/lib/api";
 import { dataUrlToBlob, loadCapture } from "@/lib/capture-store";
 import { money, TIER_COPY } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
+import { clearDraft, loadDraft } from "@/lib/profile-store";
 import type { Goal, Match, Product, Scan, Simulation } from "@/lib/types";
 import { ProvenanceBadge } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
@@ -217,10 +218,23 @@ function TrialCard({ scan, goal, product }: { scan: Scan; goal: Goal; product: P
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
   const demo = scan.provenance.kind === "demo";
+  // Sent only if the user chose to save their answers; frozen with the plan from this moment on.
+  const [draft] = useState(() => loadDraft(scan.id));
+  const status = useResource("status", api.status);
+  const saving = draft?.save === true && status.data?.skin_profile_enabled === true;
   async function start() {
     setBusy(true);
+    const body = { scan_id: scan.id, goal: goal.key, product_id: product.id };
     try {
-      const trial = await api.createTrial({ scan_id: scan.id, goal: goal.key, product_id: product.id });
+      let trial;
+      try {
+        trial = await api.createTrial(saving && draft ? { ...body, profile: draft.profile } : body);
+      } catch (err) {
+        // Profiles were switched off after this page loaded: start the trial without one rather than not at all.
+        if (!(saving && err instanceof ApiError && err.code === "feature_disabled")) throw err;
+        trial = await api.createTrial(body);
+      }
+      if (saving) clearDraft(scan.id);
       go(`/trial?id=${trial.id}`);
     } catch (err) {
       setError(err instanceof ApiError ? err : new ApiError("unknown", "Couldn't start the trial.", 0));
@@ -236,6 +250,12 @@ function TrialCard({ scan, goal, product }: { scan: Scan; goal: Goal; product: P
         similar light. ProofLoop will compare the two scans and tell you whether {goal.metric_label.toLowerCase()} moved beyond normal variation.
       </p>
       {demo && <p className="mt-3 text-sm text-paper/70">This is a sample-data trial. You&apos;ll be able to view a clearly labelled synthetic follow-up.</p>}
+      {saving && (
+        <p className="mt-3 text-sm text-paper/75">
+          Your plan is fixed when you start. Your answers and the camera&apos;s reading are saved with it as they are today;
+          changing them later won&apos;t change the plan.
+        </p>
+      )}
       {error && <p role="alert" className="mt-3 text-sm text-[#ffb4a2]">{error.message}</p>}
       <Button className="mt-5 bg-paper !text-ink hover:!bg-white" onClick={start} loading={busy}>
         Save baseline &amp; start trial

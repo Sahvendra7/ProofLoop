@@ -14,6 +14,7 @@ import { ProvenanceNote } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
 import { Button, ButtonLink, Card, Notice, Skeleton } from "@/components/ui";
 import { AssistantPanel } from "./assistant-panel";
+import { ProfileBlock } from "./profile-block";
 
 export function TrialView() {
   const id = useSearchParams().get("id");
@@ -50,6 +51,8 @@ function TrialDetail({ trial, onUpdate }: { trial: Trial; onUpdate: (t: Trial) =
       <InstrumentCheck trial={trial} check={trial.protocol.instrument_check} onUpdate={onUpdate} />
 
       <ProtocolCard trial={trial} protocol={trial.protocol} decided={trial.comparison !== null} />
+
+      <ProfileBlock trial={trial} onUpdate={onUpdate} />
 
       {pendingCheckin && <Notice className="mt-6" title="A check-in is still being measured.">Refresh in a few seconds.</Notice>}
 

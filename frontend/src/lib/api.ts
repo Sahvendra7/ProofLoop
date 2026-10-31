@@ -3,12 +3,16 @@ import type {
   AssistantConsent,
   AssistantIntent,
   AssistantReply,
+  FocusPlan,
   Goal,
   Preflight,
+  Profile,
+  ProfileIn,
   Product,
   RecommendationFilters,
   Recommendations,
   Scan,
+  SelfReport,
   Simulation,
   SystemStatus,
   Trial,
@@ -149,7 +153,16 @@ export const api = {
     return request<Recommendations>(`/scans/${encodeURIComponent(scanId)}/recommendations?${q}`);
   },
 
-  createTrial: (body: { scan_id: string; goal: string; product_id: string }) => request<Trial>("/trials", json(body)),
+  /** Orders the focuses and explains them. No units, nothing stored; answers travel in the body only. */
+  focusPlan: (scanId: string, body: { self_report: SelfReport | null; use_camera_reading: boolean }) =>
+    request<FocusPlan>(`/scans/${encodeURIComponent(scanId)}/focus-plan`, json(body)),
+  createTrial: (body: { scan_id: string; goal: string; product_id: string; profile?: ProfileIn }) =>
+    request<Trial>("/trials", json(body)),
+  /** Later answers are recorded beside the frozen profile; the plan never changes. */
+  amendProfile: (trialId: string, body: { self_report: SelfReport | null; user_view: ProfileIn["user_view"]; expected_amendments: number }) =>
+    request<Profile>(`/trials/${encodeURIComponent(trialId)}/profile`, { ...json(body), method: "PATCH" }),
+  withdrawProfile: (trialId: string) =>
+    request<void>(`/trials/${encodeURIComponent(trialId)}/profile`, { method: "DELETE" }),
   trial: (id: string) => request<Trial>(`/trials/${encodeURIComponent(id)}`),
   trials: () => request<TrialSummary[]>("/trials"),
   /** Free: compares a check-in photo with the baseline's conditions. No YouCam call, nothing stored. */

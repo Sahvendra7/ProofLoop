@@ -58,6 +58,10 @@ Without that check the client would fall back to `http://localhost:8000`.
   CHECK constraints to `trials`. It is additive: existing rows keep NULLs and are served as "reconstructed"
   plans. Verified on a local PostgreSQL 16 (pgserver): upgrade, `alembic check` (no drift), downgrade,
   re-upgrade, and the full test suite. It runs automatically on the next Render start after a deploy.
+- `0004_skin_profile` (PR #4) adds two nullable TEXT columns, `scans.skin_type_json` and `trials.profile_json`.
+  Because the start command runs `alembic upgrade head`, code older than a migration the database already has
+  **cannot start**. Rolling code back past `0004` needs the downgrade first, and the downgrade deletes saved profiles.
+  The procedure is in `docs/innovation/21-INTEGRATED-RELEASE-VERIFICATION.md` §5.3.
 - Local development and tests keep SQLite with `create_all`. `TEST_DATABASE_URL=postgresql://… pytest` runs the full suite on Postgres, rebuilding the schema through the migrations for every test.
 - Connections: direct (non-pooled) Neon host, SQLAlchemy pool of 5 + 5 overflow, `pool_pre_ping`, recycled after 240 s, because Neon closes idle connections when it scales to zero.
 - Budget reservations take a transaction-scoped Postgres advisory lock, so concurrent requests can't overspend.

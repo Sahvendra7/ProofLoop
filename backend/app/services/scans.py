@@ -17,13 +17,14 @@ from urllib.parse import parse_qs, urlparse
 from sqlalchemy import select, update
 
 from app.core.logging import get_logger
-from app.db.models import ReadingRow, ScanRow, utcnow
+from app.db.models import ReadingRow, ScanRow, TrialRow, utcnow
 from app.db.session import db_session
-from app.domain.metrics import REQUESTED_PROVIDER_ACTIONS
+from app.domain.metrics import SKIN_TYPE_ACTION
 from app.domain.normalize import normalize_outputs
+from app.domain.profile import REMOVED_JSON, parse_skin_type, reading_to_json
 from app.providers.youcam.client import YouCamClient
 from app.providers.youcam.errors import ProviderError, ProviderErrorCode
-from app.services import usage
+from app.services import profiles, usage
 from app.services.imaging import PreparedImage
 
 log = get_logger("proofloop.scans")
@@ -47,8 +48,8 @@ class ScanJobRunner:
         self._semaphore = asyncio.Semaphore(max_concurrency)
         self._tasks: set[asyncio.Task] = set()
 
-    def start(self, scan_id: str, call_id: int, image: PreparedImage) -> None:
-        task = asyncio.create_task(self._run(scan_id, call_id, image), name=f"scan-{scan_id}")
+    def start(self, scan_id: str, call_id: int, image: PreparedImage, actions: tuple[str, ...]) -> None:
+        task = asyncio.create_task(self._run(scan_id, call_id, image, actions), name=f"scan-{scan_id}")
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
 
@@ -60,7 +61,7 @@ class ScanJobRunner:
         with db_session() as db:
             db.execute(update(ScanRow).where(ScanRow.id == scan_id).values(stage=stage))
 
-    async def _run(self, scan_id: str, call_id: int, image: PreparedImage) -> None:
+    async def _run(self, scan_id: str, call_id: int, image: PreparedImage, actions: tuple[str, ...]) -> None:
         provider = self._provider_factory()
         if provider is None:
             self._fail(scan_id, call_id, ProviderError(ProviderErrorCode.not_configured))
@@ -70,7 +71,7 @@ class ScanJobRunner:
                 result = await provider.analyze_skin(
                     image.data,
                     image.content_type,
-                    REQUESTED_PROVIDER_ACTIONS,
+                    actions,
                     on_stage=lambda stage: self._set_stage(scan_id, stage),
                 )
             except ProviderError as exc:
@@ -82,6 +83,7 @@ class ScanJobRunner:
                 return
 
         normalized = normalize_outputs(result.outputs, result.requested_actions)
+        skin_type = parse_skin_type(result.outputs) if SKIN_TYPE_ACTION in actions else None
         if not normalized.readings:
             self._fail(scan_id, call_id, ProviderError(ProviderErrorCode.malformed, "no usable metrics"), billed=True)
             return
@@ -103,6 +105,9 @@ class ScanJobRunner:
                         mask_url=reading.mask_url,
                     )
                 )
+            if skin_type is not None:
+                withdrawn = _profile_withdrawn(db, scan)
+                scan.skin_type_json = REMOVED_JSON if withdrawn else reading_to_json(skin_type)
             scan.status = "complete"
             scan.stage = "complete"
             scan.missing_metrics = json.dumps(normalized.missing)
@@ -118,6 +123,9 @@ class ScanJobRunner:
                 "metrics": len(normalized.readings),
                 "missing": normalized.missing,
                 "ignored_types": normalized.ignored_types,
+                # Counts only: the labels themselves are personal data and never logged.
+                "skin_type_regions": len(skin_type.returned()) if skin_type else 0,
+                "skin_type_unrecognised": skin_type.unrecognised if skin_type else 0,
                 "duration_s": result.duration_s,
             },
         )
@@ -135,6 +143,14 @@ class ScanJobRunner:
                 scan.completed_at = utcnow()
             usage.settle(db, call_id, success=False, error_code=exc.code.value, possibly_billed=possibly_billed)
         log.info("scan_failed", extra={"scan_id": scan_id, "code": exc.code.value, "provider_code": exc.provider_code})
+
+
+def _profile_withdrawn(db, scan: ScanRow) -> bool:
+    """A check-in or repeat of a trial whose profile was withdrawn keeps no reading."""
+    trial = db.get(TrialRow, scan.trial_id) if scan.trial_id else None
+    if trial is None:
+        trial = db.scalar(select(TrialRow).where(TrialRow.repeat_scan_id == scan.id))
+    return trial is not None and profiles.withdrawn(trial)
 
 
 _FAILURE_TITLES = {

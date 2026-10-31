@@ -6,7 +6,8 @@ import { useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Check, CircleDollarSign, Plus, SlidersHorizontal, Target } from "lucide-react";
 import { api } from "@/lib/api";
 import { money, TIER_COPY } from "@/lib/format";
-import { useResource } from "@/lib/hooks";
+import { useMounted, useResource } from "@/lib/hooks";
+import { loadDraft } from "@/lib/profile-store";
 import type { Match, RecommendationFilters, Reason } from "@/lib/types";
 import { ProvenanceBadge } from "@/components/measure";
 import { ProductArt } from "@/components/product-art";
@@ -79,6 +80,7 @@ export function MatchesView() {
         {data && data.matches.length > 0 && (
           <>
             <p className="mb-4 text-sm text-ink-3">{data.matches.length} {data.matches.length === 1 ? "product" : "products"} · {data.ranking_explanation}</p>
+            <ProfileMatchNote scanId={scanId} />
             <ol className="space-y-5">
               {data.matches.map((m) => <MatchCard key={m.product.id} match={m} scanId={scanId} goal={goal} />)}
             </ol>
@@ -115,6 +117,13 @@ function ReasonItem({ reason }: { reason: Reason }) {
       <span><span className="sr-only">{reason.kind}: </span>{reason.text}</span>
     </li>
   );
+}
+
+/** Shown when skin-profile answers will be saved: matching never reads them. */
+function ProfileMatchNote({ scanId }: { scanId: string }) {
+  const mounted = useMounted();
+  if (!mounted || !loadDraft(scanId)?.save) return null;
+  return <p className="-mt-2 mb-4 text-sm text-ink-3">Matches use your focus and preferences, not your skin-type reading.</p>;
 }
 
 function MatchCard({ match, scanId, goal }: { match: Match; scanId: string; goal: string }) {

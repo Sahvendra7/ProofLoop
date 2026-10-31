@@ -60,6 +60,70 @@ export interface Scan {
     duration_s: number | null;
   } | null;
   failure: { code: string; message: string; hint: string | null } | null;
+  /** YouCam's skin-type reading of this photo; null when it wasn't requested. */
+  skin_type: SkinType | null;
+}
+
+// --- Checked skin profile (backend/app/domain/profile.py) ---------------------------------------
+
+export type SkinRegion = "whole" | "t_zone" | "u_zone";
+export type Frequency = "often" | "sometimes" | "rarely" | "unsure";
+export type Reactive = "yes" | "no" | "unsure";
+export type UserView = "agree" | "disagree" | "unsure";
+export type FocusBadge = "picked" | "most_room" | "cant_show_gains" | "not_measured";
+export type Stability = "held" | "changed" | "partial" | "not_checked" | "no_reading" | "not_used";
+
+export interface SkinType {
+  /** removed: a reading came back, then the user removed it with their profile. */
+  status: "complete" | "partial" | "missing" | "removed";
+  whole: string | null;
+  t_zone: string | null;
+  u_zone: string | null;
+  /** Provenance of the sample reading, for sample scans. */
+  note: string | null;
+}
+
+export interface SelfReport {
+  shine: Frequency | null;
+  tightness: Frequency | null;
+  reactive: Reactive | null;
+  priorities: string[];
+}
+
+export interface ProfileIn {
+  self_report: SelfReport | null;
+  user_view: UserView | null;
+  use_camera_reading: boolean;
+}
+
+export interface ProfileNote {
+  rule_id: string;
+  text: string;
+}
+
+export interface FocusPlan {
+  order: { goal: string; rank: number; badges: FocusBadge[]; notes: ProfileNote[] }[];
+  profile_notes: ProfileNote[];
+  priority_note: ProfileNote | null;
+  ranking_explanation: string;
+  rules_version: string;
+  camera: SkinType | null;
+}
+
+export interface Profile {
+  at_start: {
+    created_at: string;
+    self_report: SelfReport | null;
+    user_view: UserView | null;
+    camera: { scan_id: string; whole: string | null; t_zone: string | null; u_zone: string | null } | null;
+    camera_rejected: boolean;
+  } | null;
+  latest: { at: string; self_report: SelfReport | null; user_view: UserView | null } | null;
+  amendments: number;
+  stability: Stability;
+  notes: ProfileNote[];
+  rules_version: string | null;
+  withdrawn: boolean;
 }
 
 export interface Goal {
@@ -211,6 +275,8 @@ export interface Trial {
   comparison: Comparison | null;
   focus_noise_band: number;
   protocol: Protocol;
+  /** The profile frozen when the plan was fixed. Context only: it never affects the plan or the result. */
+  profile: Profile | null;
 }
 
 export interface TrialSummary {
@@ -244,6 +310,7 @@ export interface SystemStatus {
   noise_bands: Record<string, number>;
   demo_note: string;
   catalog_disclaimer: string;
+  skin_profile_enabled: boolean;
 }
 
 export interface RecommendationFilters {

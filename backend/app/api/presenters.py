@@ -7,12 +7,13 @@ from datetime import UTC, datetime
 
 from app.api import schemas as s
 from app.db.models import ScanRow
+from app.domain import profile as pf
 from app.domain.catalog import Product
 from app.domain.compare import CaptureInfo, Comparison, MetricChange, detectability
-from app.domain.metrics import BAND_LABELS, METRICS, METRICS_BY_KEY, Goal, band_for
+from app.domain.metrics import BAND_LABELS, METRICS, METRICS_BY_KEY, SKIN_TYPE_ACTION, Goal, band_for
 from app.domain.recommend import RecommendationResult
 from app.providers.youcam import endpoints as ep
-from app.services.demo import fixture_note
+from app.services.demo import fixture_note, skin_type_note
 
 # Goals the Skin Simulation API can visualise. Oil balance is excluded: the
 # documented `oiliness` field description is ambiguous about direction.
@@ -131,6 +132,37 @@ def scan_out(scan: ScanRow, now: datetime) -> s.ScanOut:
         masks_available=masks_live and any(m.mask_url for m in metrics),
         provider_run=provider_run,
         failure=failure,
+        skin_type=skin_type_out(scan),
+    )
+
+
+def skin_type_out(scan: ScanRow) -> s.SkinTypeOut | None:
+    """None when the reading wasn't requested; 'missing' when none came back; 'removed' when the user removed it."""
+    if scan.status != "complete" or SKIN_TYPE_ACTION not in json.loads(scan.requested_metrics or "[]"):
+        return None
+    if pf.is_removed(scan.skin_type_json):
+        return s.SkinTypeOut(status="removed", whole=None, t_zone=None, u_zone=None)
+    reading = pf.reading_from_json(scan.skin_type_json)
+    status = pf.reading_status(reading, requested=True)
+    regions = reading.regions() if reading else {"whole": None, "t_zone": None, "u_zone": None}
+    note = skin_type_note() if scan.provenance == "demo" and reading else None
+    return s.SkinTypeOut(status=status, note=note, **regions)
+
+
+def focus_plan_out(plan: pf.FocusPlan, camera: s.SkinTypeOut | None) -> s.FocusPlanOut:
+    def note(n: pf.Note) -> s.NoteOut:
+        return s.NoteOut(rule_id=n.rule_id, text=n.text)
+
+    return s.FocusPlanOut(
+        order=[
+            s.FocusItemOut(goal=i.goal, rank=i.rank, badges=list(i.badges), notes=[note(n) for n in i.notes])
+            for i in plan.order
+        ],
+        profile_notes=[note(n) for n in plan.profile_notes],
+        priority_note=note(plan.priority_note) if plan.priority_note else None,
+        ranking_explanation=plan.ranking_explanation,
+        rules_version=plan.rules_version,
+        camera=camera,
     )
 
 
