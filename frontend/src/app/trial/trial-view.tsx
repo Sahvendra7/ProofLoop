@@ -261,6 +261,10 @@ function NextStep({ trial, comparison, synthetic }: { trial: Trial; comparison: 
   const step = comparison.next_step;
   const copy = NEXT_STEP_COPY[step.action];
   const live = trial.provenance.kind !== "demo";
+  // A live trial can always take another check-in (judged against the same sealed plan), except while one is
+  // still being measured: several next steps tell the user to check in again, so each needs a way to do it.
+  const canCheckIn = live && !trial.checkins.some((c) => c.status === "processing");
+  const switching = step.action === "consider_switching";
   return (
     <section aria-labelledby="next-step" className="mt-6 rounded-[var(--radius-xl)] bg-card p-6 shadow-[var(--shadow-card)] ring-1 ring-line sm:p-8">
       <p className="eyebrow inline-flex items-center gap-2">
@@ -268,15 +272,19 @@ function NextStep({ trial, comparison, synthetic }: { trial: Trial; comparison: 
       </p>
       <h2 id="next-step" className="mt-2 font-display text-2xl text-ink">{copy.title}</h2>
       <p className="mt-2 max-w-3xl leading-relaxed text-ink-2">{copy.body}</p>
-      {step.action === "consider_switching" && (
-        <ButtonLink href={`/matches?scan=${step.baseline_scan_id}&goal=${step.goal}`} variant="secondary" className="mt-5">
-          See other matches for {trial.goal.label.toLowerCase()}
-        </ButtonLink>
-      )}
-      {step.action === "retake" && live && (
-        <ButtonLink href={`/scan?trial=${trial.id}`} variant="secondary" className="mt-5">
-          <Camera aria-hidden className="size-4" /> Retake the check-in
-        </ButtonLink>
+      {(switching || canCheckIn) && (
+        <div className="mt-5 flex flex-wrap gap-3">
+          {switching && (
+            <ButtonLink href={`/matches?scan=${step.baseline_scan_id}&goal=${step.goal}`} variant="secondary">
+              See other matches for {trial.goal.label.toLowerCase()}
+            </ButtonLink>
+          )}
+          {canCheckIn && (
+            <ButtonLink href={`/scan?trial=${trial.id}`} variant="secondary">
+              <Camera aria-hidden className="size-4" /> {step.action === "retake" ? "Retake the check-in" : "Check in again"}
+            </ButtonLink>
+          )}
+        </div>
       )}
     </section>
   );

@@ -140,5 +140,44 @@ test("instrument check replays a recorded repeat, and the verdict ends in one ne
   await expect(done).toContainText("part of the plan");
   const step = page.getByRole("region", { name: "Finish the test before deciding." });
   await expect(step).toContainText("Next step (demo)");
+  // Sample trials take the synthetic follow-up, never a photo check-in.
+  await expect(step.getByRole("link", { name: /Check in again/ })).toHaveCount(0);
   await expectNoSeriousA11yViolations(page);
+});
+
+test("after a verdict, a live trial can always check in again", async ({ page }) => {
+  // The keyless E2E backend can't hold a live trial, so a sample trial with a verdict is served as live: only the
+  // provenance kind changes, which is all the next-step card reads. A check-in still being measured hides the link.
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explore with sample data" }).click();
+  await page.getByRole("radio", { name: /Look more hydrated/ }).check({ force: true });
+  await page.getByRole("button", { name: "See matching products" }).click();
+  await page.getByRole("link", { name: /Details & trial/ }).first().click();
+  await page.getByRole("button", { name: "Save baseline & start trial" }).click();
+  await expect(page).toHaveURL(/\/trial\?id=/);
+  const trialId = new URL(page.url()).searchParams.get("id")!;
+  await page.getByRole("button", { name: "Show synthetic 21-day follow-up" }).click();
+  await expect(page.getByRole("region", { name: "Finish the test before deciding." })).toBeVisible();
+
+  let processing = false;
+  await page.route(`**/api/v1/trials/${trialId}`, async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    const res = await route.fetch();
+    const trial = await res.json();
+    trial.provenance = { ...trial.provenance, kind: "youcam" };
+    if (processing) trial.checkins = [...trial.checkins, { ...trial.checkins[0], id: "pendingcheckin0000000000000000ab", status: "processing" }];
+    await route.fulfill({ response: res, json: trial });
+  });
+
+  await page.reload();
+  const step = page.getByRole("region", { name: "Finish the test before deciding." });
+  await expect(step).toContainText("check in on the planned date");
+  const again = step.getByRole("link", { name: "Check in again" });
+  await expect(again).toHaveAttribute("href", `/scan?trial=${trialId}`);
+  await expectNoSeriousA11yViolations(page);
+
+  processing = true;
+  await page.reload();
+  await expect(page.getByText("A check-in is still being measured.")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Finish the test before deciding." }).getByRole("link", { name: "Check in again" })).toHaveCount(0);
 });
